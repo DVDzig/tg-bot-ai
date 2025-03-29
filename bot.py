@@ -84,7 +84,6 @@ async def send_daily_reminder(bot: Bot):
 async def main():
     logging.basicConfig(level=logging.INFO)
 
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.include_router(start_handler.router)
