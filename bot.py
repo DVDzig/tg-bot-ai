@@ -7,8 +7,8 @@ print("Aiogram version:", aiogram.__version__)
 from datetime import datetime, time as dt_time, timedelta
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.bot import DefaultBotProperties
 from aiogram.enums import ParseMode
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from aiohttp import web
