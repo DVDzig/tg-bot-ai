@@ -1,6 +1,9 @@
 import asyncio
 import logging
 import pytz
+import aiogram
+print("Aiogram version:", aiogram.__version__)
+
 from datetime import datetime, time as dt_time, timedelta
 
 from aiogram import Bot, Dispatcher
