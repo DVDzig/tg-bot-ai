@@ -6,7 +6,7 @@ from functools import lru_cache
 
 # Подключение к Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-SERVICE_ACCOUNT_FILE = 'D:/Документы/tg-bot-ai/credentials.json'
+SERVICE_ACCOUNT_FILE = 'credentials.json'
 
 USER_FIELDS = [
     "user_id", "username", "first_name", "last_name", "language_code", "is_premium",
