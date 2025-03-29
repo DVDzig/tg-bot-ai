@@ -5,7 +5,7 @@ import aiogram
 print("Aiogram version:", aiogram.__version__)
 
 from datetime import datetime, time as dt_time, timedelta
-
+from config import TOKEN
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
