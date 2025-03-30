@@ -340,4 +340,5 @@ async def block_input(message: Message, state: FSMContext):
     if current_state != ProgramStates.asking_question.state:
         await message.delete()
         await message.answer("❗Используй кнопки для навигации.")
-        raise SkipHandler  # предотвращает дальнейшую обработку
+        return  # просто завершаем обработку
+
