@@ -188,3 +188,24 @@ def find_similar_questions(discipline, keywords, limit=3):
 def get_all_users():
     values = get_sheet_data(USER_SHEET_ID, "Users!A2:A")
     return [{"user_id": row[0]} for row in values if row]
+
+# Атоматическая подгрузка разрешённых модулей/дисциплин
+def get_all_valid_buttons():
+    buttons = {
+        "🎓 Выбрать программу", "👤 Мой профиль", "💰 Купить вопросы",
+        "📊 Лидерборд", "❓ Помощь", "🔁 Начать сначала", "⬅️ Назад",
+        "🔄 Обновить ключевые слова"
+    }
+
+    for program in PROGRAM_SHEETS_LIST:
+        buttons.add(program)
+
+        sheet = PROGRAM_SHEETS_LIST[program]
+        values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:C")
+        for row in values:
+            if len(row) > 0:
+                buttons.add(f"📗 {row[0]}")  # модуль
+            if len(row) > 1:
+                buttons.add(f"📕 {row[1]}")  # дисциплина
+
+    return buttons

@@ -32,6 +32,10 @@ from services.user_service import (
     check_and_apply_daily_challenge
 )
 
+from services.google_sheets_service import get_all_valid_buttons
+
+ALLOWED_BUTTONS = get_all_valid_buttons()
+
 router = Router()
 
 BACK_BUTTON = "⬅️ Назад"
@@ -43,14 +47,7 @@ class ProgramStates(StatesGroup):
     choosing_module = State()
     choosing_discipline = State()
     asking_question = State()
-    
-# Список всех допустимых кнопок
-ALLOWED_BUTTONS = {
-    "🎓 Выбрать программу", "👤 Мой профиль", "💰 Купить вопросы",
-    "📊 Лидерборд", "❓ Помощь", "🔁 Начать сначала", "⬅️ Назад",
-    "🔄 Обновить ключевые слова"
-}
-    
+      
 # Кэшируем ключевые операции для ускорения
 @lru_cache(maxsize=512)
 def cached_get_keywords(module, discipline):
