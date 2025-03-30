@@ -332,8 +332,6 @@ async def block_input(message: Message, state: FSMContext):
         await message.delete()
         await message.answer("❗Используй кнопки для навигации.")
 
-from aiogram.exceptions import SkipHandler
-
 @router.message()
 async def block_input(message: Message, state: FSMContext):
     current_state = await state.get_state()
