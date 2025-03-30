@@ -114,8 +114,23 @@ async def level_selected(message: Message, state: FSMContext):
 @router.message(ProgramStates.choosing_program)
 async def choose_module_handler(message: Message, state: FSMContext):
     selected_program = message.text.replace("📘 ", "").replace("📗 ", "").replace("📙 ", "").replace("📕 ", "").replace("📒 ", "")
-    await state.update_data(program=selected_program)
+    level_data = await state.get_data()
+    level = level_data.get("level")
 
+    # Сравниваем с доступными программами по уровню
+    if level == "Бакалавриат":
+        valid_programs = ["МРК", "ТПР", "БХ"]
+    elif level == "Магистратура":
+        valid_programs = ["МСС", "ФВМ", "СА"]
+    else:
+        await message.answer("⚠️ Уровень не определён. Вернись назад и выбери снова.")
+        return
+
+    if selected_program not in valid_programs:
+        await message.answer("⚠️ Неверный выбор программы. Используй кнопки ниже.")
+        return
+
+    await state.update_data(program=selected_program)
     modules = get_modules(selected_program)
     logging.debug(f"[DEBUG] Найдено модулей: {modules}")
     if not modules:
@@ -139,9 +154,16 @@ async def choose_discipline_handler(message: Message, state: FSMContext):
         await message.answer("✅ Ключевые слова обновлены!")
         return
 
-    selected_module = message.text.replace("📗 ", "")
-    await state.update_data(module=selected_module)
+    data = await state.get_data()
+    current_program = data.get("program")
+    modules = get_modules(current_program)
 
+    selected_module = message.text.replace("📗 ", "")
+    if selected_module not in modules:
+        await message.answer("⚠️ Неверный выбор модуля. Используй кнопки ниже.")
+        return
+
+    await state.update_data(module=selected_module)
     disciplines = get_disciplines(selected_module)
     if not disciplines:
         await message.answer("❌ Не удалось найти дисциплины для выбранного модуля.")
@@ -154,15 +176,21 @@ async def choose_discipline_handler(message: Message, state: FSMContext):
 # Обработка выбранной дисциплины
 @router.message(ProgramStates.choosing_discipline)
 async def choose_discipline_complete(message: Message, state: FSMContext):
-
     selected_discipline = message.text.replace("📕 ", "")
+    data = await state.get_data()
+    module = data.get("module")
+    available_disciplines = get_disciplines(module)
+
+    if selected_discipline not in available_disciplines:
+        await message.answer("⚠️ Неверный выбор дисциплины. Используй кнопки ниже.")
+        return
+
     await state.update_data(discipline=selected_discipline)
 
-    data = await state.get_data()
     log_user_activity(
         user_id=message.from_user.id,
         plan=data.get("program"),
-        module=data.get("module"),
+        module=module,
         discipline=selected_discipline
     )
 
@@ -303,3 +331,13 @@ async def block_input(message: Message, state: FSMContext):
     if current_state != ProgramStates.asking_question.state:
         await message.delete()
         await message.answer("❗Используй кнопки для навигации.")
+
+from aiogram.exceptions import SkipHandler
+
+@router.message()
+async def block_input(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state != ProgramStates.asking_question.state:
+        await message.delete()
+        await message.answer("❗Используй кнопки для навигации.")
+        raise SkipHandler  # предотвращает дальнейшую обработку

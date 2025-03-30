@@ -190,8 +190,3 @@ async def handle_shop_selection(message: types.Message):
     link = generate_shop_links(message.from_user.id)[message.text]
     await message.answer(f"💳 Оплати по ссылке:\n{link}", reply_markup=get_main_keyboard())
 
-# Обработчик кнопки "⬅️ Назад"
-@router.message(lambda message: message.text == "⬅️ Назад")
-async def back_to_main(message: types.Message, state: FSMContext):
-    await state.clear()
-    await message.answer("Ты в главном меню", reply_markup=get_main_keyboard())
