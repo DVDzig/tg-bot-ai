@@ -53,7 +53,6 @@ def cached_get_keywords(module, discipline):
 @router.message(lambda msg: msg.text == BACK_BUTTON)
 async def universal_back_handler(message: Message, state: FSMContext):
     current_state = await state.get_state()
-    print(current_state)
     data = await state.get_data()
 
     if current_state == ProgramStates.asking_question.state:
@@ -68,15 +67,13 @@ async def universal_back_handler(message: Message, state: FSMContext):
 
     elif current_state == ProgramStates.choosing_module.state:
         await state.set_state(ProgramStates.choosing_program)
-        program = data.get("program")
         level = data.get("level")
         markup = get_bachelor_programs_keyboard() if level == "Бакалавриат" else get_master_programs_keyboard()
         await message.answer("⬅️ Вернулся к выбору программы:", reply_markup=markup)
 
     elif current_state == ProgramStates.choosing_program.state:
         await state.set_state(ProgramStates.choosing_level)
-        markup = get_levels_keyboard()
-        await message.answer("⬅️ Вернулся к выбору уровня образования:", reply_markup=markup)
+        await message.answer("⬅️ Вернулся к выбору уровня образования:", reply_markup=get_levels_keyboard())
 
     elif current_state == ProgramStates.choosing_level.state:
         await state.clear()

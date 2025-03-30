@@ -43,17 +43,14 @@ async def start_handler(message: types.Message):
         "⚠️ Важно: если вопрос не по теме дисциплины — ответа не будет.\n\n"
         "Выбери действие ниже ⤵️"
     )
-    markup = get_main_keyboard()
-    await message.answer(welcome_text, reply_markup=markup)
+    await message.answer(welcome_text, reply_markup=get_main_keyboard())
 
-# Обработчик для кнопки "Мой профиль"
+# Обработчик кнопки "Мой профиль"
 @router.message(lambda message: message.text.lower() == "👤 мой профиль")
 async def profile_handler(message: types.Message):
     user_id = message.from_user.id
-
     profile_data = get_user_profile(user_id)
     stats = get_user_activity_stats(user_id)
-
     current_xp = profile_data['xp']
     new_status, _ = determine_status(current_xp)
 
@@ -67,7 +64,6 @@ async def profile_handler(message: types.Message):
     progress = int(((current_xp - min_xp) / (max_xp - min_xp)) * 100) if max_xp > min_xp else 100
     bar_blocks = min(5, int(progress / 5))
     progress_bar = "🟩" * bar_blocks + "⬜️" * (5 - bar_blocks)
-    progress_display = f"{progress_bar} {progress}%"
 
     daily_goal = 3
     challenge_text = (
@@ -79,7 +75,7 @@ async def profile_handler(message: types.Message):
     profile_text = (
         f"👤 <b>Имя:</b> {profile_data['first_name']}\n"
         f"🎖️ <b>Статус:</b> {new_status.capitalize()}\n"
-        f"⭐ <b>XP:</b> {current_xp} (прогресс: {progress_display})\n"
+        f"⭐ <b>XP:</b> {current_xp} (прогресс: {progress_bar} {progress}%)\n"
         f"📅 <b>Последний вход:</b> {profile_data['last_interaction']}\n"
         f"🎁 <b>Бесплатные вопросы:</b> {profile_data['free_questions']}\n"
         f"💰 <b>Платные вопросы:</b> {profile_data['paid_questions']}\n\n"
@@ -118,7 +114,7 @@ async def leaderboard_handler(message: types.Message):
 
     await message.answer(text, parse_mode="HTML")
 
-# Обработчик для кнопки "ℹ️ Помощь"
+# Обработка кнопки "❓ Помощь"
 @router.message(lambda m: m.text and "помощь" in m.text.lower())
 async def help_handler(message: types.Message):
     help_text = (
@@ -129,8 +125,8 @@ async def help_handler(message: types.Message):
         "• За каждый вопрос ты получаешь 1 XP (очки активности).\n"
         "• XP повышают твой статус и открывают бонусы.\n\n"
         "🏆 <b>Статусы и XP</b>\n"
-        "• 🐣 Новичок 0–10 XP\n"
-        "• 🎯 Опытный 11–50 XP\n"
+        "• 🟢 Новичок 0–10 XP\n"
+        "• 🔸 Опытный 11–50 XP\n"
         "• 🚀 Профи 51–100 XP\n"
         "• 👑 Эксперт 101+ XP\n\n"
         "⚠️ Не заходил 5 дней — минус 5 XP\n"
@@ -152,7 +148,8 @@ async def help_handler(message: types.Message):
     )
     await message.answer(help_text, parse_mode="HTML", reply_markup=get_main_keyboard())
 
-# Функция для генерации подписанной и корректно закодированной ссылки Robokassa
+# ===== Покупка вопросов через Robokassa =====
+
 def robokassa_link(amount: int, questions: int, user_id: int) -> str:
     login = "TGTutorBot"
     password1 = "iP540dCVN006A3Ul"
@@ -171,7 +168,6 @@ def robokassa_link(amount: int, questions: int, user_id: int) -> str:
         f"SignatureValue={signature}"
     )
 
-# Словарь с динамически сгенерированными ссылками
 def generate_shop_links(user_id: int):
     return {
         "1 вопрос — 10₽": robokassa_link(10, 1, user_id),
@@ -180,7 +176,6 @@ def generate_shop_links(user_id: int):
         "100 вопросов — 900₽": robokassa_link(900, 100, user_id),
     }
 
-# Обработчик кнопки "Купить вопросы"
 @router.message(lambda message: message.text == "💰 Купить вопросы")
 async def buy_questions_handler(message: types.Message):
     links = generate_shop_links(message.from_user.id)
@@ -190,7 +185,6 @@ async def buy_questions_handler(message: types.Message):
     )
     await message.answer("Выбери нужный пакет вопросов:", reply_markup=keyboard)
 
-# Обработчик выбора количества
 @router.message(lambda message: message.text in generate_shop_links(message.from_user.id))
 async def handle_shop_selection(message: types.Message):
     link = generate_shop_links(message.from_user.id)[message.text]

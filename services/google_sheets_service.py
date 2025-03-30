@@ -102,8 +102,9 @@ def get_modules(program):
     if not sheet_name:
         return []
     values = get_sheet_data(PROGRAM_SHEETS, f"{sheet_name}!A2:A")
-    modules = sorted({row[0] for row in values if len(row) > 0})
+    modules = sorted({row[0].strip() for row in values if len(row) > 0 and row[0].strip()})
     return modules
+
 
 
 def get_disciplines(module):
