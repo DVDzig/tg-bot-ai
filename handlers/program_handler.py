@@ -7,7 +7,10 @@ from utils.keyboard import (
     get_modules_keyboard,
     get_disciplines_keyboard,
     get_question_keyboard,
-    get_main_keyboard
+    get_main_keyboard,
+    get_levels_keyboard,
+    get_bachelor_programs_keyboard,
+    get_master_programs_keyboard
 )
 from services.google_sheets_service import (
     get_modules, get_disciplines, log_user_activity,
@@ -35,12 +38,13 @@ BACK_BUTTON = "⬅️ Назад"
 
 # Состояния для FSM
 class ProgramStates(StatesGroup):
+    choosing_level = State()
     choosing_program = State()
     choosing_module = State()
     choosing_discipline = State()
     asking_question = State()
-
-# Кэшируем ключевые операции для ускорения (обёртки вокруг импорта)
+    
+# Кэшируем ключевые операции для ускорения
 @lru_cache(maxsize=512)
 def cached_get_keywords(module, discipline):
     return get_keywords_for_discipline(module, discipline)
@@ -63,10 +67,17 @@ async def universal_back_handler(message: Message, state: FSMContext):
 
     elif current_state == ProgramStates.choosing_module.state:
         await state.set_state(ProgramStates.choosing_program)
-        markup = get_programs_keyboard()
+        program = data.get("program")
+        level = data.get("level")
+        markup = get_bachelor_programs_keyboard() if level == "Бакалавриат" else get_master_programs_keyboard()
         await message.answer("⬅️ Вернулся к выбору программы:", reply_markup=markup)
 
     elif current_state == ProgramStates.choosing_program.state:
+        await state.set_state(ProgramStates.choosing_level)
+        markup = get_levels_keyboard()
+        await message.answer("⬅️ Вернулся к выбору уровня образования:", reply_markup=markup)
+
+    elif current_state == ProgramStates.choosing_level.state:
         await state.clear()
         await message.answer("⬅️ Вернулся в главное меню:", reply_markup=get_main_keyboard())
 
@@ -78,20 +89,33 @@ async def universal_back_handler(message: Message, state: FSMContext):
 @router.message(lambda msg: msg.text == "🔁 Начать сначала")
 async def restart_bot(message: Message, state: FSMContext):
     await state.clear()
-    await state.set_state(ProgramStates.choosing_program)
-    await message.answer("🔁 Начнём сначала! Выбери образовательную программу:", reply_markup=get_programs_keyboard())
+    await state.set_state(ProgramStates.choosing_level)
+    await message.answer("🔁 Начнём сначала! Выбери уровень образования:", reply_markup=get_levels_keyboard())
 
 # Обработка нажатия "Выбрать программу"
 @router.message(lambda message: message.text == "🎓 Выбрать программу")
-async def choose_program_handler(message: Message, state: FSMContext):
+async def choose_level_handler(message: Message, state: FSMContext):
+    await state.set_state(ProgramStates.choosing_level)
+    await message.answer("Выбери уровень образования:", reply_markup=get_levels_keyboard())
+
+# Обработка выбора бакалавриата или магистратуры
+@router.message(ProgramStates.choosing_level)
+async def level_selected(message: Message, state: FSMContext):
+    level = message.text.replace("🎓 ", "")
+    await state.update_data(level=level)
     await state.set_state(ProgramStates.choosing_program)
-    markup = get_programs_keyboard()
-    await message.answer("Выбери образовательную программу:", reply_markup=markup)
+
+    if level == "Бакалавриат":
+        await message.answer("Выбери программу бакалавриата:", reply_markup=get_bachelor_programs_keyboard())
+    elif level == "Магистратура":
+        await message.answer("Выбери программу магистратуры:", reply_markup=get_master_programs_keyboard())
+    else:
+        await message.answer("❌ Неверный выбор. Попробуй ещё раз.", reply_markup=get_levels_keyboard())
 
 # Обработка выбранной программы
 @router.message(ProgramStates.choosing_program)
 async def choose_module_handler(message: Message, state: FSMContext):
-    selected_program = message.text.replace("📘 ", "")
+    selected_program = message.text.replace("📘 ", "").replace("📗 ", "").replace("📙 ", "").replace("📕 ", "").replace("📒 ", "")
     await state.update_data(program=selected_program)
 
     modules = get_modules(selected_program)

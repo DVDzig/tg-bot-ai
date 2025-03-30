@@ -1,12 +1,11 @@
 from collections import defaultdict
-from services.google_sheets_service import get_sheet_data, update_keywords_for_discipline
+from services.google_sheets_service import get_sheet_data, update_keywords_for_discipline, get_keywords_for_discipline
 from services.gpt_service import generate_ai_response
 from config import PROGRAM_SHEETS
 
-
 def update_keywords_from_qa():
     print("\n🔁 Обновляем ключевые слова по логам QA...")
-    
+
     # Загружаем все QA
     all_qa = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")  # user_id, timestamp, program, module, discipline, question, answer
     grouped = defaultdict(list)
@@ -35,8 +34,14 @@ def update_keywords_from_qa():
         try:
             keywords = generate_ai_response(prompt)
             if keywords:
-                update_keywords_for_discipline(module, discipline, keywords)
-                print(f"✅ Обновлены ключевые слова: {keywords}")
+                existing = get_keywords_for_discipline(module, discipline) or ""
+                existing_list = [kw.strip() for kw in existing.split(",") if kw.strip()]
+                new_list = [kw.strip() for kw in keywords.split(",") if kw.strip()]
+                merged_keywords = sorted(set(existing_list + new_list))
+                final_keywords = ", ".join(merged_keywords)
+
+                update_keywords_for_discipline(module, discipline, final_keywords)
+                print(f"✅ Ключевые слова добавлены: {len(new_list)} новых → всего {len(merged_keywords)}")
             else:
                 print("⚠️ GPT не вернул ключевые слова")
         except Exception as e:
