@@ -12,8 +12,12 @@ PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
 PROGRAM_SHEETS_LIST = {
     'МРК': os.getenv("SHEET_PLAN_MRK", "ПланМРК"),
     'ТПР': os.getenv("SHEET_PLAN_TPR", "ПланТПР"),
-    'БХ': os.getenv("SHEET_PLAN_BH", "ПланБХ")
+    'БХ': os.getenv("SHEET_PLAN_BH", "ПланБХ"),
+    'ФВМ': os.getenv("SHEET_PLAN_FVM", "ПланФВМ"),
+    'СА': os.getenv("SHEET_PLAN_SA", "ПланСА"),
+    'МСС': os.getenv("SHEET_PLAN_MSS", "ПланМСС")
 }
+
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 

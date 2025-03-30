@@ -6,7 +6,6 @@ def get_main_keyboard():
         [KeyboardButton(text="🎓 Выбрать программу")],
         [KeyboardButton(text="👤 Мой профиль"), KeyboardButton(text="💰 Купить вопросы")],
         [KeyboardButton(text="📊 Лидерборд"), KeyboardButton(text="❓ Помощь")],
-        [KeyboardButton(text="🔁 Начать сначала")]
     ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
@@ -27,7 +26,7 @@ def get_bachelor_programs_keyboard():
 
 def get_master_programs_keyboard():
     keyboard = [
-        [KeyboardButton(text="📕 МСС"), KeyboardButton(text="📗 ТПР")],
+        [KeyboardButton(text="📕 МСС"), KeyboardButton(text="📗 ФВМ")],
         [KeyboardButton(text="📒 СА")],
         [KeyboardButton(text="⬅️ Назад")]
     ]

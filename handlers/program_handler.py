@@ -53,6 +53,7 @@ def cached_get_keywords(module, discipline):
 @router.message(lambda msg: msg.text == BACK_BUTTON)
 async def universal_back_handler(message: Message, state: FSMContext):
     current_state = await state.get_state()
+    print(current_state)
     data = await state.get_data()
 
     if current_state == ProgramStates.asking_question.state:
@@ -297,3 +298,11 @@ async def handle_question(message: Message, state: FSMContext):
     is_admin = user_id == 150532949
 
     await message.answer(reply, parse_mode="HTML", reply_markup=get_question_keyboard(is_admin=is_admin))
+
+# Запрет писать в чат с ботом вне общения с ИИ
+@router.message()
+async def block_input(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state != ProgramStates.asking_question.state:
+        await message.delete()
+        await message.answer("❗Используй кнопки для навигации.")
