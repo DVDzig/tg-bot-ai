@@ -44,6 +44,13 @@ class ProgramStates(StatesGroup):
     choosing_discipline = State()
     asking_question = State()
     
+# Список всех допустимых кнопок
+ALLOWED_BUTTONS = {
+    "🎓 Выбрать программу", "👤 Мой профиль", "💰 Купить вопросы",
+    "📊 Лидерборд", "❓ Помощь", "🔁 Начать сначала", "⬅️ Назад",
+    "🔄 Обновить ключевые слова"
+}
+    
 # Кэшируем ключевые операции для ускорения
 @lru_cache(maxsize=512)
 def cached_get_keywords(module, discipline):
@@ -325,18 +332,10 @@ async def handle_question(message: Message, state: FSMContext):
     await message.answer(reply, parse_mode="HTML", reply_markup=get_question_keyboard(is_admin=is_admin))
 
 # Запрет писать в чат с ботом вне общения с ИИ
-@router.message()
+@router.message(lambda msg: msg.text not in ALLOWED_BUTTONS)
 async def block_input(message: Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state != ProgramStates.asking_question.state:
         await message.delete()
         await message.answer("❗Используй кнопки для навигации.")
-
-@router.message()
-async def block_input(message: Message, state: FSMContext):
-    current_state = await state.get_state()
-    if current_state != ProgramStates.asking_question.state:
-        await message.delete()
-        await message.answer("❗Используй кнопки для навигации.")
-        return  # просто завершаем обработку
 
