@@ -38,20 +38,64 @@ async def handle_payment_webhook(request):
     print(f"[YooKassa] Event: {event_type} | Status: {status} | User: {user_id} | Questions: {questions}")
 
     if event_type == "payment.succeeded":
-        from services.user_service import add_paid_questions
+        from services.user_service import add_paid_questions, get_user_profile, determine_status
         success = add_paid_questions(int(user_id), int(questions))
         print(f"[YooKassa] Вопросы зачислены: {success}")
         log_payment_event(user_id, amount, questions, status, event_type, payment_id)
+
+        if success:
+            try:
+                profile = get_user_profile(int(user_id))
+                xp = profile.get("xp", 0)
+                current_status, _ = determine_status(xp)
+                next_status_info = {
+                    "новичок": ("опытный", 11),
+                    "опытный": ("профи", 51),
+                    "профи": ("эксперт", 101),
+                    "эксперт": ("эксперт", 9999)
+                }
+                next_status, xp_target = next_status_info.get(current_status, ("опытный", 11))
+                xp_left = max(0, xp_target - xp)
+
+                # Персонализированное сообщение в зависимости от пакета
+                if int(questions) == 1:
+                    text = "✅ Ты купил 1 вопрос. Удачи в учебе! 📘"
+                elif int(questions) == 10:
+                    text = "✅ +10 вопросов добавлены. Ты на пути к знаниям! 🧠"
+                elif int(questions) == 50:
+                    text = "💥 Целых 50 вопросов теперь у тебя! Ты — машина знаний! 🤖"
+                elif int(questions) == 100:
+                    text = "👑 100 вопросов — ты явно готов к марафону! Вперёд к успеху!"
+                else:
+                    text = f"✅ Вопросы ({questions}) успешно начислены!"
+
+                text += f"\n\n🧮 Осталось {xp_left} XP до уровня «{next_status}»."
+                text += "\nСпасибо за поддержку ❤️"
+
+                await bot.send_message(
+                    chat_id=int(user_id),
+                    text=text
+                )
+            except Exception as e:
+                print(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
+
         return web.Response(text="OK")
 
     elif event_type == "payment.canceled":
         log_payment_event(user_id, amount, questions, status, event_type, payment_id)
         print(f"[YooKassa] Платёж отменён пользователем {user_id}")
+        try:
+            await bot.send_message(
+                chat_id=int(user_id),
+                text=(
+                    "❌ Платёж был отменён.\n"
+                    "Если возникли трудности — напиши нам, и мы поможем! 💬"
+                )
+            )
+        except Exception as e:
+            print(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
+
         return web.Response(text="CANCELLED")
-
-    return web.Response(text="IGNORED")
-
-
 
 # --- Уведомление о челлендже и напоминание вечером ---  
 async def send_daily_reminder(bot: Bot):
