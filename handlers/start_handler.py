@@ -90,7 +90,10 @@ async def profile_handler(message: types.Message):
         "эксперт": (101, 150)
     }
     min_xp, max_xp = thresholds.get(new_status, (0, 10))
-    progress = int(((current_xp - min_xp) / (max_xp - min_xp)) * 100) if max_xp > min_xp else 100
+    if current_xp >= max_xp:
+        progress = 100
+    else:
+        progress = int(((current_xp - min_xp) / (max_xp - min_xp)) * 100)
     bar_blocks = min(5, int(progress / 5))
     progress_bar = "🟩" * bar_blocks + "⬜️" * (5 - bar_blocks)
 
