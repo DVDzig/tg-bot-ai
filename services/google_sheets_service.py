@@ -102,20 +102,24 @@ def get_modules(program):
         return []
     values = get_sheet_data(PROGRAM_SHEETS, f"{sheet_name}!A2:A")
     modules = sorted({
-        row[0].replace("\n", " ").strip()
+        " ".join(row[0].replace("\n", " ").split()).strip()
         for row in values if len(row) > 0 and row[0].strip()
     })
     return modules
 
 def get_disciplines(module):
+    module = " ".join(module.replace("\n", " ").split()).strip()
     all_sheets = PROGRAM_SHEETS_LIST.values()
     disciplines = set()
     for sheet in all_sheets:
         values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:B")
         for row in values:
-            if len(row) >= 2 and row[0].replace("\n", " ").strip() == module:
-                disciplines.add(row[1].replace("\n", " ").strip())
+            row_module = " ".join(row[0].replace("\n", " ").split()).strip()
+            if len(row) >= 2 and row_module == module:
+                discipline = " ".join(row[1].replace("\n", " ").split()).strip()
+                disciplines.add(discipline)
     return sorted(disciplines)
+
 
 def log_user_activity(user_id, plan=None, module=None, discipline=None):
     timestamp = datetime.now().strftime("%d %B %Y, %H:%M")
