@@ -15,7 +15,7 @@ from utils.keyboard import (
 from services.google_sheets_service import (
     get_modules, get_disciplines, log_user_activity,
     get_keywords_for_discipline, find_similar_questions,
-    save_question_answer
+    save_question_answer, get_all_valid_buttons
 )
 from services.youtube_search import search_youtube_videos
 import logging
@@ -32,7 +32,7 @@ from services.user_service import (
     check_and_apply_daily_challenge
 )
 
-from services.google_sheets_service import get_all_valid_buttons
+from handlers.start_handler import go_to_start_screen
 
 ALLOWED_BUTTONS = get_all_valid_buttons()
 
@@ -81,11 +81,10 @@ async def universal_back_handler(message: Message, state: FSMContext):
 
     elif current_state == ProgramStates.choosing_level.state:
         await state.clear()
-        await message.answer("⬅️ Вернулся в главное меню:", reply_markup=get_main_keyboard())
-
+        await go_to_start_screen(message)
     else:
         await state.clear()
-        await message.answer("⬅️ Возврат в главное меню.", reply_markup=get_main_keyboard())
+        await go_to_start_screen(message)
 
 # Обработка кнопки "Начать сначала"
 @router.message(lambda msg: msg.text == "🔁 Начать сначала")
@@ -241,12 +240,9 @@ async def handle_question(message: Message, state: FSMContext):
 
     user_id = message.from_user.id
     if not can_ask_question(user_id):
-        await message.answer(
-            "❌ У тебя закончились вопросы!\n"
-            "Ты можешь купить дополнительные, чтобы продолжить 🤖",
-            reply_markup=get_main_keyboard()
-        )
         await state.clear()
+        await message.answer("❌ У тебя закончились вопросы!\n")
+        await go_to_start_screen(message)
         return
 
     data = await state.get_data()
@@ -270,12 +266,9 @@ async def handle_question(message: Message, state: FSMContext):
         return
 
     if not decrement_question_balance(user_id):
-        await message.answer(
-            "❌ У тебя закончились вопросы!\n"
-            "Купи дополнительные, чтобы продолжить.",
-            reply_markup=get_main_keyboard()
-        )
         await state.clear()
+        await message.answer("❌ У тебя закончились вопросы!\n")
+        await go_to_start_screen(message)
         return
 
     ai_response = generate_ai_response(question, keywords, history)
