@@ -161,8 +161,9 @@ async def choose_discipline_handler(message: Message, state: FSMContext):
     current_program = data.get("program")
     modules = get_modules(current_program)
 
-    selected_module = message.text.replace("📗 ", "")
-    if selected_module not in modules:
+    selected_module = message.text.replace("📗 ", "").replace("\n", " ").strip()
+    normalized_modules = [m.replace("\n", " ").strip() for m in modules]
+    if selected_module not in normalized_modules:
         await message.answer("⚠️ Неверный выбор модуля. Используй кнопки ниже.")
         return
 
@@ -179,14 +180,18 @@ async def choose_discipline_handler(message: Message, state: FSMContext):
 # Обработка выбранной дисциплины
 @router.message(ProgramStates.choosing_discipline)
 async def choose_discipline_complete(message: Message, state: FSMContext):
-    selected_discipline = message.text.replace("📕 ", "")
+    selected_discipline = message.text.replace("📕 ", "").replace("\n", " ").strip()
     data = await state.get_data()
     module = data.get("module")
     available_disciplines = get_disciplines(module)
 
-    if selected_discipline not in available_disciplines:
+    # Нормализуем имена дисциплин из таблицы
+    normalized_disciplines = [d.replace("\n", " ").strip() for d in available_disciplines]
+
+    if selected_discipline not in normalized_disciplines:
         await message.answer("⚠️ Неверный выбор дисциплины. Используй кнопки ниже.")
         return
+
 
     await state.update_data(discipline=selected_discipline)
 

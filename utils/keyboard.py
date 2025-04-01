@@ -40,7 +40,14 @@ def get_programs_keyboard():
 
 def get_modules_keyboard(program: str, include_back=True, is_admin=False):
     modules = get_modules(program)
-    keyboard = [[KeyboardButton(text=f"📗 {module}")] for module in modules]
+    keyboard = []
+    for module in modules:
+        label = module.strip()
+        if len(label) > 35:
+            parts = label.split(" ")
+            half = len(parts) // 2
+            label = " ".join(parts[:half]) + "\n" + " ".join(parts[half:])
+        keyboard.append([KeyboardButton(text=f"📗 {label}")])
 
     if is_admin:
         keyboard.append([KeyboardButton(text="🔄 Обновить ключевые слова")])
@@ -52,7 +59,14 @@ def get_modules_keyboard(program: str, include_back=True, is_admin=False):
 
 def get_disciplines_keyboard(module: str, include_back=True):
     disciplines = get_disciplines(module)
-    keyboard = [[KeyboardButton(text=f"📕 {discipline}")] for discipline in disciplines]
+    keyboard = []
+    for discipline in disciplines:
+        label = discipline.strip()
+        if len(label) > 35:
+            parts = label.split(" ")
+            half = len(parts) // 2
+            label = " ".join(parts[:half]) + "\n" + " ".join(parts[half:])
+        keyboard.append([KeyboardButton(text=f"📕 {label}")])
 
     if include_back:
         keyboard.append([KeyboardButton(text="⬅️ Назад")])
