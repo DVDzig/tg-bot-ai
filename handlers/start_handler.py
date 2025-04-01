@@ -72,13 +72,13 @@ async def profile_handler(message: types.Message):
             last_payment = row
             break
 
-        if last_payment:
-            q_count = last_payment[2]
-            price = last_payment[1]
-            date = last_payment[6]
-            last_purchase_text = f"\n🧾 <b>Последняя покупка:</b>\n• {q_count} вопрос(ов), {price}₽\n• {date}"
-        else:
-            last_purchase_text = ""
+    if last_payment:
+        q_count = last_payment[2]
+        price = last_payment[1]
+        date = last_payment[6]
+        last_purchase_text = f"\n🧾 <b>Последняя покупка:</b>\n• {q_count} вопрос(ов), {price}₽\n• {date}"
+    else:
+        last_purchase_text = ""
 
     current_xp = profile_data['xp']
     new_status, _ = determine_status(current_xp)
@@ -189,8 +189,11 @@ async def leaderboard_handler(message: types.Message):
 
     # Хвост сообщения
     tail = f"\n👤 Ты сейчас на {user_place} месте"
-    tail += f"\n📈 До уровня «{next_status}» осталось {xp_left} XP\n"
-    tail += "Продолжай в том же духе! 💪"
+    if current_status == "эксперт":
+        tail += "\n🎓 Ты достиг максимального уровня! Продолжай учиться и помогай другим 💪"
+    else:
+        tail += f"\n📈 До уровня «{next_status}» осталось {xp_left} XP\n"
+        tail += "Продолжай в том же духе! 💪"
 
     await message.answer(top_text + tail, parse_mode="HTML")
 

@@ -96,16 +96,16 @@ def get_leaderboard(top_n=10):
 def get_programs():
     return list(PROGRAM_SHEETS_LIST.keys())
 
-
 def get_modules(program):
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
     if not sheet_name:
         return []
     values = get_sheet_data(PROGRAM_SHEETS, f"{sheet_name}!A2:A")
-    modules = sorted({row[0].strip() for row in values if len(row) > 0 and row[0].strip()})
+    modules = sorted({
+        row[0].replace("\n", " ").strip()
+        for row in values if len(row) > 0 and row[0].strip()
+    })
     return modules
-
-
 
 def get_disciplines(module):
     all_sheets = PROGRAM_SHEETS_LIST.values()
@@ -113,16 +113,14 @@ def get_disciplines(module):
     for sheet in all_sheets:
         values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:B")
         for row in values:
-            if len(row) >= 2 and row[0] == module:
-                disciplines.add(row[1])
+            if len(row) >= 2 and row[0].replace("\n", " ").strip() == module:
+                disciplines.add(row[1].replace("\n", " ").strip())
     return sorted(disciplines)
-
 
 def log_user_activity(user_id, plan=None, module=None, discipline=None):
     timestamp = datetime.now().strftime("%d %B %Y, %H:%M")
     row = [str(user_id), timestamp, plan or "", module or "", discipline or ""]
     append_to_sheet(USER_SHEET_ID, "Log", row)
-
 
 def update_keywords_for_discipline(module, discipline, keywords):
     all_sheets = PROGRAM_SHEETS_LIST.items()
