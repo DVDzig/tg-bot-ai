@@ -209,3 +209,9 @@ def get_all_valid_buttons():
                 buttons.add(f"📕 {row[1]}")  # дисциплина
 
     return buttons
+
+def log_payment_event(user_id: str, amount: str, questions: str, status: str, event: str, payment_id: str):
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%d.%m.%Y %H:%M")
+    row = [user_id, amount, questions, status, event, payment_id, timestamp]
+    append_to_sheet(USER_SHEET_ID, "PaymentsLog", row)

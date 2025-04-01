@@ -11,9 +11,8 @@ from services.user_service import (
 from services.google_sheets_service import get_leaderboard
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.markdown import hlink
-from hashlib import md5
-from config import robokassa_links as old_links
-from urllib.parse import quote
+from services.yookassa_service import create_payment
+
 
 router = Router()
 
@@ -150,31 +149,14 @@ async def help_handler(message: types.Message):
 
 # ===== Покупка вопросов через Robokassa =====
 
-def robokassa_link(amount: int, questions: int, user_id: int) -> str:
-    login = "TGTutorBot"
-    password1 = "iP540dCVN006A3Ul"
-    inv_id = f"{user_id}_{questions}"
-    description = f"Buy {questions} Q"
-    encoded_description = quote(description)
-
-    signature_raw = f"{login}:{amount}:{inv_id}:{password1}"
-    signature = md5(signature_raw.encode()).hexdigest()
-
-    return (
-        f"https://auth.robokassa.ru/Merchant/Index.aspx?"
-        f"MerchantLogin={login}&OutSum={amount}&InvId={inv_id}&"
-        f"Description={encoded_description}&"
-        f"Shp_Questions={questions}&Shp_UserID={user_id}&"
-        f"SignatureValue={signature}"
-    )
-
 def generate_shop_links(user_id: int):
     return {
-        "1 вопрос — 10₽": robokassa_link(10, 1, user_id),
-        "10 вопросов — 90₽": robokassa_link(90, 10, user_id),
-        "50 вопросов — 450₽": robokassa_link(450, 50, user_id),
-        "100 вопросов — 900₽": robokassa_link(900, 100, user_id),
+        "1 вопрос — 10₽": create_payment(10, "Покупка 1 вопроса", user_id, 1),
+        "10 вопросов — 90₽": create_payment(90, "Покупка 10 вопросов", user_id, 10),
+        "50 вопросов — 450₽": create_payment(450, "Покупка 50 вопросов", user_id, 50),
+        "100 вопросов — 900₽": create_payment(900, "Покупка 100 вопросов", user_id, 100),
     }
+
 
 @router.message(lambda message: message.text == "💰 Купить вопросы")
 async def buy_questions_handler(message: types.Message):

@@ -1,4 +1,8 @@
 import os
+
+YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
+YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -8,6 +12,9 @@ USER_SHEET_ID = os.getenv("USER_SHEET_ID")
 USER_SHEET_NAME = os.getenv("USER_SHEET_NAME", "Users")
 client_email = os.getenv("CLIENT_EMAIL")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
+YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
+YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
+
 
 PROGRAM_SHEETS_LIST = {
     'МРК': os.getenv("SHEET_PLAN_MRK", "ПланМРК"),
@@ -28,7 +35,3 @@ robokassa_links = {
     "50 вопросов – 450₽": 450,
     "100 вопросов – 900₽": 900,
 }
-
-ROBOKASSA_LOGIN = os.getenv("ROBOKASSA_LOGIN")
-ROBOKASSA_PASSWORD1 = os.getenv("ROBOKASSA_PASSWORD1")
-ROBOKASSA_URL = os.getenv("ROBOKASSA_URL")
