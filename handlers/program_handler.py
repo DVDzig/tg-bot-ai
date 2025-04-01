@@ -1,7 +1,16 @@
 from aiogram import Router, types
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+
+import logging
+from datetime import datetime
+from functools import lru_cache
+
+from config import OPENAI_API_KEY
+
+from handlers.start_handler import go_to_start_screen
+
 from utils.keyboard import (
     get_programs_keyboard,
     get_modules_keyboard,
@@ -12,27 +21,30 @@ from utils.keyboard import (
     get_bachelor_programs_keyboard,
     get_master_programs_keyboard
 )
+
+from services.gpt_service import generate_ai_response
 from services.google_sheets_service import (
-    get_modules, get_disciplines, log_user_activity,
-    get_keywords_for_discipline, find_similar_questions,
-    save_question_answer, get_all_valid_buttons
+    get_modules,
+    get_disciplines,
+    log_user_activity,
+    get_keywords_for_discipline,
+    find_similar_questions,
+    save_question_answer,
+    get_all_valid_buttons
 )
 from services.youtube_search import search_youtube_videos
-import logging
-from config import OPENAI_API_KEY
-from services.gpt_service import generate_ai_response
-from functools import lru_cache
-
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from services.qa_keywords_updater import update_keywords_from_qa
 from services.user_service import (
-    get_user_profile, get_or_create_user,
-    can_ask_question, update_user_xp,
-    determine_status, decrement_question_balance,
-    check_and_apply_daily_challenge
+    get_user_profile,
+    get_or_create_user,
+    can_ask_question,
+    update_user_xp,
+    determine_status,
+    decrement_question_balance,
+    check_and_apply_daily_challenge,
+    update_user_data
 )
 
-from handlers.start_handler import go_to_start_screen
 
 ALLOWED_BUTTONS = get_all_valid_buttons()
 
@@ -215,7 +227,7 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
 # Обработка текста вопроса в состоянии asking_question
 @router.message(ProgramStates.asking_question)
 async def handle_question(message: Message, state: FSMContext):
-    if message.text == "💰 Купить вопросы":
+    if message.text == "💳 Купить доступ":
         await state.clear()
         await message.answer(
             "💸 <b>Покупка вопросов</b>\n\n"
@@ -247,9 +259,23 @@ async def handle_question(message: Message, state: FSMContext):
 
     user_id = message.from_user.id
     if not can_ask_question(user_id):
+        user_data = get_user_profile(user_id)
+        premium = user_data.get("premium_status", "none")
+
+        text = "❌ У тебя закончились вопросы!\n\n"
+
+        if premium == "none":
+            text += (
+                "🔓 <b>Хочешь продолжить без ограничений?</b>\n\n"
+                "• <b>Лайт</b> — безлимит на 7 дней\n"
+                "• <b>Про</b> — видео и приоритет от ИИ\n\n"
+                "Нажми «Купить доступ» ниже ⬇️"
+            )
+        else:
+            text += "Ты можешь купить дополнительные, чтобы продолжить 🤖"
+
+        await message.answer(text, parse_mode="HTML", reply_markup=get_main_keyboard())
         await state.clear()
-        await message.answer("❌ У тебя закончились вопросы!\n")
-        await go_to_start_screen(message)
         return
 
     data = await state.get_data()
@@ -284,6 +310,22 @@ async def handle_question(message: Message, state: FSMContext):
 
     new_xp, new_status = update_user_xp(user_id)
     profile = get_user_profile(user_id)
+    
+    premium = profile.get("premium_status", "none")
+    last_prompt = profile.get("last_upgrade_prompt", "")
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    if premium == "none" and new_xp >= 50 and last_prompt != today:
+        await message.answer(
+            "🔥 Ты задал уже больше 50 вопросов — круто! 💪\n\n"
+            "Хочешь ещё больше?\n"
+            "💡 <b>Лайт</b> — безлимит на 7 дней\n"
+            "🚀 <b>Про</b> — приоритет, видео и +100 вопросов\n\n"
+            "Доступно в разделе <b>«Купить доступ»</b> 👇",
+            parse_mode="HTML"
+        )
+        update_user_data(user_id, {"last_upgrade_prompt": today})
+    
     free_q = profile["free_questions"]
 
     # Заменяем кэшированный профиль на актуальный
@@ -313,6 +355,21 @@ async def handle_question(message: Message, state: FSMContext):
     # Ежедневный челлендж
     if check_and_apply_daily_challenge(user_id):
         reply += "\n\n🏆 Ты выполнил ежедневный челлендж и получил +2 XP!"
+
+        if profile.get("premium_status", "none") == "none":
+            last_prompt = profile.get("last_upgrade_prompt", "")
+            today = datetime.now().strftime("%Y-%m-%d")
+
+            if last_prompt != today:
+                await message.answer(
+                    "🔥 Челлендж пройден — супер!\n\n"
+                    "Готов двигаться быстрее и глубже? 📚\n"
+                    "💡 <b>Лайт</b> — безлимит на 7 дней\n"
+                    "🚀 <b>Про</b> — приоритет, видео и +100 вопросов\n\n"
+                    "Доступно в разделе <b>«Купить доступ»</b>",
+                    parse_mode="HTML"
+                )
+                update_user_data(user_id, {"last_upgrade_prompt": today})
 
     # Рекомендованные видео
     if status in ["профи", "эксперт"]:

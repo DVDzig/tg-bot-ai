@@ -136,8 +136,22 @@ async def profile_handler(message: types.Message):
             if new_status != "эксперт"
             else "🎓 Ты уже достиг максимального уровня! Поздравляем! 🏆\n"
         )
+        + (
+            f"\n💎 <b>Активный доступ:</b> {profile_data['premium_status'].capitalize()} "
+            f"(до {profile_data.get('premium_until', 'неизвестно')})"
+            if profile_data.get("premium_status") in ("light", "pro")
+            else ""
+        )
     )
 
+    # Добавим предложение купить Лайт или Про, если их нет
+    if profile_data.get("premium_status") in (None, "", "none"):
+        profile_text += (
+            "\n\n🔓 <b>Хочешь больше возможностей?</b>\n\n"
+            "• <b>Лайт</b> — безлимит на 7 дней\n"
+            "• <b>Про</b> — 100 вопросов, видео и приоритет 🤖\n\n"
+            "👉 Доступно в разделе <b>«Купить доступ»</b>"
+        )
 
     await message.answer(profile_text, parse_mode="HTML", reply_markup=get_main_keyboard())
 
@@ -240,13 +254,16 @@ async def help_handler(message: types.Message):
 
 def generate_shop_links(user_id: int):
     return {
+        "💡 Лайт-доступ — 149₽": create_payment(149, "Покупка статуса Лайт", user_id, questions=30, status="light"),
+        "🚀 Про-доступ — 299₽": create_payment(299, "Покупка статуса Про", user_id, questions=100, status="pro"),
         "💡 1 вопрос — 10₽": create_payment(10, "Покупка 1 вопроса", user_id, 1),
         "🔥 10 вопросов — 90₽": create_payment(90, "Покупка 10 вопросов", user_id, 10),
         "🚀 50 вопросов — 450₽": create_payment(450, "Покупка 50 вопросов", user_id, 50),
         "👑 100 вопросов — 900₽": create_payment(900, "Покупка 100 вопросов", user_id, 100),
-    }
+   }
 
-@router.message(lambda message: message.text == "💰 Купить вопросы")
+
+@router.message(lambda message: message.text == "💳 Купить доступ")
 async def buy_questions_handler(message: types.Message):
     links = generate_shop_links(message.from_user.id)
     keyboard = ReplyKeyboardMarkup(
@@ -268,3 +285,11 @@ async def handle_shop_selection(message: types.Message):
     link = generate_shop_links(message.from_user.id)[message.text]
     await message.answer(f"💳 Оплати по ссылке:\n{link}", reply_markup=get_main_keyboard())
 
+def get_shop_keyboard():
+    keyboard = [
+        [KeyboardButton(text="💰 Купить вопросы")],
+        [KeyboardButton(text="💡 Лайт-доступ — 149₽")],
+        [KeyboardButton(text="🚀 Про-доступ — 299₽")],
+        [KeyboardButton(text="⬅️ Назад")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)

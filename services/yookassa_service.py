@@ -3,7 +3,7 @@ import requests
 import uuid
 from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
 
-def create_payment(amount_rub: int, description: str, user_id: int, questions: int):
+def create_payment(amount_rub: int, description: str, user_id: int, questions: int, status: str = None):
     auth_string = f"{YOOKASSA_SHOP_ID}:{YOOKASSA_SECRET_KEY}"
     auth_encoded = base64.b64encode(auth_string.encode()).decode()
 
@@ -41,7 +41,8 @@ def create_payment(amount_rub: int, description: str, user_id: int, questions: i
         "description": description,
         "metadata": {
             "user_id": str(user_id),
-            "questions": str(questions)
+            "questions": str(questions),
+            "status": status or "none"
         },
         "capture": True,
         "receipt": receipt  # 👈 добавлен чек

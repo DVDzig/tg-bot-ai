@@ -20,7 +20,7 @@ from services.user_service import add_paid_questions
 from services.google_sheets_service import log_payment_event
 
 
-# --- Webhook от Robokassa ---
+# --- Webhook от ЮКассы ---
 
 
 async def handle_payment_webhook(request):
@@ -38,10 +38,33 @@ async def handle_payment_webhook(request):
     print(f"[YooKassa] Event: {event_type} | Status: {status} | User: {user_id} | Questions: {questions}")
 
     if event_type == "payment.succeeded":
-        from services.user_service import add_paid_questions, get_user_profile, determine_status
+        from services.user_service import add_paid_questions, get_user_profile, determine_status, update_user_data
         success = add_paid_questions(int(user_id), int(questions))
         print(f"[YooKassa] Вопросы зачислены: {success}")
         log_payment_event(user_id, amount, questions, status, event_type, payment_id)
+
+        # 👇 Вставка: обработка light/pro
+        if status in ("light", "pro"):
+            from datetime import datetime, timedelta
+            days = 7 if status == "light" else 30
+            until_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
+
+            update_user_data(int(user_id), {
+                "premium_status": status,
+                "premium_until": until_date
+            })
+
+            try:
+                await bot.send_message(
+                    chat_id=int(user_id),
+                    text=(
+                        f"🎉 Статус <b>{status.capitalize()}</b> активирован до <b>{until_date}</b>!\n"
+                        f"Продолжай обучение без ограничений и бонусов 🚀"
+                    ),
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                print(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
 
         if success:
             try:
@@ -61,7 +84,6 @@ async def handle_payment_webhook(request):
                 next_status, xp_target = next_status_info.get(current_status, ("опытный", 11))
                 xp_left = max(0, xp_target - xp)
 
-                # Персонализированное сообщение в зависимости от пакета
                 if int(questions) == 1:
                     text = "✅ Ты купил 1 вопрос. Маленький шаг к большим знаниям! 📘"
                 elif int(questions) == 10:
