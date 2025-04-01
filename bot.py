@@ -46,6 +46,10 @@ async def handle_payment_webhook(request):
         if success:
             try:
                 profile = get_user_profile(int(user_id))
+                is_first_purchase = profile["paid_questions"] == 0
+                if is_first_purchase:
+                    from services.user_service import update_user_xp
+                    update_user_xp(int(user_id), xp_gain=2)
                 xp = profile.get("xp", 0)
                 current_status, _ = determine_status(xp)
                 next_status_info = {
@@ -58,6 +62,8 @@ async def handle_payment_webhook(request):
                 xp_left = max(0, xp_target - xp)
 
                 # Персонализированное сообщение в зависимости от пакета
+                if is_first_purchase:
+                    text += "\n\n🎁 Бонус: +2 XP за первую покупку!"
                 if int(questions) == 1:
                     text = "✅ Ты купил 1 вопрос. Удачи в учебе! 📘"
                 elif int(questions) == 10:

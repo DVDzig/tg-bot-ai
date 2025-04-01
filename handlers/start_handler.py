@@ -2,16 +2,18 @@ from aiogram import Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from utils.keyboard import get_main_keyboard
-from services.user_service import get_user_profile, get_or_create_user
 from services.user_service import (
     apply_xp_penalty_if_needed,
     get_user_activity_stats,
-    determine_status
+    determine_status,
+    get_user_profile, 
+    get_or_create_user
 )
-from services.google_sheets_service import get_leaderboard
+from services.google_sheets_service import get_leaderboard, get_sheet_data
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.markdown import hlink
 from services.yookassa_service import create_payment
+from config import USER_SHEET_ID
 
 
 router = Router()
@@ -50,6 +52,21 @@ async def profile_handler(message: types.Message):
     user_id = message.from_user.id
     profile_data = get_user_profile(user_id)
     stats = get_user_activity_stats(user_id)
+    payment_log = get_sheet_data(USER_SHEET_ID, "PaymentsLog!A2:G")
+    last_payment = None
+    for row in reversed(payment_log):
+        if row[0] == str(user_id) and row[4] == "payment.succeeded":
+            last_payment = row
+            break
+
+        if last_payment:
+            q_count = last_payment[2]
+            price = last_payment[1]
+            date = last_payment[6]
+            last_purchase_text = f"\n🧾 <b>Последняя покупка:</b>\n• {q_count} вопрос(ов), {price}₽\n• {date}"
+        else:
+            last_purchase_text = ""
+
     current_xp = profile_data['xp']
     new_status, _ = determine_status(current_xp)
 
@@ -77,7 +94,8 @@ async def profile_handler(message: types.Message):
         f"⭐ <b>XP:</b> {current_xp} (прогресс: {progress_bar} {progress}%)\n"
         f"📅 <b>Последний вход:</b> {profile_data['last_interaction']}\n"
         f"🎁 <b>Бесплатные вопросы:</b> {profile_data['free_questions']}\n"
-        f"💰 <b>Платные вопросы:</b> {profile_data['paid_questions']}\n\n"
+        f"💰 <b>Платные вопросы:</b> {profile_data['paid_questions']}\n"
+        f"{last_purchase_text}\n\n"
         f"📈 <b>История активности:</b>\n"
         f"• Сегодня: {stats['today']} вопрос(ов)\n"
         f"• За неделю: {stats['week']} вопрос(ов)\n"
