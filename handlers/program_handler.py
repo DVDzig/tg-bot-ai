@@ -163,6 +163,8 @@ async def choose_discipline_handler(message: Message, state: FSMContext):
 
     selected_module = message.text.replace("📗 ", "").replace("\n", " ").strip()
     normalized_modules = [m.replace("\n", " ").strip() for m in modules]
+    print(f"[DEBUG] selected_module: '{selected_module}'")
+    print(f"[DEBUG] normalized_modules: {normalized_modules}")
     if selected_module not in normalized_modules:
         await message.answer("⚠️ Неверный выбор модуля. Используй кнопки ниже.")
         return
