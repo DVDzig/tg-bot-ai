@@ -13,7 +13,8 @@ USER_FIELDS = [
     "first_interaction", "last_interaction",
     "question_count", "day_count", "status", "plan",
     "discipline", "module", "xp", "xp_today", "xp_week",
-    "paid_questions", "last_free_reset", "free_questions", "last_bonus_date"
+    "paid_questions", "last_free_reset", "free_questions", "last_bonus_date",
+    "premium_status", "premium_until"
 ]
 
 # Создание API клиента

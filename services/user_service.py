@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
-from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS
+from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN
 from .google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, USER_FIELDS
+from aiogram import Bot
+import asyncio
+bot = Bot(token=TOKEN)
 
 # Получение пользователя или регистрация
 def get_or_create_user(user_id, username="Unknown", first_name="", last_name="", language_code="", is_premium=False):
@@ -12,6 +15,51 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
                 row += [""] * (len(USER_FIELDS) - len(row))
             now = datetime.now().strftime("%d %B %Y, %H:%M")
             row[USER_FIELDS.index("last_interaction")] = now
+            # Проверка просроченного платного статуса
+            status_index = USER_FIELDS.index("premium_status")
+            until_index = USER_FIELDS.index("premium_until")
+            premium_status = row[status_index].strip().lower() if len(row) > status_index else ""
+            premium_until = row[until_index].strip() if len(row) > until_index else ""
+
+            if premium_status in ("light", "pro") and premium_until:
+                try:
+                    end_date = datetime.strptime(premium_until, "%Y-%m-%d").date()
+                    today = datetime.now().date()
+                    days_left = (end_date - today).days
+
+                    # Статус истёк
+                    if end_date < today:
+                        row[status_index] = "none"
+                        row[until_index] = ""
+                        print(f"[INFO] Статус {premium_status} истёк у пользователя {user_id}")
+
+                        # Отправка уведомления об отключении
+                        asyncio.create_task(bot.send_message(
+                            chat_id=int(user_id),
+                            text=(
+                                "⛔️ <b>Срок действия твоего статуса истёк</b>\n"
+                                "Ты снова на базовом доступе.\n\n"
+                                "💡 Хочешь продолжить без ограничений?\n"
+                                "Попробуй <b>Лайт</b> или <b>Про</b> доступ 👉 «Купить доступ»"                                
+                            ),
+                            parse_mode="HTML"
+                        ))
+
+                    # Предупреждение за 1 день до окончания
+                    elif days_left == 1:
+                        asyncio.create_task(bot.send_message(
+                            chat_id=int(user_id),
+                            text=(
+                                f"⏳ <b>Внимание!</b>\n"
+                                f"Твой статус <b>{premium_status.capitalize()}</b> истекает завтра ({premium_until})!\n\n"
+                                f"Если хочешь продлить — открой «Купить доступ» и выбери нужный вариант 🛒"
+                            ),
+                            parse_mode="HTML"
+                        ))
+
+                except Exception as e:
+                    print(f"[ERROR] Ошибка при проверке статуса: {e}")
+
             update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, idx, row)
             return row
 
