@@ -85,8 +85,31 @@ def get_question_keyboard(is_admin=False):
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 def get_shop_keyboard():
-    keyboard = [
-        [KeyboardButton(text="💬 Вопросы"), KeyboardButton(text="💳 Подписка")],
-        [KeyboardButton(text="🔙 Назад")]
-    ]
-    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="💬 Вопросы"), KeyboardButton(text="💳 Подписка")],
+            [KeyboardButton(text="⬅️ Назад")]
+        ],
+        resize_keyboard=True
+    )
+
+def get_question_packages_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="💰 Купить 25 вопросов")],
+            [KeyboardButton(text="💰 Купить 50 вопросов")],
+            [KeyboardButton(text="💰 Купить 100 вопросов")],
+            [KeyboardButton(text="⬅️ Назад")]
+        ],
+        resize_keyboard=True
+    )
+
+def get_subscription_packages_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="💡 Лайт-доступ — 149₽")],
+            [KeyboardButton(text="🚀 Про-доступ — 299₽")],
+            [KeyboardButton(text="⬅️ Назад")]
+        ],
+        resize_keyboard=True
+    )

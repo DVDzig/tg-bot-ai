@@ -1,6 +1,11 @@
-from utils.keyboard import get_shop_keyboard, get_main_keyboard
 from aiogram import Router, types
 from aiogram.types import Message
+from keyboards.keyboard import (
+    get_main_keyboard,
+    get_shop_keyboard,
+    get_question_packages_keyboard,
+    get_subscription_packages_keyboard
+)
 
 router = Router()
 
@@ -18,7 +23,6 @@ async def shop_handler(message: Message):
         reply_markup=get_shop_keyboard()
     )
 
-
 @router.message(lambda msg: msg.text == "💬 Вопросы")
 async def handle_buy_questions(message: Message):
     await message.answer(
@@ -28,10 +32,10 @@ async def handle_buy_questions(message: Message):
         "• Получай ответы от ИИ по учебным дисциплинам\n"
         "• XP будет начисляться за каждый вопрос\n"
         "• Возможность прокачиваться, выполнять миссии, открывать достижения\n\n"
-        "Выбери нужный пакет в меню ниже 👇",
-        parse_mode="HTML"
+        "Выбери нужный пакет ниже 👇",
+        parse_mode="HTML",
+        reply_markup=get_question_packages_keyboard()
     )
-    # здесь можно добавить inline-кнопки с выбором пакета
 
 @router.message(lambda msg: msg.text == "💳 Подписка")
 async def handle_buy_subscription(message: Message):
@@ -43,10 +47,10 @@ async def handle_buy_subscription(message: Message):
         "• 🚀 Про: +100 вопросов, видео, генерация изображений, приоритет\n"
         "• 💡 Лайт: просто безлимит на неделю\n\n"
         "Выбирай нужный тариф ниже 👇",
-        parse_mode="HTML"
+        parse_mode="HTML",
+        reply_markup=get_subscription_packages_keyboard()
     )
-    # здесь можно добавить inline-кнопки с выбором подписки
 
-@router.message(lambda msg: msg.text == "🔙 Назад")
+@router.message(lambda msg: msg.text == "⬅️ Назад")
 async def back_to_main(message: Message):
     await message.answer("↩️ Возвращаемся в главное меню", reply_markup=get_main_keyboard())
