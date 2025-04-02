@@ -318,8 +318,9 @@ async def show_missions(message: types.Message):
 
     await message.answer("\n".join(lines), parse_mode="HTML")
     
-@router.message(lambda msg: msg.text == "💬 Вопросы")
+@router.message(lambda msg: msg.text and msg.text.strip() == "💬 Вопросы")
 async def handle_question_shop(message: types.Message):
+    print("[DEBUG] Кнопка ВОПРОСЫ сработала")
     await message.answer(
         "💬 <b>Покупка вопросов</b>\n\n"
         "Если у тебя закончились бесплатные вопросы — просто купи дополнительные и продолжай обучение!\n\n"
@@ -331,7 +332,6 @@ async def handle_question_shop(message: types.Message):
         parse_mode="HTML",
         reply_markup=get_question_packages_keyboard()
     )
-
 @router.message(lambda msg: msg.text == "💳 Подписка")
 async def handle_subscription_shop(message: types.Message):
     await message.answer(
