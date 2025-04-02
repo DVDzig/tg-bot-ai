@@ -254,24 +254,6 @@ def generate_shop_links(user_id: int):
         "👑 100 вопросов — 900₽": create_payment(900, "Покупка 100 вопросов", user_id, 100),
    }
 
-
-@router.message(lambda message: message.text == "🛍 Магазин")
-async def buy_questions_handler(message: types.Message):
-    links = generate_shop_links(message.from_user.id)
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=label)] for label in links] + [[KeyboardButton(text="⬅️ Назад")]],
-        resize_keyboard=True
-    )
-    text = (
-        "💰 <b>Хочешь продолжить обучение?</b>\n\n"
-        "Здесь ты можешь купить дополнительные вопросы, если бесплатные закончились.\n\n"
-        "🎓 Каждый вопрос приближает тебя к новому статусу!\n"
-        "🚀 Больше вопросов → больше знаний → выше XP\n"
-        "📈 А ещё Профи и Эксперт получают бонусы и YouTube-видео по теме 🤩\n\n"
-        "Выбери пакет ниже ⤵️"
-    )
-    await message.answer(text, parse_mode="HTML", reply_markup=keyboard)
-
 @router.message(lambda message: message.text in generate_shop_links(message.from_user.id))
 async def handle_shop_selection(message: types.Message):
     link = generate_shop_links(message.from_user.id)[message.text]
