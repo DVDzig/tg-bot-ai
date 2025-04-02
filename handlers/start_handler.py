@@ -9,7 +9,7 @@ from services.user_service import (
     get_user_profile, 
     get_or_create_user
 )
-from services.google_sheets_service import get_leaderboard, get_sheet_data, get_user_profile
+from services.google_sheets_service import get_leaderboard, get_sheet_data
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.markdown import hlink
 from services.yookassa_service import create_payment
