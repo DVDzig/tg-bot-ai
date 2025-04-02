@@ -1,6 +1,6 @@
 from aiogram import Router, types
 from aiogram.types import Message
-from keyboards.keyboard import (
+from utils.keyboard import (
     get_main_keyboard,
     get_shop_keyboard,
     get_question_packages_keyboard,
