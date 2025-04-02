@@ -23,7 +23,7 @@ async def shop_handler(message: Message):
         reply_markup=get_shop_keyboard()
     )
 
-@router.message(lambda msg: msg.text == "💬 Вопросы")
+@router.message(lambda message: message.text == "💬 Вопросы")
 async def handle_buy_questions(message: Message):
     print("[DEBUG] 💬 Вопросы нажата")
     await message.answer(
@@ -38,7 +38,7 @@ async def handle_buy_questions(message: Message):
         reply_markup=get_question_packages_keyboard()
     )
 
-@router.message(lambda msg: msg.text == "💳 Подписка")
+@router.message(lambda message: message.text == "💳 Подписка")
 async def handle_buy_subscription(message: Message):
     print("[DEBUG] 💬 Вопросы нажата")
     await message.answer(
@@ -53,6 +53,6 @@ async def handle_buy_subscription(message: Message):
         reply_markup=get_subscription_packages_keyboard()
     )
 
-@router.message(lambda msg: msg.text == "⬅️ Назад")
+@router.message(lambda message: message.text == "⬅️ Назад")
 async def back_to_main(message: Message):
     await message.answer("↩️ Возвращаемся в главное меню", reply_markup=get_main_keyboard())
