@@ -47,14 +47,26 @@ def append_to_sheet(spreadsheet_id, sheet_name, row_data):
     ).execute()
 
 
-def update_sheet_row(spreadsheet_id, sheet_name, row_index, row_data):
-    range_ = f"{sheet_name}!A{row_index}:U{row_index}"
+def update_sheet_row(sheet_id, sheet_name, row_index, row_data):
+    # Генерация последней буквы колонки (A, B, ..., Z, AA и т.д.)
+    def col_letter(n):
+        result = ''
+        while n:
+            n, r = divmod(n - 1, 26)
+            result = chr(65 + r) + result
+        return result
+
+    last_col = col_letter(len(row_data))  # например: V если 22 столбца
+    range_ = f"{sheet_name}!A{row_index}:{last_col}{row_index}"
+
+    body = {"values": [row_data]}
     service.spreadsheets().values().update(
-        spreadsheetId=spreadsheet_id,
+        spreadsheetId=sheet_id,
         range=range_,
         valueInputOption="RAW",
-        body={"values": [row_data]}
+        body=body
     ).execute()
+
 
 
 @lru_cache(maxsize=512)

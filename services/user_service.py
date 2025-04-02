@@ -281,8 +281,8 @@ def add_paid_questions(user_id: int, count: int):
     return False
 
 def update_user_data(user_id: int, updates: dict):
-    values = get_sheet_data(USER_SHEET_ID, f"{USER_SHEET_NAME}!A2:U")
-
+    values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
+    
     for idx, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
             if len(row) < len(USER_FIELDS):
@@ -290,10 +290,9 @@ def update_user_data(user_id: int, updates: dict):
 
             for key, value in updates.items():
                 if key in USER_FIELDS:
-                    field_index = USER_FIELDS.index(key)
-                    row[field_index] = str(value)
+                    row[USER_FIELDS.index(key)] = value
 
-            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, idx, row)
+            update_sheet_row(USER_SHEET_ID, "Users", idx, row)
             return True
 
     return False
