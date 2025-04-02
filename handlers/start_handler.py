@@ -279,9 +279,7 @@ async def handle_shop_selection(message: types.Message):
 
 def get_shop_keyboard():
     keyboard = [
-        [KeyboardButton(text="💰 Купить вопросы")],
-        [KeyboardButton(text="💡 Лайт-доступ — 149₽")],
-        [KeyboardButton(text="🚀 Про-доступ — 299₽")],
+        [KeyboardButton(text="💬 Вопросы"), KeyboardButton(text="💳 Подписка")],
         [KeyboardButton(text="⬅️ Назад")]
     ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
