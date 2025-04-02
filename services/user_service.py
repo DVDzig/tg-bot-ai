@@ -150,7 +150,8 @@ def update_user_xp(user_id, xp_gain=1):
 
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + xp_gain
-            status, _ = determine_status(new_xp, user_id)
+            status, _ = determine_status(new_xp)
+            print(f"[XP UPDATE] user {user_id} → XP: {new_xp}, status: {status}")
 
             row[xp_index] = str(new_xp)
             row[status_index] = status

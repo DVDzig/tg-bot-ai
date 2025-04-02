@@ -25,6 +25,7 @@ async def shop_handler(message: Message):
 
 @router.message(lambda msg: msg.text == "💬 Вопросы")
 async def handle_buy_questions(message: Message):
+    print("[DEBUG] 💬 Вопросы нажата")
     await message.answer(
         "💬 <b>Покупка вопросов</b>\n\n"
         "Если у тебя закончились бесплатные вопросы — просто купи дополнительные и продолжай обучение!\n\n"
@@ -39,6 +40,7 @@ async def handle_buy_questions(message: Message):
 
 @router.message(lambda msg: msg.text == "💳 Подписка")
 async def handle_buy_subscription(message: Message):
+    print("[DEBUG] 💬 Вопросы нажата")
     await message.answer(
         "💳 <b>Подписка</b>\n\n"
         "Подписка снимает все лимиты и даёт доступ к эксклюзивным функциям!\n\n"

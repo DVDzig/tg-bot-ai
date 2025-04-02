@@ -14,12 +14,10 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiohttp import web
 
 from config import TOKEN
-from handlers import start_handler, program_handler
+from handlers import start_handler, program_handler, shop_handler
 from services.google_sheets_service import get_all_users
 from services.user_service import add_paid_questions
 from services.google_sheets_service import log_payment_event
-from handlers import shop_handler
-
 
 # --- Webhook от ЮКассы ---
 
