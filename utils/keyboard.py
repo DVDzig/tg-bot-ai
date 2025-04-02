@@ -96,13 +96,15 @@ def get_shop_keyboard():
 def get_question_packages_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="💰 Купить 25 вопросов")],
-            [KeyboardButton(text="💰 Купить 50 вопросов")],
-            [KeyboardButton(text="💰 Купить 100 вопросов")],
+            [KeyboardButton(text="💡 1 вопрос — 10₽")],
+            [KeyboardButton(text="🔥 10 вопросов — 90₽")],
+            [KeyboardButton(text="🚀 50 вопросов — 450₽")],
+            [KeyboardButton(text="👑 100 вопросов — 900₽")],
             [KeyboardButton(text="⬅️ Назад")]
         ],
         resize_keyboard=True
     )
+
 
 def get_subscription_packages_keyboard():
     return ReplyKeyboardMarkup(

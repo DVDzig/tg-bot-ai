@@ -28,10 +28,3 @@ PROGRAM_SHEETS_LIST = {
 
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
-robokassa_links = {
-    "1 вопрос – 10₽": 10,
-    "10 вопросов – 90₽": 90,
-    "20 вопросов – 180₽": 180,
-    "50 вопросов – 450₽": 450,
-    "100 вопросов – 900₽": 900,
-}

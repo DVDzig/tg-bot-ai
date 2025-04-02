@@ -18,6 +18,7 @@ from handlers import start_handler, program_handler, shop_handler
 from services.google_sheets_service import get_all_users
 from services.user_service import add_paid_questions
 from services.google_sheets_service import log_payment_event
+from utils.keyboard import get_question_packages_keyboard, get_subscription_packages_keyboard
 
 # --- Webhook от ЮКассы ---
 

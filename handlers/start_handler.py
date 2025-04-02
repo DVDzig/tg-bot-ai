@@ -1,7 +1,7 @@
 from aiogram import Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from utils.keyboard import get_main_keyboard
+from utils.keyboard import get_main_keyboard, get_question_packages_keyboard, get_subscription_packages_keyboard
 from services.user_service import (
     apply_xp_penalty_if_needed,
     get_user_activity_stats,
@@ -317,3 +317,32 @@ async def show_missions(message: types.Message):
         lines.append(f"{mission.title} — {status} (+{mission.reward} XP)")
 
     await message.answer("\n".join(lines), parse_mode="HTML")
+    
+@router.message(lambda msg: msg.text == "💬 Вопросы")
+async def handle_question_shop(message: types.Message):
+    await message.answer(
+        "💬 <b>Покупка вопросов</b>\n\n"
+        "Если у тебя закончились бесплатные вопросы — просто купи дополнительные и продолжай обучение!\n\n"
+        "📌 Зачем это нужно:\n"
+        "• Получай ответы от ИИ по учебным дисциплинам\n"
+        "• XP будет начисляться за каждый вопрос\n"
+        "• Возможность прокачиваться, выполнять миссии, открывать достижения\n\n"
+        "Выбери нужный пакет ниже 👇",
+        parse_mode="HTML",
+        reply_markup=get_question_packages_keyboard()
+    )
+
+@router.message(lambda msg: msg.text == "💳 Подписка")
+async def handle_subscription_shop(message: types.Message):
+    await message.answer(
+        "💳 <b>Подписка</b>\n\n"
+        "Подписка снимает все лимиты и даёт доступ к эксклюзивным функциям!\n\n"
+        "🎁 Что даёт подписка:\n"
+        "• Безлимит на вопросы (не тратятся, XP не начисляется)\n"
+        "• 🚀 Про: +100 вопросов, видео, генерация изображений, приоритет\n"
+        "• 💡 Лайт: просто безлимит на неделю\n\n"
+        "Выбирай нужный тариф ниже 👇",
+        parse_mode="HTML",
+        reply_markup=get_subscription_packages_keyboard()
+    )
+    
