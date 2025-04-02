@@ -88,17 +88,22 @@ def can_ask_question(user_id):
     paid_questions = int(user[paid_q_index]) if len(user) > paid_q_index and user[paid_q_index].isdigit() else 0
     return free_questions > 0 or paid_questions > 0
 
-def determine_status(xp, user_id=None):
-    if str(user_id) == "150532949":
-        return "эксперт", 100
+def determine_status(xp: int):
     if xp <= 10:
         return "новичок", 10
     elif 11 <= xp <= 50:
-        return "опытный", 20
-    elif 51 <= xp <= 100:
-        return "профи", 30
+        return "опытный", 50
+    elif 51 <= xp <= 150:
+        return "профи", 150
+    elif 151 <= xp <= 300:
+        return "эксперт", 300
+    elif 301 <= xp <= 999:
+        return "наставник", 999
+    elif 1000 <= xp <= 4999:
+        return "легенда", 4999
     else:
-        return "эксперт", 100
+        return "создатель", 9999
+
 
 def decrement_question_balance(user_id):
     values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
@@ -131,20 +136,30 @@ def update_user_xp(user_id, xp_gain=1):
     values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
     xp_index = USER_FIELDS.index("xp")
     status_index = USER_FIELDS.index("status")
+    premium_index = USER_FIELDS.index("premium_status")
+
     for i, row in enumerate(values, start=2):
         if row[0] == str(user_id):
             if len(row) < len(USER_FIELDS):
                 row += [""] * (len(USER_FIELDS) - len(row))
+
+            # 🛡 Проверка подписки
+            premium_status = row[premium_index].strip().lower()
+            if premium_status in ("light", "pro"):
+                return int(row[xp_index]) if row[xp_index].isdigit() else 0, row[status_index]
+
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + xp_gain
             status, _ = determine_status(new_xp, user_id)
 
             row[xp_index] = str(new_xp)
             row[status_index] = status
-            # free_questions не обновляется здесь!
+
             update_sheet_row(USER_SHEET_ID, "Users", i, row)
             return new_xp, status
+
     return 0, "новичок"
+
 
 def get_user_profile(user_id):
     user = get_or_create_user(user_id)
@@ -225,7 +240,7 @@ def check_and_apply_daily_challenge(user_id):
     xp_index = USER_FIELDS.index("xp")
     status_index = USER_FIELDS.index("status")
     free_q_index = USER_FIELDS.index("free_questions")
-    last_bonus_index = USER_FIELDS.index("last_free_reset")
+    daily_challenge_index = USER_FIELDS.index("last_daily_challenge")  # новое поле!
 
     for idx, row in enumerate(values, start=2):
         if str(row[0]) != str(user_id):
@@ -234,8 +249,8 @@ def check_and_apply_daily_challenge(user_id):
         if len(row) < len(USER_FIELDS):
             row += [""] * (len(USER_FIELDS) - len(row))
 
-        last_bonus = row[last_bonus_index] if row[last_bonus_index] else ""
-        if last_bonus == today_str:
+        last_done = row[daily_challenge_index] if row[daily_challenge_index] else ""
+        if last_done == today_str:
             return False  # Бонус уже был сегодня
 
         today_count = 0
@@ -251,12 +266,11 @@ def check_and_apply_daily_challenge(user_id):
         if today_count >= 3:
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 2
-            new_status, new_free_q = determine_status(new_xp, user_id)
+            new_status, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
-            row[free_q_index] = str(new_free_q)
-            row[last_bonus_index] = today_str
+            row[daily_challenge_index] = today_str  # сохраняем дату выполнения
 
             update_sheet_row(USER_SHEET_ID, "Users", idx, row)
             return True
@@ -293,6 +307,83 @@ def update_user_data(user_id: int, updates: dict):
                     row[USER_FIELDS.index(key)] = value
 
             update_sheet_row(USER_SHEET_ID, "Users", idx, row)
+            return True
+
+    return False
+
+def refresh_monthly_free_questions():
+    values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
+    status_index = USER_FIELDS.index("status")
+    free_index = USER_FIELDS.index("free_questions")
+
+    bonus_by_status = {
+        "новичок": 5,
+        "опытный": 10,
+        "профи": 20,
+        "эксперт": 30,
+        "наставник": 50,
+        "легенда": 75,
+        "создатель": 100
+    }
+
+    for i, row in enumerate(values, start=2):
+        if len(row) < len(USER_FIELDS):
+            row += [""] * (len(USER_FIELDS) - len(row))
+
+        status = row[status_index].strip().lower()
+        current_free = int(row[free_index]) if row[free_index].isdigit() else 0
+        bonus = bonus_by_status.get(status, 5)
+        updated = current_free + bonus
+
+        row[free_index] = str(updated)
+        update_sheet_row(USER_SHEET_ID, "Users", i, row)
+
+def check_thematic_challenge(user_id):
+    from config import PROGRAM_SHEETS
+    qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
+    values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
+
+    today = datetime.now().date()
+    today_str = datetime.now().strftime("%d.%m.%Y")
+
+    discipline_set = set()
+    thematic_index = USER_FIELDS.index("last_thematic_challenge")
+    xp_index = USER_FIELDS.index("xp")
+    status_index = USER_FIELDS.index("status")
+
+    for i, row in enumerate(values, start=2):
+        if str(row[0]) != str(user_id):
+            continue
+
+        if len(row) < len(USER_FIELDS):
+            row += [""] * (len(USER_FIELDS) - len(row))
+
+        last_done = row[thematic_index] if row[thematic_index] else ""
+        if last_done == today_str:
+            return False  # Уже выполнено сегодня
+
+        # Подсчёт уникальных дисциплин за сегодня
+        for qa in qa_log:
+            if str(qa[0]) == str(user_id):
+                try:
+                    ts = datetime.strptime(qa[1], "%d %B %Y, %H:%M")
+                    if ts.date() == today:
+                        discipline = qa[4].strip().lower()
+                        if discipline:
+                            discipline_set.add(discipline)
+                except:
+                    continue
+
+        if len(discipline_set) >= 3:
+            # ✅ Выполнил миссию
+            xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
+            new_xp = xp + 5
+            new_status, _ = determine_status(new_xp)
+
+            row[xp_index] = str(new_xp)
+            row[status_index] = new_status
+            row[thematic_index] = today_str
+            update_sheet_row(USER_SHEET_ID, "Users", i, row)
             return True
 
     return False

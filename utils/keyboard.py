@@ -4,8 +4,9 @@ from services.google_sheets_service import get_programs, get_modules, get_discip
 def get_main_keyboard():
     keyboard = [
         [KeyboardButton(text="🎓 Выбрать программу")],
-        [KeyboardButton(text="👤 Мой профиль"), KeyboardButton(text="💳 Купить доступ")],
-        [KeyboardButton(text="📊 Лидерборд"), KeyboardButton(text="❓ Помощь")],
+        [KeyboardButton(text="👤 Мой профиль"), KeyboardButton(text="🛍 Магазин")],
+        [KeyboardButton(text="📊 Лидерборд"), KeyboardButton(text="🎯 Миссии")],
+        [KeyboardButton(text="ℹ️ О статусах и подписках"), KeyboardButton(text="❓ Помощь")]
     ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
@@ -75,10 +76,17 @@ def get_disciplines_keyboard(module: str, include_back=True):
 
 def get_question_keyboard(is_admin=False):
     keyboard = [
-        [KeyboardButton(text="💳 Купить доступ")]
+        [KeyboardButton(text="🛍 Магазин")]
     ]
 
     keyboard.append([KeyboardButton(text="⬅️ Назад")])
     keyboard.append([KeyboardButton(text="🔁 Начать сначала")])
 
+    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+
+def get_shop_keyboard():
+    keyboard = [
+        [KeyboardButton(text="💬 Вопросы"), KeyboardButton(text="💳 Подписка")],
+        [KeyboardButton(text="🔙 Назад")]
+    ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)

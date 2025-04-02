@@ -14,7 +14,8 @@ USER_FIELDS = [
     "question_count", "day_count", "status", "plan",
     "discipline", "module", "xp", "xp_today", "xp_week",
     "paid_questions", "last_free_reset", "free_questions", "last_bonus_date",
-    "premium_status", "premium_until"
+    "premium_status", "premium_until", "last_daily_challenge", "last_thematic_challenge",
+    "last_daily_3", "last_multi_disc"
 ]
 
 # Создание API клиента
@@ -207,7 +208,7 @@ def get_all_users():
 # Атоматическая подгрузка разрешённых модулей/дисциплин
 def get_all_valid_buttons():
     buttons = {
-        "🎓 Выбрать программу", "👤 Мой профиль", "💳 Купить доступ",
+        "🎓 Выбрать программу", "👤 Мой профиль", "🛍 Магазин",
         "📊 Лидерборд", "❓ Помощь", "🔁 Начать сначала", "⬅️ Назад",
         "🔄 Обновить ключевые слова"
     }

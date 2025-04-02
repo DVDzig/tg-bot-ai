@@ -42,8 +42,11 @@ from services.user_service import (
     determine_status,
     decrement_question_balance,
     check_and_apply_daily_challenge,
-    update_user_data
+    update_user_data,
+    check_thematic_challenge
 )
+
+from services.missions import get_all_missions
 
 
 ALLOWED_BUTTONS = get_all_valid_buttons()
@@ -227,7 +230,7 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
 # Обработка текста вопроса в состоянии asking_question
 @router.message(ProgramStates.asking_question)
 async def handle_question(message: Message, state: FSMContext):
-    if message.text == "💳 Купить доступ":
+    if message.text == "🛍 Магазин":
         await state.clear()
         await message.answer(
             "💸 <b>Покупка вопросов</b>\n\n"
@@ -351,6 +354,22 @@ async def handle_question(message: Message, state: FSMContext):
         f"🎯 Твой XP: {new_xp} | Статус: {status} (прогресс: {progress_bar} {progress}%)\n"
         f"🆓 Осталось бесплатных вопросов: {free_q}"
     )
+
+    # ✅ Проверка всех миссий
+    completed_missions = []
+    for mission in get_all_missions():
+        try:
+            if mission.check(user_id):
+                completed_missions.append(f"🎯 {mission.title} +{mission.reward} XP")
+        except Exception as e:
+            print(f"[Mission Error] {mission.id}: {e}")
+
+    if completed_missions:
+        reply += "\n\n" + "\n".join(completed_missions)
+
+    # 🎯 Миссия: 3 дисциплины за день
+    if check_thematic_challenge(user_id):
+        reply += "\n\n📚 Выполнена миссия: 3 дисциплины за день! +5 XP"
 
     # Ежедневный челлендж
     if check_and_apply_daily_challenge(user_id):
