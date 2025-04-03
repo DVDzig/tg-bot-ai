@@ -9,7 +9,7 @@ from functools import lru_cache
 
 from config import OPENAI_API_KEY
 
-from handlers.start_handler import go_to_start_screen
+from handlers.start_handler import go_to_start_screen, get_shop_keyboard
 
 from utils.keyboard import (
     get_programs_keyboard,
@@ -48,27 +48,23 @@ from services.user_service import (
 
 from services.missions import get_all_missions
 
-
 ALLOWED_BUTTONS = get_all_valid_buttons()
 
 router = Router()
 
 BACK_BUTTON = "⬅️ Назад"
 
-# Состояния для FSM
 class ProgramStates(StatesGroup):
     choosing_level = State()
     choosing_program = State()
     choosing_module = State()
     choosing_discipline = State()
     asking_question = State()
-      
-# Кэшируем ключевые операции для ускорения
+
 @lru_cache(maxsize=512)
 def cached_get_keywords(module, discipline):
     return get_keywords_for_discipline(module, discipline)
 
-# Универсальный обработчик кнопки "Назад"
 @router.message(lambda msg: msg.text == BACK_BUTTON)
 async def universal_back_handler(message: Message, state: FSMContext):
     current_state = await state.get_state()
@@ -101,20 +97,17 @@ async def universal_back_handler(message: Message, state: FSMContext):
         await state.clear()
         await go_to_start_screen(message)
 
-# Обработка кнопки "Начать сначала"
 @router.message(lambda msg: msg.text == "🔁 Начать сначала")
 async def restart_bot(message: Message, state: FSMContext):
     await state.clear()
     await state.set_state(ProgramStates.choosing_level)
     await message.answer("🔁 Начнём сначала! Выбери уровень образования:", reply_markup=get_levels_keyboard())
 
-# Обработка нажатия "Выбрать программу"
 @router.message(lambda message: message.text == "🎓 Выбрать программу")
 async def choose_level_handler(message: Message, state: FSMContext):
     await state.set_state(ProgramStates.choosing_level)
     await message.answer("Выбери уровень образования:", reply_markup=get_levels_keyboard())
 
-# Обработка выбора бакалавриата или магистратуры
 @router.message(ProgramStates.choosing_level)
 async def level_selected(message: Message, state: FSMContext):
     level = message.text.replace("🎓 ", "")
@@ -128,14 +121,12 @@ async def level_selected(message: Message, state: FSMContext):
     else:
         await message.answer("❌ Неверный выбор. Попробуй ещё раз.", reply_markup=get_levels_keyboard())
 
-# Обработка выбранной программы
 @router.message(ProgramStates.choosing_program)
 async def choose_module_handler(message: Message, state: FSMContext):
     selected_program = message.text.replace("📘 ", "").replace("📗 ", "").replace("📙 ", "").replace("📕 ", "").replace("📒 ", "")
     level_data = await state.get_data()
     level = level_data.get("level")
 
-    # Сравниваем с доступными программами по уровню
     if level == "Бакалавриат":
         valid_programs = ["МРК", "ТПР", "БХ"]
     elif level == "Магистратура":
@@ -150,7 +141,6 @@ async def choose_module_handler(message: Message, state: FSMContext):
 
     await state.update_data(program=selected_program)
     modules = get_modules(selected_program)
-    logging.debug(f"[DEBUG] Найдено модулей: {modules}")
     if not modules:
         await message.answer("❌ Не удалось найти модули для выбранной программы.")
         return
@@ -160,7 +150,6 @@ async def choose_module_handler(message: Message, state: FSMContext):
     markup = get_modules_keyboard(selected_program, is_admin=is_admin)
     await message.answer("Теперь выбери модуль:", reply_markup=markup)
 
-# Обработка выбранного модуля
 @router.message(ProgramStates.choosing_module)
 async def choose_discipline_handler(message: Message, state: FSMContext):
     if message.text == "🔄 Обновить ключевые слова":
@@ -175,11 +164,9 @@ async def choose_discipline_handler(message: Message, state: FSMContext):
     data = await state.get_data()
     current_program = data.get("program")
     modules = get_modules(current_program)
-
     selected_module = message.text.replace("📗 ", "").replace("\n", " ").strip()
     normalized_modules = [m.replace("\n", " ").strip() for m in modules]
-    print(f"[DEBUG] selected_module: '{selected_module}'")
-    print(f"[DEBUG] normalized_modules: {normalized_modules}")
+
     if selected_module not in normalized_modules:
         await message.answer("⚠️ Неверный выбор модуля. Используй кнопки ниже.")
         return
@@ -194,24 +181,19 @@ async def choose_discipline_handler(message: Message, state: FSMContext):
     markup = get_disciplines_keyboard(selected_module)
     await message.answer("Выбери дисциплину:", reply_markup=markup)
 
-# Обработка выбранной дисциплины
 @router.message(ProgramStates.choosing_discipline)
 async def choose_discipline_complete(message: Message, state: FSMContext):
     selected_discipline = message.text.replace("📕 ", "").replace("\n", " ").strip()
     data = await state.get_data()
     module = data.get("module")
     available_disciplines = get_disciplines(module)
-
-    # Нормализуем имена дисциплин из таблицы
     normalized_disciplines = [d.replace("\n", " ").strip() for d in available_disciplines]
 
     if selected_discipline not in normalized_disciplines:
         await message.answer("⚠️ Неверный выбор дисциплины. Используй кнопки ниже.")
         return
 
-
     await state.update_data(discipline=selected_discipline)
-
     log_user_activity(
         user_id=message.from_user.id,
         plan=data.get("program"),
@@ -228,6 +210,20 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
     )
 
 # Обработка текста вопроса в состоянии asking_question
+    if message.text == "🛍 Магазин":
+        await state.clear()
+        from handlers.start_handler import get_shop_keyboard  # импортируем тут, чтобы не было циклов
+        await message.answer(
+            "🛍 <b>Магазин</b>\n\n"
+            "Выбери, что хочешь купить:\n"
+            "💬 Вопросы — для продолжения общения с ИИ\n"
+            "💳 Подписка — чтобы снять лимиты и открыть бонусы\n\n"
+            "👇 Выбери категорию ниже:",
+            parse_mode="HTML",
+            reply_markup=get_shop_keyboard()
+        )
+        return
+
     if message.text == "👤 Мой профиль":
         await state.clear()
         profile = get_user_profile(message.from_user.id)
@@ -268,21 +264,6 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
         await message.answer(text, parse_mode="HTML", reply_markup=get_main_keyboard())
         await state.clear()
         return
-
-    if message.text == "🛍 Магазин":
-        from handlers.start_handler import get_shop_keyboard
-        await state.clear()
-        await message.answer(
-            "🛍 <b>Добро пожаловать в магазин!</b>\n\n"
-            "Здесь ты можешь купить:\n"
-            "💬 Вопросы — чтобы продолжить диалог с ИИ\n"
-            "💳 Подписку — чтобы снять лимиты и открыть бонусы\n\n"
-            "👇 Выбери категорию ниже:",
-            parse_mode="HTML",
-            reply_markup=get_shop_keyboard()
-        )
-        return
-
 
     data = await state.get_data()
 
