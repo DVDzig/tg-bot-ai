@@ -321,7 +321,7 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
     status = profile["status"]
 
     # Новый статус и прогресс
-    status, _ = determine_status(new_xp)
+    status = determine_status(new_xp)
     thresholds = {
         "новичок": (0, 10),
         "опытный": (11, 50),

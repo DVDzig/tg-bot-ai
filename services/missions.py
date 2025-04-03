@@ -157,7 +157,7 @@ def three_disciplines(user_id):
         if len(disciplines) >= 3:
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 5
-            new_status, _ = determine_status(new_xp)
+            new_status = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
