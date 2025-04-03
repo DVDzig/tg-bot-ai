@@ -186,7 +186,7 @@ async def leaderboard_handler(message: types.Message):
             break
 
     # Определим следующую цель
-    current_status, _ = determine_status(current_xp)
+    current_status, _, _ = determine_status(current_xp)
     next_status_info = {
         "новичок": ("опытный", 11),
         "опытный": ("профи", 51),

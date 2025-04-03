@@ -78,6 +78,11 @@ def register_user(user_id, username, first_name, last_name, language_code, is_pr
         "0", "0", "новичок", "", "", "", "0", "0", "0", "0", today_str, "10", "",
         "none", "", "", "", "", "", "", "", "", "", "", "", ""
     ]
+
+    # Заполним до длины USER_FIELDS
+    if len(row_data) < len(USER_FIELDS):
+        row_data += [""] * (len(USER_FIELDS) - len(row_data))
+
     append_to_sheet(USER_SHEET_ID, USER_SHEET_NAME, row_data)
     return row_data
 

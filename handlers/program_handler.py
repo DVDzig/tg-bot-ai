@@ -299,10 +299,17 @@ async def handle_user_question(message: Message, state: FSMContext):
         "новичок": (0, 10),
         "опытный": (11, 50),
         "профи": (51, 100),
-        "эксперт": (101, 150)
+        "эксперт": (101, 200),
+        "наставник": (201, 500),
+        "легенда": (501, 1000),
+        "создатель": (1001, 5000)
     }
-    min_xp, max_xp = thresholds.get(status, (0, 10))
-    progress = int(((new_xp - min_xp) / (max_xp - min_xp)) * 100) if max_xp > min_xp else 100
+
+    min_xp, max_xp = thresholds.get(status, (0, new_xp + 1))
+    if max_xp > min_xp:
+        progress = min(100, int(((new_xp - min_xp) / (max_xp - min_xp)) * 100))
+    else:
+        progress = 100
     progress_bar = "🟩" * min(5, int(progress / 1)) + "⬜️" * (5 - min(5, int(progress / 1)))
 
     reply = (
@@ -339,9 +346,21 @@ async def handle_user_question(message: Message, state: FSMContext):
             )
             update_user_data(user_id, {"last_upgrade_prompt": today})
 
-    if status in ["профи", "эксперт"]:
-        count = 3 if status == "эксперт" else 1
-        videos = search_youtube_videos(question, max_results=count)
+    video_count = 0
+
+    # подписки: лайт/про → всегда 3 видео
+    if premium in ["light", "pro"]:
+        video_count = 3
+    # статусы: профи и выше → от 1 до 3 видео
+    elif status == "профи":
+        video_count = 1
+    elif status == "эксперт":
+        video_count = 2
+    elif status in ["наставник", "создатель", "легенда"]:
+        video_count = 3
+
+    if video_count > 0:
+        videos = search_youtube_videos(question, max_results=video_count)
         if videos:
             reply += "\n\n🎥 <b>Рекомендуемые видео:</b>\n"
             for link in videos:

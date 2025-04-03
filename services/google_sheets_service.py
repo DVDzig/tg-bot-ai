@@ -17,8 +17,10 @@ USER_FIELDS = [
     "premium_status", "premium_until", "last_daily_challenge", "last_thematic_challenge",
     "last_daily_3", "last_multi_disc",
     "last_weekly_10", "last_weekly_50xp", "last_weekly_5disc", "last_streak3", "xp_start_of_week", 
-    "streak_days", "last_streak_date", "last_xp_bonus"
+    "streak_days", "last_streak_date", "last_xp_bonus",
+    "missions_streak", "last_mission_day"
 ]
+
 
 # Создание API клиента
 credentials = service_account.Credentials.from_service_account_file(
@@ -51,6 +53,9 @@ def append_to_sheet(spreadsheet_id, sheet_name, row_data):
 
 
 def update_sheet_row(sheet_id, sheet_name, row_index, row_data):
+    from . import pad_user_row  # если pad_user_row в том же модуле — не нужно
+    row_data = pad_user_row(row_data)  # 🔒 защита от неверной длины строки
+
     # Генерация последней буквы колонки (A, B, ..., Z, AA и т.д.)
     def col_letter(n):
         result = ''
@@ -69,8 +74,6 @@ def update_sheet_row(sheet_id, sheet_name, row_index, row_data):
         valueInputOption="RAW",
         body=body
     ).execute()
-
-
 
 @lru_cache(maxsize=512)
 def get_keywords_for_discipline(module, discipline):
