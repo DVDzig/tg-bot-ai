@@ -146,7 +146,7 @@ async def profile_handler(message: types.Message):
 # Обработка кнопки "📊 Лидерборд"
 @router.message(lambda msg: msg.text == "📊 Лидерборд")
 async def leaderboard_handler(message: types.Message):
-    leaderboard = get_leaderboard(top_n=100)
+    leaderboard = get_leaderboard(top_n=100)  # Получим сразу 100, чтобы найти место пользователя
     if not leaderboard:
         await message.answer("🏆 Пока что нет пользователей в рейтинге.")
         return
@@ -160,37 +160,51 @@ async def leaderboard_handler(message: types.Message):
     top_text = "🏆 <b>Топ-10 пользователей по XP</b>:\n\n"
     for idx, entry in enumerate(leaderboard[:10], start=1):
         name = entry.get("first_name") or f"@{entry.get('username', 'неизвестно')}"
-        status, _, _ = determine_status(entry['xp'])
+        status, _ = determine_status(entry['xp'])
 
+        # Иконка статуса
         status_icon = {
             "новичок": "🟢",
             "опытный": "🔸",
             "профи": "🚀",
             "эксперт": "👑",
-            "наставник": "🧙",
+            "наставник": "🧠",
             "легенда": "🎓",
             "создатель": "🛸"
         }.get(status, "❓")
 
+        # Иконка места
         place_emoji = {1: "🥇", 2: "🥈", 3: "🥉"}.get(idx, f"{idx}.")
         highlight = " (ты)" if entry['user_id'] == user_id else ""
 
-        top_text += f"{place_emoji} {name} — {status_icon} {entry['xp']} XP{highlight}\n"
+        top_text += f"{place_emoji} {name} — {status_icon} {status.capitalize()}, {entry['xp']} XP{highlight}\n"
 
+    # Найдём текущее место пользователя
     for idx, entry in enumerate(leaderboard, start=1):
         if entry['user_id'] == user_id:
             user_place = idx
             break
 
-    # Новая логика: определить следующее звание
-    current_status, next_status, xp_to_next = determine_status(current_xp)
+    # Определим следующую цель
+    current_status, _ = determine_status(current_xp)
+    next_status_info = {
+        "новичок": ("опытный", 11),
+        "опытный": ("профи", 51),
+        "профи": ("эксперт", 101),
+        "эксперт": ("наставник", 301),
+        "наставник": ("легенда", 1000),
+        "легенда": ("создатель", 5000),
+        "создатель": ("создатель", 9999)
+    }
+    next_status, xp_target = next_status_info.get(current_status, ("опытный", 11))
+    xp_left = max(0, xp_target - current_xp)
 
+    # Хвост сообщения
     tail = f"\n👤 Ты сейчас на {user_place} месте"
-    if next_status == "максимальный":
-        tail += "\n🎓 Ты достиг максимального уровня! Продолжай учиться и помогай другим 💪"
+    if current_status == "создатель":
+        tail += "\n🛸 Ты достиг вершины! Легенда среди легенд 👑"
     else:
-        tail += f"\n📈 До уровня «{next_status}» осталось {xp_to_next} XP\n"
-        tail += "Продолжай в том же духе! 💪"
+        tail += f"\n📈 До уровня «{next_status}» осталось {xp_left} XP\nПродолжай в том же духе! 💪"
 
     await message.answer(top_text + tail, parse_mode="HTML")
 
