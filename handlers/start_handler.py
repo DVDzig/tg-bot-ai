@@ -160,7 +160,7 @@ async def leaderboard_handler(message: types.Message):
     top_text = "🏆 <b>Топ-10 пользователей по XP</b>:\n\n"
     for idx, entry in enumerate(leaderboard[:10], start=1):
         name = entry.get("first_name") or f"@{entry.get('username', 'неизвестно')}"
-        status, _ = determine_status(entry['xp'])
+        status, _, _ = determine_status(entry['xp'])
 
         # Иконка статуса
         status_icon = {

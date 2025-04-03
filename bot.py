@@ -44,13 +44,14 @@ async def handle_payment_webhook(request):
         log_payment_event(user_id, amount, questions, status, event_type, payment_id)
 
         # 👇 Вставка: обработка light/pro
-        if status in ("light", "pro"):
+        premium = metadata.get("status")
+        if premium in ("light", "pro"):
             from datetime import datetime, timedelta
-            days = 7 if status == "light" else 30
+            days = 7 if premium == "light" else 30
             until_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
 
             update_user_data(int(user_id), {
-                "premium_status": status,
+                "premium_status": premium,
                 "premium_until": until_date
             })
 
@@ -58,7 +59,7 @@ async def handle_payment_webhook(request):
                 await bot.send_message(
                     chat_id=int(user_id),
                     text=(
-                        f"🎉 Статус <b>{status.capitalize()}</b> активирован до <b>{until_date}</b>!\n"
+                        f"🎉 Статус <b>{premium.capitalize()}</b> активирован до <b>{until_date}</b>!\n"
                         f"Продолжай обучение без ограничений и бонусов 🚀"
                     ),
                     parse_mode="HTML"
