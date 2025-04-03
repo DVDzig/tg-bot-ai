@@ -37,7 +37,7 @@ def update_activity_rewards(user_id):
             continue
 
         row = pad_user_row(row)
-
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
         last_date_str = row[last_streak_index] if row[last_streak_index] else ""
         last_date = datetime.strptime(last_date_str, "%d.%m.%Y").date() if last_date_str else None
@@ -94,6 +94,8 @@ def daily_3_questions(user_id):
             continue
 
         row = pad_user_row(row)
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
+
 
 
         if row[field_index] == today_str:
@@ -139,6 +141,7 @@ def three_disciplines(user_id):
             continue
 
         row = pad_user_row(row)
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
 
         if row[field_index] == today_str:
@@ -184,7 +187,7 @@ def weekly_10_questions(user_id):
             continue
 
         row = pad_user_row(row)
-
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
         if row[field_index] == start_week.strftime("%d.%m.%Y"):
             return False
@@ -230,7 +233,7 @@ def weekly_50_xp(user_id):
             continue
 
         row = pad_user_row(row)
-
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
         if row[field_index] == today_str:
             return False
@@ -268,7 +271,7 @@ def weekly_5_disciplines(user_id):
             continue
 
         row = pad_user_row(row)
-
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
         if row[field_index] == today_str:
             return False
@@ -313,7 +316,7 @@ def streak_3_days(user_id):
             continue
 
         row = pad_user_row(row)
-
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
         if row[field_index] == today_str:
             return False

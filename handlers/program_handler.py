@@ -209,38 +209,21 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
         reply_markup=markup
     )
 
-# Обработка текста вопроса в состоянии asking_question
-    if message.text == "🛍 Магазин":
-        await state.clear()
-        from handlers.start_handler import get_shop_keyboard  # импортируем тут, чтобы не было циклов
-        await message.answer(
-            "🛍 <b>Магазин</b>\n\n"
-            "Выбери, что хочешь купить:\n"
-            "💬 Вопросы — для продолжения общения с ИИ\n"
-            "💳 Подписка — чтобы снять лимиты и открыть бонусы\n\n"
-            "👇 Выбери категорию ниже:",
-            parse_mode="HTML",
-            reply_markup=get_shop_keyboard()
-        )
-        return
+# Запрет писать в чат с ботом вне общения с ИИ
+@router.message(lambda msg: msg.text not in ALLOWED_BUTTONS)
+async def block_input(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state != ProgramStates.asking_question.state:
+        await message.delete()
+        await message.answer("❗Используй кнопки для навигации.")
 
-    if message.text == "👤 Мой профиль":
-        await state.clear()
-        profile = get_user_profile(message.from_user.id)
-        await message.answer(
-            f"👤 <b>Твой профиль</b>:\n"
-            f"Имя: {profile['first_name'] or '@' + profile['username']}"
-            f"Статус: {profile['status']}\n"
-            f"XP: {profile['xp']}\n"
-            f"Бесплатные вопросы: {profile['free_questions']}\n"
-            f"Платные вопросы: {profile['paid_questions']}",
-            parse_mode="HTML",
-            reply_markup=get_main_keyboard()
-        )
-        return
 
-    if message.text in ["📊 Лидерборд", "🔁 Начать сначала"]:
-        return
+@router.message(ProgramStates.asking_question)
+async def handle_user_question(message: Message, state: FSMContext):
+    if message.text in ["📗 Модуль", "📕 Дисциплина", "⬅️ Назад", "🔁 Начать сначала"]:
+        return  # пропустить навигационные кнопки
+
+    from handlers.start_handler import go_to_start_screen
 
     logging.debug(f"[DEBUG] Вошли в состояние задавания вопроса. Сообщение: {message.text}")
 
@@ -250,7 +233,6 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
         premium = user_data.get("premium_status", "none")
 
         text = "❌ У тебя закончились вопросы!\n\n"
-
         if premium == "none":
             text += (
                 "🔓 <b>Хочешь продолжить без ограничений?</b>\n\n"
@@ -266,7 +248,6 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
         return
 
     data = await state.get_data()
-
     discipline = data.get("discipline")
     program = data.get("program")
     module = data.get("module")
@@ -292,12 +273,10 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
         return
 
     ai_response = generate_ai_response(question, keywords, history)
-
     save_question_answer(user_id, program, module, discipline, question, ai_response)
 
     new_xp, new_status = update_user_xp(user_id)
     profile = get_user_profile(user_id)
-    
     premium = profile.get("premium_status", "none")
     last_prompt = profile.get("last_upgrade_prompt", "")
     today = datetime.now().strftime("%Y-%m-%d")
@@ -312,16 +291,11 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
             parse_mode="HTML"
         )
         update_user_data(user_id, {"last_upgrade_prompt": today})
-    
-    free_q = profile["free_questions"]
 
-    # Заменяем кэшированный профиль на актуальный
     profile = get_user_profile(user_id)
     free_q = profile["free_questions"]
-    status = profile["status"]
-
-    # Новый статус и прогресс
     status, _, _ = determine_status(new_xp)
+
     thresholds = {
         "новичок": (0, 10),
         "опытный": (11, 50),
@@ -339,7 +313,6 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
         f"🆓 Осталось бесплатных вопросов: {free_q}"
     )
 
-    # ✅ Проверка всех миссий
     completed_missions = []
     for mission in get_all_missions():
         try:
@@ -351,30 +324,22 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
     if completed_missions:
         reply += "\n\n" + "\n".join(completed_missions)
 
-    # 🎯 Миссия: 3 дисциплины за день
     if check_thematic_challenge(user_id):
         reply += "\n\n📚 Выполнена миссия: 3 дисциплины за день! +5 XP"
 
-    # Ежедневный челлендж
     if check_and_apply_daily_challenge(user_id):
         reply += "\n\n🏆 Ты выполнил ежедневный челлендж и получил +2 XP!"
+        if premium == "none" and last_prompt != today:
+            await message.answer(
+                "🔥 Челлендж пройден — супер!\n\n"
+                "Готов двигаться быстрее и глубже? 📚\n"
+                "💡 <b>Лайт</b> — безлимит на 7 дней\n"
+                "🚀 <b>Про</b> — приоритет, видео и +100 вопросов\n\n"
+                "Доступно в разделе <b>«Купить доступ»</b>",
+                parse_mode="HTML"
+            )
+            update_user_data(user_id, {"last_upgrade_prompt": today})
 
-        if profile.get("premium_status", "none") == "none":
-            last_prompt = profile.get("last_upgrade_prompt", "")
-            today = datetime.now().strftime("%Y-%m-%d")
-
-            if last_prompt != today:
-                await message.answer(
-                    "🔥 Челлендж пройден — супер!\n\n"
-                    "Готов двигаться быстрее и глубже? 📚\n"
-                    "💡 <b>Лайт</b> — безлимит на 7 дней\n"
-                    "🚀 <b>Про</b> — приоритет, видео и +100 вопросов\n\n"
-                    "Доступно в разделе <b>«Купить доступ»</b>",
-                    parse_mode="HTML"
-                )
-                update_user_data(user_id, {"last_upgrade_prompt": today})
-
-    # Рекомендованные видео
     if status in ["профи", "эксперт"]:
         count = 3 if status == "эксперт" else 1
         videos = search_youtube_videos(question, max_results=count)
@@ -383,16 +348,5 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
             for link in videos:
                 reply += f"{link}\n"
 
-    # Проверка, админ ли пользователь (нужно для reply_markup)
     is_admin = user_id == 150532949
-
     await message.answer(reply, parse_mode="HTML", reply_markup=get_question_keyboard(is_admin=is_admin))
-
-# Запрет писать в чат с ботом вне общения с ИИ
-@router.message(lambda msg: msg.text not in ALLOWED_BUTTONS)
-async def block_input(message: Message, state: FSMContext):
-    current_state = await state.get_state()
-    if current_state != ProgramStates.asking_question.state:
-        await message.delete()
-        await message.answer("❗Используй кнопки для навигации.")
-

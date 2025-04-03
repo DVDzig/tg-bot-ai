@@ -71,10 +71,12 @@ def register_user(user_id, username, first_name, last_name, language_code, is_pr
     now = datetime.now()
     formatted_now = now.strftime("%d %B %Y, %H:%M")
     today_str = now.strftime("%d.%m.%Y")
+
     row_data = [
         str(user_id), username, first_name, last_name, language_code, str(is_premium),
         formatted_now, formatted_now,  # first_interaction, last_interaction
-        "0", "0", "новичок", "", "", "", "0", "0", "0", "0", today_str, "10", ""
+        "0", "0", "новичок", "", "", "", "0", "0", "0", "0", today_str, "10", "",
+        "none", "", "", "", "", "", "", "", "", "", "", "", ""
     ]
     append_to_sheet(USER_SHEET_ID, USER_SHEET_NAME, row_data)
     return row_data
@@ -123,7 +125,7 @@ def decrement_question_balance(user_id):
     for idx, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
             row = pad_user_row(row)
-
+            assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
             free_q = int(row[free_q_index]) if row[free_q_index].isdigit() else 0
             paid_q = int(row[paid_q_index]) if row[paid_q_index].isdigit() else 0
@@ -151,7 +153,7 @@ def update_user_xp(user_id, xp_gain=1):
     for i, row in enumerate(values, start=2):
         if row[0] == str(user_id):
             row = pad_user_row(row)
-
+            assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
             # 🛡 Проверка подписки
             premium_status = row[premium_index].strip().lower()
@@ -193,6 +195,7 @@ def apply_xp_penalty_if_needed(user_id):
     for i, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
             row = pad_user_row(row)
+            assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
             last_interaction = row[last_interaction_index]
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
@@ -259,6 +262,8 @@ def check_and_apply_daily_challenge(user_id):
             continue
 
         row = pad_user_row(row)
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
+
 
 
         last_done = row[daily_challenge_index] if row[daily_challenge_index] else ""
@@ -296,6 +301,8 @@ def add_paid_questions(user_id: int, count: int):
     for idx, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
             row = pad_user_row(row)
+            assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
+
 
 
             current = int(row[paid_q_index]) if row[paid_q_index].isdigit() else 0
@@ -312,6 +319,7 @@ def update_user_data(user_id: int, updates: dict):
     for idx, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
             row = pad_user_row(row)
+            assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
 
             for key, value in updates.items():
@@ -368,6 +376,7 @@ def check_thematic_challenge(user_id):
             continue
 
         row = pad_user_row(row)
+        assert str(row[0]) == str(user_id), f"❗ Нарушение соответствия user_id при обновлении строки: ожидалось {user_id}, найдено {row[0]}"
 
 
         last_done = row[thematic_index] if row[thematic_index] else ""

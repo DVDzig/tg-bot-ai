@@ -15,7 +15,9 @@ USER_FIELDS = [
     "discipline", "module", "xp", "xp_today", "xp_week",
     "paid_questions", "last_free_reset", "free_questions", "last_bonus_date",
     "premium_status", "premium_until", "last_daily_challenge", "last_thematic_challenge",
-    "last_daily_3", "last_multi_disc"
+    "last_daily_3", "last_multi_disc",
+    "last_weekly_10", "last_weekly_50xp", "last_weekly_5disc", "last_streak3", "xp_start_of_week", 
+    "streak_days", "last_streak_date", "last_xp_bonus"
 ]
 
 # Создание API клиента
@@ -235,4 +237,6 @@ def log_payment_event(user_id: str, amount: str, questions: str, status: str, ev
 def pad_user_row(row: list[str]) -> list[str]:
     if len(row) < len(USER_FIELDS):
         row += [""] * (len(USER_FIELDS) - len(row))
+    elif len(row) > len(USER_FIELDS):
+        row = row[:len(USER_FIELDS)]
     return row
