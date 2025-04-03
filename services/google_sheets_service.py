@@ -231,3 +231,8 @@ def log_payment_event(user_id: str, amount: str, questions: str, status: str, ev
     timestamp = datetime.now().strftime("%d.%m.%Y %H:%M")
     row = [user_id, amount, questions, status, event, payment_id, timestamp]
     append_to_sheet(USER_SHEET_ID, "PaymentsLog", row)
+
+def pad_user_row(row: list[str]) -> list[str]:
+    if len(row) < len(USER_FIELDS):
+        row += [""] * (len(USER_FIELDS) - len(row))
+    return row

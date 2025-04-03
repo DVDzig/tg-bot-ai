@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN
-from .google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, USER_FIELDS
+from .google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, USER_FIELDS, pad_user_row
 from aiogram import Bot
 import asyncio
 bot = Bot(token=TOKEN)
@@ -11,8 +11,7 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
 
     for idx, row in enumerate(values, start=2):
         if str(row[0]).strip() == str(user_id):
-            if len(row) < len(USER_FIELDS):
-                row += [""] * (len(USER_FIELDS) - len(row))
+            row = pad_user_row(row)
             now = datetime.now().strftime("%d %B %Y, %H:%M")
             row[USER_FIELDS.index("last_interaction")] = now
             # Проверка просроченного платного статуса
@@ -123,8 +122,8 @@ def decrement_question_balance(user_id):
 
     for idx, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
-            if len(row) < len(USER_FIELDS):
-                row += [""] * (len(USER_FIELDS) - len(row))
+            row = pad_user_row(row)
+
 
             free_q = int(row[free_q_index]) if row[free_q_index].isdigit() else 0
             paid_q = int(row[paid_q_index]) if row[paid_q_index].isdigit() else 0
@@ -151,8 +150,8 @@ def update_user_xp(user_id, xp_gain=1):
 
     for i, row in enumerate(values, start=2):
         if row[0] == str(user_id):
-            if len(row) < len(USER_FIELDS):
-                row += [""] * (len(USER_FIELDS) - len(row))
+            row = pad_user_row(row)
+
 
             # 🛡 Проверка подписки
             premium_status = row[premium_index].strip().lower()
@@ -193,8 +192,8 @@ def apply_xp_penalty_if_needed(user_id):
 
     for i, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
-            if len(row) < len(USER_FIELDS):
-                row += [""] * (len(USER_FIELDS) - len(row))
+            row = pad_user_row(row)
+
             last_interaction = row[last_interaction_index]
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
 
@@ -259,8 +258,8 @@ def check_and_apply_daily_challenge(user_id):
         if str(row[0]) != str(user_id):
             continue
 
-        if len(row) < len(USER_FIELDS):
-            row += [""] * (len(USER_FIELDS) - len(row))
+        row = pad_user_row(row)
+
 
         last_done = row[daily_challenge_index] if row[daily_challenge_index] else ""
         if last_done == today_str:
@@ -296,8 +295,8 @@ def add_paid_questions(user_id: int, count: int):
 
     for idx, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
-            if len(row) < len(USER_FIELDS):
-                row += [""] * (len(USER_FIELDS) - len(row))
+            row = pad_user_row(row)
+
 
             current = int(row[paid_q_index]) if row[paid_q_index].isdigit() else 0
             row[paid_q_index] = str(current + count)
@@ -312,8 +311,8 @@ def update_user_data(user_id: int, updates: dict):
     
     for idx, row in enumerate(values, start=2):
         if str(row[0]) == str(user_id):
-            if len(row) < len(USER_FIELDS):
-                row += [""] * (len(USER_FIELDS) - len(row))
+            row = pad_user_row(row)
+
 
             for key, value in updates.items():
                 if key in USER_FIELDS:
@@ -340,8 +339,8 @@ def refresh_monthly_free_questions():
     }
 
     for i, row in enumerate(values, start=2):
-        if len(row) < len(USER_FIELDS):
-            row += [""] * (len(USER_FIELDS) - len(row))
+        row = pad_user_row(row)
+
 
         status = row[status_index].strip().lower()
         current_free = int(row[free_index]) if row[free_index].isdigit() else 0
@@ -368,8 +367,8 @@ def check_thematic_challenge(user_id):
         if str(row[0]) != str(user_id):
             continue
 
-        if len(row) < len(USER_FIELDS):
-            row += [""] * (len(USER_FIELDS) - len(row))
+        row = pad_user_row(row)
+
 
         last_done = row[thematic_index] if row[thematic_index] else ""
         if last_done == today_str:
