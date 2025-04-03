@@ -112,7 +112,7 @@ def daily_3_questions(user_id):
         if today_count >= 3:
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 2
-            new_status, _ = determine_status(new_xp)
+            new_status, _, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
@@ -202,7 +202,7 @@ def weekly_10_questions(user_id):
         if count >= 10:
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 10
-            new_status, _ = determine_status(new_xp)
+            new_status, _, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
@@ -240,7 +240,7 @@ def weekly_50_xp(user_id):
 
         if (current_xp - start_xp) >= 50:
             new_xp = current_xp + 10
-            new_status, _ = determine_status(new_xp)
+            new_status, _, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
@@ -286,7 +286,7 @@ def weekly_5_disciplines(user_id):
         if len(disciplines) >= 5:
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 10
-            new_status, _ = determine_status(new_xp)
+            new_status, _, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
@@ -337,7 +337,7 @@ def streak_3_days(user_id):
         if streak:
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 7
-            new_status, _ = determine_status(new_xp)
+            new_status, _, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status

@@ -208,7 +208,8 @@ def apply_xp_penalty_if_needed(user_id):
 
             if penalty > 0:
                 new_xp = max(xp - penalty, 0)
-                status, _ = determine_status(new_xp)
+                status, _, _ = determine_status(new_xp)
+
                 row[xp_index] = str(new_xp)
                 row[status_index] = status
                 update_sheet_row(USER_SHEET_ID, "Users", i, row)
@@ -278,7 +279,7 @@ def check_and_apply_daily_challenge(user_id):
         if today_count >= 3:
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 2
-            new_status, _ = determine_status(new_xp)
+            new_status, _, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
@@ -390,7 +391,7 @@ def check_thematic_challenge(user_id):
             # ✅ Выполнил миссию
             xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
             new_xp = xp + 5
-            new_status, _ = determine_status(new_xp)
+            new_status, _, _ = determine_status(new_xp)
 
             row[xp_index] = str(new_xp)
             row[status_index] = new_status
