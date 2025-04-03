@@ -228,20 +228,6 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
     )
 
 # Обработка текста вопроса в состоянии asking_question
-    if message.text == "🛍 Магазин":
-        await state.clear()
-        from handlers.start_handler import get_shop_keyboard  # импортируем тут, чтобы не было циклов
-        await message.answer(
-            "🛍 <b>Магазин</b>\n\n"
-            "Выбери, что хочешь купить:\n"
-            "💬 Вопросы — для продолжения общения с ИИ\n"
-            "💳 Подписка — чтобы снять лимиты и открыть бонусы\n\n"
-            "👇 Выбери категорию ниже:",
-            parse_mode="HTML",
-            reply_markup=get_shop_keyboard()
-        )
-        return
-
     if message.text == "👤 Мой профиль":
         await state.clear()
         profile = get_user_profile(message.from_user.id)
@@ -282,6 +268,21 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
         await message.answer(text, parse_mode="HTML", reply_markup=get_main_keyboard())
         await state.clear()
         return
+
+    if message.text == "🛍 Магазин":
+        from handlers.start_handler import get_shop_keyboard
+        await state.clear()
+        await message.answer(
+            "🛍 <b>Добро пожаловать в магазин!</b>\n\n"
+            "Здесь ты можешь купить:\n"
+            "💬 Вопросы — чтобы продолжить диалог с ИИ\n"
+            "💳 Подписку — чтобы снять лимиты и открыть бонусы\n\n"
+            "👇 Выбери категорию ниже:",
+            parse_mode="HTML",
+            reply_markup=get_shop_keyboard()
+        )
+        return
+
 
     data = await state.get_data()
 
