@@ -213,9 +213,11 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
 @router.message(lambda msg: msg.text not in ALLOWED_BUTTONS)
 async def block_input(message: Message, state: FSMContext):
     current_state = await state.get_state()
-    if current_state != ProgramStates.asking_question.state:
-        await message.delete()
-        await message.answer("❗Используй кнопки для навигации.")
+    # Не блокировать, если пользователь задаёт вопрос
+    if current_state == ProgramStates.asking_question.state:
+        return
+    await message.delete()
+    await message.answer("❗Используй кнопки для навигации.")
 
 
 @router.message(ProgramStates.asking_question)
