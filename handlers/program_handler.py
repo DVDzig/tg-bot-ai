@@ -210,7 +210,7 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
     )
 
 # Запрет писать в чат с ботом вне общения с ИИ
-@router.message(lambda msg: msg.text not in ALLOWED_BUTTONS)
+@router.message(lambda msg: msg.text not in ALLOWED_BUTTONS, ~ProgramStates.asking_question)
 async def block_input(message: Message, state: FSMContext):
     current_state = await state.get_state()
     # Не блокировать, если пользователь задаёт вопрос
