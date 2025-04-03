@@ -89,20 +89,31 @@ def can_ask_question(user_id):
     return free_questions > 0 or paid_questions > 0
 
 def determine_status(xp: int):
-    if xp <= 10:
-        return "новичок", 10
-    elif 11 <= xp <= 50:
-        return "опытный", 50
-    elif 51 <= xp <= 150:
-        return "профи", 150
-    elif 151 <= xp <= 300:
-        return "эксперт", 300
-    elif 301 <= xp <= 999:
-        return "наставник", 999
-    elif 1000 <= xp <= 4999:
-        return "легенда", 4999
-    else:
-        return "создатель", 9999
+    thresholds = [
+        ("новичок", 0),
+        ("опытный", 11),
+        ("профи", 51),
+        ("эксперт", 151),
+        ("наставник", 301),
+        ("легенда", 1000),
+        ("создатель", 5000),
+    ]
+
+    current = thresholds[0][0]
+    next_status = thresholds[1][0]
+    xp_to_next = thresholds[1][1] - xp
+
+    for i in range(len(thresholds)):
+        if xp >= thresholds[i][1]:
+            current = thresholds[i][0]
+            if i + 1 < len(thresholds):
+                next_status = thresholds[i + 1][0]
+                xp_to_next = thresholds[i + 1][1] - xp
+            else:
+                next_status = "максимальный"
+                xp_to_next = 0
+
+    return current, next_status, max(0, xp_to_next)
 
 
 def decrement_question_balance(user_id):

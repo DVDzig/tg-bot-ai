@@ -228,15 +228,17 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
     )
 
 # Обработка текста вопроса в состоянии asking_question
-@router.message(ProgramStates.asking_question)
-async def handle_question(message: Message, state: FSMContext):
     if message.text == "🛍 Магазин":
         await state.clear()
+        from handlers.start_handler import get_shop_keyboard  # импортируем тут, чтобы не было циклов
         await message.answer(
-            "💸 <b>Покупка вопросов</b>\n\n"
-            "Скоро появится возможность купить дополнительные вопросы прямо здесь!\n"
-            "А пока просто напиши нам, и мы поможем лично 😉",
-            parse_mode="HTML"
+            "🛍 <b>Магазин</b>\n\n"
+            "Выбери, что хочешь купить:\n"
+            "💬 Вопросы — для продолжения общения с ИИ\n"
+            "💳 Подписка — чтобы снять лимиты и открыть бонусы\n\n"
+            "👇 Выбери категорию ниже:",
+            parse_mode="HTML",
+            reply_markup=get_shop_keyboard()
         )
         return
 

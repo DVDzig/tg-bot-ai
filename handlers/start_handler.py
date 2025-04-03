@@ -79,7 +79,7 @@ async def profile_handler(message: types.Message):
         last_purchase_text = ""
 
     current_xp = profile_data['xp']
-    new_status, _ = determine_status(current_xp)
+    current_status, next_status, xp_to_next = determine_status(current_xp)
 
     thresholds = {
         "новичок": (0, 10),
@@ -87,7 +87,7 @@ async def profile_handler(message: types.Message):
         "профи": (51, 100),
         "эксперт": (101, 150)
     }
-    min_xp, max_xp = thresholds.get(new_status, (0, 10))
+    min_xp, max_xp = thresholds.get(current_status, (0, 10))
     if current_xp >= max_xp:
         progress = 100
     else:
@@ -101,19 +101,10 @@ async def profile_handler(message: types.Message):
         if stats['today'] < daily_goal
         else "🏆 Ты выполнил ежедневный челлендж!"
     )
-    # Определим ближайший статус и сколько XP до него
-    next_status_info = {
-        "новичок": ("опытный", 11),
-        "опытный": ("профи", 51),
-        "профи": ("эксперт", 101),
-        "эксперт": ("эксперт", 9999)
-    }
-    next_status, xp_target = next_status_info.get(new_status, ("опытный", 11))
-    xp_left = max(0, xp_target - current_xp)
 
     profile_text = (
         f"👤 <b>Имя:</b> {profile_data['first_name']}\n"
-        f"🎖️ <b>Статус:</b> {new_status.capitalize()} — {progress_bar} {progress}%\n"
+        f"🎖️ <b>Статус:</b> {current_status.capitalize()} — {progress_bar} {progress}%\n"
         f"⭐ <b>Твой XP:</b> {current_xp} XP\n"
         f"📅 <b>Последний вход:</b> {profile_data['last_interaction']}\n\n"
 
@@ -130,8 +121,8 @@ async def profile_handler(message: types.Message):
 
         f"{challenge_text}\n\n"
         + (
-            f"💡 <i>Ближайший статус:</i> {next_status} (ещё {xp_left} XP)\n"
-            if new_status != "эксперт"
+            f"💡 <i>Ближайший статус:</i> {next_status} (ещё {xp_to_next} XP)\n"
+            if next_status != "максимальный"
             else "🎓 Ты уже достиг максимального уровня! Поздравляем! 🏆\n"
         )
         + (
@@ -142,7 +133,6 @@ async def profile_handler(message: types.Message):
         )
     )
 
-    # Добавим предложение купить Лайт или Про, если их нет
     if profile_data.get("premium_status") in (None, "", "none"):
         profile_text += (
             "\n\n🔓 <b>Хочешь больше возможностей?</b>\n\n"
@@ -156,7 +146,7 @@ async def profile_handler(message: types.Message):
 # Обработка кнопки "📊 Лидерборд"
 @router.message(lambda msg: msg.text == "📊 Лидерборд")
 async def leaderboard_handler(message: types.Message):
-    leaderboard = get_leaderboard(top_n=100)  # Получим сразу 100, чтобы найти место пользователя
+    leaderboard = get_leaderboard(top_n=100)
     if not leaderboard:
         await message.answer("🏆 Пока что нет пользователей в рейтинге.")
         return
@@ -170,45 +160,36 @@ async def leaderboard_handler(message: types.Message):
     top_text = "🏆 <b>Топ-10 пользователей по XP</b>:\n\n"
     for idx, entry in enumerate(leaderboard[:10], start=1):
         name = entry.get("first_name") or f"@{entry.get('username', 'неизвестно')}"
-        status, _ = determine_status(entry['xp'])
+        status, _, _ = determine_status(entry['xp'])
 
-        # Иконка статуса
         status_icon = {
             "новичок": "🟢",
             "опытный": "🔸",
             "профи": "🚀",
-            "эксперт": "👑"
+            "эксперт": "👑",
+            "наставник": "🧙",
+            "легенда": "🎓",
+            "создатель": "🛸"
         }.get(status, "❓")
 
-        # Иконка места
         place_emoji = {1: "🥇", 2: "🥈", 3: "🥉"}.get(idx, f"{idx}.")
         highlight = " (ты)" if entry['user_id'] == user_id else ""
 
         top_text += f"{place_emoji} {name} — {status_icon} {entry['xp']} XP{highlight}\n"
 
-    # Найдём текущее место пользователя
     for idx, entry in enumerate(leaderboard, start=1):
         if entry['user_id'] == user_id:
             user_place = idx
             break
 
-    # Определим следующую цель
-    current_status, _ = determine_status(current_xp)
-    next_status_info = {
-        "новичок": ("опытный", 11),
-        "опытный": ("профи", 51),
-        "профи": ("эксперт", 101),
-        "эксперт": ("эксперт", 9999)
-    }
-    next_status, xp_target = next_status_info.get(current_status, ("опытный", 11))
-    xp_left = max(0, xp_target - current_xp)
+    # Новая логика: определить следующее звание
+    current_status, next_status, xp_to_next = determine_status(current_xp)
 
-    # Хвост сообщения
     tail = f"\n👤 Ты сейчас на {user_place} месте"
-    if current_status == "эксперт":
+    if next_status == "максимальный":
         tail += "\n🎓 Ты достиг максимального уровня! Продолжай учиться и помогай другим 💪"
     else:
-        tail += f"\n📈 До уровня «{next_status}» осталось {xp_left} XP\n"
+        tail += f"\n📈 До уровня «{next_status}» осталось {xp_to_next} XP\n"
         tail += "Продолжай в том же духе! 💪"
 
     await message.answer(top_text + tail, parse_mode="HTML")
