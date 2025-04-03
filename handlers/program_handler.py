@@ -1,7 +1,8 @@
-from aiogram import Router, types
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram import Router
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters import StateFilter
 
 import logging
 from datetime import datetime
@@ -210,12 +211,8 @@ async def choose_discipline_complete(message: Message, state: FSMContext):
     )
 
 # Запрет писать в чат с ботом вне общения с ИИ
-@router.message(lambda msg: msg.text not in ALLOWED_BUTTONS, ~ProgramStates.asking_question)
+@router.message(StateFilter(None), lambda msg: msg.text not in ALLOWED_BUTTONS)
 async def block_input(message: Message, state: FSMContext):
-    current_state = await state.get_state()
-    # Не блокировать, если пользователь задаёт вопрос
-    if current_state == ProgramStates.asking_question.state:
-        return
     await message.delete()
     await message.answer("❗Используй кнопки для навигации.")
 
