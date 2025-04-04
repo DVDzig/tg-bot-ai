@@ -1,4 +1,4 @@
-from aiogram import Router, types
+from aiogram import Router, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from utils.keyboard import get_main_keyboard, get_question_packages_keyboard, get_subscription_packages_keyboard
@@ -10,12 +10,15 @@ from services.user_service import (
     get_or_create_user
 )
 from services.google_sheets_service import get_leaderboard, get_sheet_data
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, Message
 from services.yookassa_service import create_payment
 from config import USER_SHEET_ID
 from services.missions import get_all_missions
 from datetime import datetime
 from functools import lru_cache
+from aiogram.handlers import BaseMiddleware
+from typing import Callable, Dict, Any, Awaitable
+
 
 router = Router()
 
@@ -350,4 +353,21 @@ async def handle_subscription_shop(message: types.Message):
         parse_mode="HTML",
         reply_markup=get_subscription_packages_keyboard()
     )
-    
+
+class EnsureUserMiddleware(BaseMiddleware):
+    async def __call__(
+        self,
+        handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+        event: Message,
+        data: Dict[str, Any]
+    ) -> Any:
+        user = event.from_user
+        get_or_create_user(
+            user_id=user.id,
+            username=user.username or "Unknown",
+            first_name=user.first_name or "",
+            last_name=user.last_name or "",
+            language_code=user.language_code or "",
+            is_premium=getattr(user, "is_premium", False)
+        )
+        return await handler(event, data)

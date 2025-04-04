@@ -18,6 +18,8 @@ from handlers import start_handler, program_handler, shop_handler
 from services.google_sheets_service import get_all_users, log_payment_event
 from services.user_service import add_paid_questions
 from utils.keyboard import get_question_packages_keyboard, get_subscription_packages_keyboard
+from handlers.start_handler import EnsureUserMiddleware
+
 
 # --- Webhook от ЮКассы ---
 async def handle_payment_webhook(request):
@@ -173,6 +175,8 @@ async def main():
     dp.include_router(start_handler.router)
     dp.include_router(program_handler.router)
     dp.include_router(shop_handler.router)
+    dp.message.middleware(EnsureUserMiddleware())
+
 
     # Устанавливаем webhook Telegram (важно — ДО старта сервера)
     await bot.set_webhook(
