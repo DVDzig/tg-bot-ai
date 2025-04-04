@@ -19,3 +19,6 @@ def get_user_row(user_id: int):
             _user_cache[user_id] = (i, row)
             return i, row
     return None, None
+
+def set_user_cache(user_id: int, value: tuple):
+    _user_cache[user_id] = value
