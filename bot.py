@@ -12,16 +12,14 @@ bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from aiohttp import web
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
-from config import TOKEN
 from handlers import start_handler, program_handler, shop_handler
 from services.google_sheets_service import get_all_users, log_payment_event
 from services.user_service import add_paid_questions
 from utils.keyboard import get_question_packages_keyboard, get_subscription_packages_keyboard
 
 # --- Webhook от ЮКассы ---
-
-
 async def handle_payment_webhook(request):
     data = await request.json()
     event_type = data.get("event")
@@ -176,28 +174,32 @@ async def main():
     dp.include_router(program_handler.router)
     dp.include_router(shop_handler.router)
 
-    # dp.include_router(payment_handler.router) - payment_handler больше не нужен
+    # Устанавливаем webhook Telegram (важно — ДО старта сервера)
+    await bot.set_webhook(
+        "https://tg-bot-ai-teyr.onrender.com/telegram",
+        drop_pending_updates=True
+    )
 
-    # --- Webhook ---
+
+    # Telegram + YooKassa webhook
     app = web.Application()
+    SimpleRequestHandler(dispatcher=dp, bot=bot).register(app, path="/telegram")
+    setup_application(app, dp)
     app.router.add_post("/payment/result", handle_payment_webhook)
 
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", 8080)
     await site.start()
-    logging.info("✅ Webhook для YooKassa запущен на https://tg-bot-ai-teyr.onrender.com/payment/result")
 
-    # --- Задача напоминания ---
+    logging.info("✅ Webhook для Telegram запущен на /telegram")
+    logging.info("✅ Webhook для YooKassa запущен на /payment/result")
+
+    # Напоминание о челлендже
     asyncio.create_task(send_daily_reminder(bot))
 
-    # --- Запуск бота ---
-    # await bot.delete_webhook(drop_pending_updates=True)
-    # await dp.start_polling(bot)
-
-    # Вместо polling — запустим aiohttp web-сервер
-    await asyncio.Event().wait()  # держит процесс живым
-
+    # Держим приложение живым
+    await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
