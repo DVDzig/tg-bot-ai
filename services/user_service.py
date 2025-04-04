@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN, USER_FIELDS
 from .google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow
 from aiogram import Bot
-from services.missions import update_activity_rewards
+from services.missions import update_activity_rewards, determine_status
 import asyncio
 bot = Bot(token=TOKEN)
 
@@ -102,34 +102,6 @@ def register_user(user_id, username, first_name, last_name, language_code, is_pr
 def can_ask_question(user_id: int) -> bool:
     user = UserRow(user_id)
     return user.get("free_questions", 0) > 0 or user.get("paid_questions", 0) > 0
-
-def determine_status(xp: int):
-    thresholds = [
-        ("новичок", 0),
-        ("опытный", 11),
-        ("профи", 51),
-        ("эксперт", 151),
-        ("наставник", 301),
-        ("легенда", 1000),
-        ("создатель", 5000),
-    ]
-
-    current = thresholds[0][0]
-    next_status = thresholds[1][0]
-    xp_to_next = thresholds[1][1] - xp
-
-    for i in range(len(thresholds)):
-        if xp >= thresholds[i][1]:
-            current = thresholds[i][0]
-            if i + 1 < len(thresholds):
-                next_status = thresholds[i + 1][0]
-                xp_to_next = thresholds[i + 1][1] - xp
-            else:
-                next_status = "максимальный"
-                xp_to_next = 0
-
-    return current, next_status, max(0, xp_to_next)
-
 
 def decrement_question_balance(user_id: int) -> bool:
     user = UserRow(user_id)

@@ -76,6 +76,33 @@ def update_activity_rewards(user_id):
     update_sheet_row(USER_SHEET_ID, "Users", i, row)
     return True
 
+def determine_status(xp: int):
+    thresholds = [
+        ("новичок", 0),
+        ("опытный", 11),
+        ("профи", 51),
+        ("эксперт", 151),
+        ("наставник", 301),
+        ("легенда", 1000),
+        ("создатель", 5000),
+    ]
+
+    current = thresholds[0][0]
+    next_status = thresholds[1][0]
+    xp_to_next = thresholds[1][1] - xp
+
+    for i in range(len(thresholds)):
+        if xp >= thresholds[i][1]:
+            current = thresholds[i][0]
+            if i + 1 < len(thresholds):
+                next_status = thresholds[i + 1][0]
+                xp_to_next = thresholds[i + 1][1] - xp
+            else:
+                next_status = "максимальный"
+                xp_to_next = 0
+
+    return current, next_status, max(0, xp_to_next)
+
 # ✅ 1. 3 вопроса за день
 def daily_3_questions(user_id):
     qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log")
