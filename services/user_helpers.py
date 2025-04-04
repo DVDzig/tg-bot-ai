@@ -10,7 +10,7 @@ def get_user_row(user_id: int):
             return i, row
         # ⚠️ Фикс: продолжим проверку, если строка некорректна
 
-    values = get_sheet_data(USER_SHEET_ID, "Users")
+    values = get_sheet_data(USER_SHEET_ID, "Users!A2:Z")
     for i, row in enumerate(values, start=2):
         row = pad_user_row(row)
         if str(row[0]).strip() == str(user_id):
