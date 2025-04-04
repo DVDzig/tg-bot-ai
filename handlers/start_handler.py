@@ -1,7 +1,7 @@
 from aiogram import Router, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from utils.keyboard import get_main_keyboard, get_question_packages_keyboard, get_subscription_packages_keyboard
+from utils.keyboard import get_main_keyboard, get_question_packages_keyboard, get_subscription_packages_keyboard, get_shop_keyboard
 from services.user_service import (
     apply_xp_penalty_if_needed,
     get_user_activity_stats,
@@ -275,6 +275,13 @@ async def handle_subscription_shop(message: types.Message):
         "Выбирай нужный тариф ниже 👇",
         parse_mode="HTML",
         reply_markup=get_subscription_packages_keyboard()
+    )
+    
+@router.message(lambda msg: msg.text == "⬅️ Назад")
+async def back_to_shop_menu(message: types.Message):
+    await message.answer(
+        "🔙 Возврат в магазин.\n\nВыбери, что тебя интересует 👇",
+        reply_markup=get_shop_keyboard()
     )
 
 # === Инфо о статусах и подписках ===
