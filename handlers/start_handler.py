@@ -6,7 +6,7 @@ from services.user_service import (
     apply_xp_penalty_if_needed,
     get_user_activity_stats,
     determine_status,
-    get_user_profile, 
+    get_user_profile_from_row, 
     get_or_create_user
 )
 from services.google_sheets_service import get_leaderboard, get_sheet_data
@@ -65,7 +65,7 @@ async def go_to_start_screen(message: types.Message):
 @router.message(lambda message: message.text == "👤 Мой профиль")
 async def profile_handler(message: types.Message):
     user_id = message.from_user.id
-    profile = get_user_profile(user_id)
+    profile = get_user_profile_from_row(user_id)
     stats = get_user_activity_stats(user_id)
     current_xp = profile['xp']
     current_status, next_status, xp_to_next = determine_status(current_xp)
@@ -144,7 +144,7 @@ async def leaderboard_handler(message: types.Message):
         return
 
     user_id = str(message.from_user.id)
-    profile = get_user_profile(int(user_id))
+    profile = get_user_profile_from_row(int(user_id))
     current_xp = profile["xp"]
     current_status, next_status, xp_target = determine_status(current_xp)
 
@@ -184,7 +184,7 @@ async def leaderboard_handler(message: types.Message):
 @router.message(lambda msg: msg.text == "🎯 Миссии")
 async def show_missions(message: types.Message):
     user_id = message.from_user.id
-    profile = get_user_profile(user_id)
+    profile = get_user_profile_from_row(user_id)
     today = datetime.now().strftime("%d.%m.%Y")
 
     lines = ["🎯 <b>Твои миссии на сегодня:</b>\n"]
@@ -331,7 +331,7 @@ async def show_status_info(message: types.Message):
 @router.message(lambda msg: msg.text == "🎯 Миссии")
 async def show_missions(message: types.Message):
     user_id = message.from_user.id
-    profile = get_user_profile(user_id)
+    profile = get_user_profile_from_row(user_id)
     today_str = datetime.now().strftime("%d.%m.%Y")
 
     lines = ["🎯 <b>Твои миссии на сегодня:</b>\n"]
