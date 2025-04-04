@@ -2,7 +2,7 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from datetime import datetime
 from config import USER_SHEET_ID, PROGRAM_SHEETS, PROGRAM_SHEETS_LIST, USER_SHEET_NAME, USER_FIELDS
-from functools import lru_cache
+
 
 # Подключение к Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -58,11 +58,10 @@ def update_sheet_row(sheet_id, sheet_name, row_index, row_data):
         body=body
     ).execute()
 
-@lru_cache(maxsize=512)
 def get_keywords_for_discipline(module, discipline):
     all_sheets = PROGRAM_SHEETS_LIST.values()
     for sheet in all_sheets:
-        values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet}!A2:C")
+        values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:C")
         for row in values:
             if len(row) >= 3 and row[0] == module and row[1] == discipline:
                 return row[2]
@@ -70,7 +69,7 @@ def get_keywords_for_discipline(module, discipline):
 
 
 def get_leaderboard(top_n=10):
-    values = get_sheet_data_cached(USER_SHEET_ID, "Users!A2:U")
+    values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
     users = []
 
     for row in values:
@@ -107,7 +106,7 @@ def get_modules(program):
     if not sheet_name:
         return []
 
-    values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet_name}!A2:A")
+    values = get_sheet_data(PROGRAM_SHEETS, f"{sheet_name}!A2:A")
     modules = {
         " ".join(row[0].replace("\n", " ").split()).strip()
         for row in values if row and row[0].strip()
@@ -119,7 +118,7 @@ def get_disciplines(module):
     disciplines = set()
 
     for sheet in PROGRAM_SHEETS_LIST.values():
-        values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet}!A2:B")
+        values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:B")
         for row in values:
             if len(row) >= 2:
                 row_module = " ".join(row[0].replace("\n", " ").split()).strip().lower()
@@ -170,10 +169,9 @@ def save_question_answer(user_id, program, module, discipline, question, answer)
     row = [str(user_id), timestamp, program, module, discipline, question, answer]
     write_to_sheet(PROGRAM_SHEETS, "QA_Log", row, mode="append")
 
-@lru_cache(maxsize=256)
 def find_similar_questions(discipline, keywords, limit=3):
     discipline = discipline.lower().strip()
-    values = get_sheet_data_cached(PROGRAM_SHEETS, "QA_Log!A2:G")
+    values = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
     seen_questions = set()
     similar_qas = []
 
@@ -201,7 +199,7 @@ def find_similar_questions(discipline, keywords, limit=3):
     return similar_qas
 
 def get_all_users():
-    values = get_sheet_data_cached(USER_SHEET_ID, "Users!A2:A")
+    values = get_sheet_data(USER_SHEET_ID, "Users!A2:A")
     return [{"user_id": row[0]} for row in values if row]
 
 # Атоматическая подгрузка разрешённых модулей/дисциплин
@@ -216,7 +214,7 @@ def get_all_valid_buttons():
         buttons.add(program)
 
         sheet = PROGRAM_SHEETS_LIST[program]
-        values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet}!A2:C")
+        values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:C")
         for row in values:
             if len(row) > 0:
                 buttons.add(f"📗 {row[0]}")  # модуль
@@ -238,15 +236,6 @@ def pad_user_row(row: list[str]) -> list[str]:
     elif len(row) > len(USER_FIELDS):
         row = row[:len(USER_FIELDS)]
     return row
-
-@lru_cache(maxsize=256)
-def get_sheet_data_cached(spreadsheet_id, range_):
-    print(f"[CACHE MISS] {spreadsheet_id} — {range_}")
-    result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheet_id,
-        range=range_
-    ).execute()
-    return result.get("values", [])
 
 # 🔡 Преобразование номера столбца в букву (A1 формат)
 def col_letter(n):
@@ -323,26 +312,13 @@ class UserRow:
         i, _ = get_user_row(user_id)
         if i is not None:
             update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, self.data())
-            set_user_cache(int(user_id), (i, self.data()))
 
 # === 👤 Вспомогательные функции для пользователей ===
 
-_user_cache = {}
-
 def get_user_row(user_id: int):
-    if user_id in _user_cache:
-        i, row = _user_cache[user_id]
-        if i is not None and row and str(row[0]) == str(user_id):
-            return i, row
-        # ⚠️ Фикс: продолжим проверку, если строка некорректна
-
     values = get_sheet_data(USER_SHEET_ID, USER_SHEET_NAME)
     for i, row in enumerate(values, start=2):
         row = pad_user_row(row)
         if str(row[0]).strip() == str(user_id):
-            _user_cache[user_id] = (i, row)
             return i, row
     return None, None
-
-def set_user_cache(user_id: int, value: tuple):
-    _user_cache[user_id] = value

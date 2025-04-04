@@ -6,7 +6,6 @@ from aiogram.filters import StateFilter
 
 import logging
 from datetime import datetime
-from functools import lru_cache
 
 from config import OPENAI_API_KEY
 
@@ -60,10 +59,6 @@ class ProgramStates(StatesGroup):
     choosing_module = State()
     choosing_discipline = State()
     asking_question = State()
-
-@lru_cache(maxsize=512)
-def cached_get_keywords(module, discipline):
-    return get_keywords_for_discipline(module, discipline)
 
 @router.message(lambda msg: msg.text == BACK_BUTTON)
 async def universal_back_handler(message: Message, state: FSMContext):
@@ -249,7 +244,7 @@ async def handle_user_question(message: Message, state: FSMContext):
     module = data.get("module")
     question = message.text
 
-    keywords = cached_get_keywords(module, discipline)
+    keywords = get_keywords_for_discipline(module, discipline)
     history = find_similar_questions(discipline, keywords or "")
 
     if not keywords or not any(kw.strip().lower() in question.lower() for kw in keywords.split(",") if kw.strip()):

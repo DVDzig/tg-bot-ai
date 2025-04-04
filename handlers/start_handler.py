@@ -15,14 +15,12 @@ from services.yookassa_service import create_payment
 from config import USER_SHEET_ID
 from services.missions import get_all_missions
 from datetime import datetime
-from functools import lru_cache
 from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from typing import Callable, Dict, Any, Awaitable
 
 
 router = Router()
 
-@lru_cache()
 def get_welcome_text():
     return (
         "Привет 👋\n\n"
@@ -35,7 +33,6 @@ def get_welcome_text():
         "Готов начать? Выбирай действие ⤵️"
     )
 
-@lru_cache()
 def get_main_screen_text():
     return (
         "📚 Главное меню готово!\n\n"
@@ -200,7 +197,6 @@ async def show_missions(message: types.Message):
     await message.answer("\n".join(lines), parse_mode="HTML")
 
 # === Помощь ===
-@lru_cache()
 def get_help_text():
     return (
         "ℹ️ <b>О боте</b>\n"

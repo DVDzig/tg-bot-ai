@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN, USER_FIELDS
-from services.google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow, get_user_row, set_user_cache
+from services.google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow, get_user_row
 from aiogram import Bot
 from services.missions import update_activity_rewards, determine_status
 import asyncio
@@ -55,7 +55,6 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         if i is not None:
             update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
 
-        set_user_cache(user_id, (i, user.data()))
         return user.data()
 
     # Повторно проверим через get_user_row — даже если кеш был пуст
@@ -66,13 +65,11 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
         if j is not None:
             update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, j, user.data())
-        set_user_cache(user_id, (j, user.data()))
         return user.data()
 
     # 👉 Если действительно нет пользователя — регистрируем нового
     print(f"[INFO] Регистрируем нового пользователя {user_id}")
     new_user = register_user(user_id, username, first_name, last_name, language_code, is_premium)
-    set_user_cache(user_id, (None, new_user))
     return new_user
 
 def register_user(user_id, username, first_name, last_name, language_code, is_premium):
@@ -137,8 +134,6 @@ def update_user_xp(user_id, xp_gain=1):
     if i is not None:
         update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
 
-    set_user_cache(user_id, (i, user.data()))
-
     update_activity_rewards(user_id)  # 🧩 вызываем после обновления XP
 
     return user.get_int("xp"), new_status
@@ -185,8 +180,6 @@ def apply_xp_penalty_if_needed(user_id):
 
     if i is not None:
         update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
-
-    set_user_cache(user_id, (i, row))
 
 def get_user_activity_stats(user_id):
     try:
@@ -269,7 +262,6 @@ def add_paid_questions(user_id: int, count: int) -> bool:
     user.set("paid_questions", current + count)
     if i is not None:
         update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
-        set_user_cache(user_id, (i, user.data()))
         return True
     return False
 
@@ -282,7 +274,6 @@ def update_user_data(user_id: int, updates: dict) -> bool:
         user.set(key, value)
     if i is not None:
         update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
-        set_user_cache(user_id, (i, user.data()))
         return True
     return False
 

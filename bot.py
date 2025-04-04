@@ -172,7 +172,6 @@ async def schedule_leaderboard_update():
         now = datetime.now(pytz.timezone("Europe/Moscow"))
         if now.time().hour == 7 and now.time().minute == 0:
             print("[Scheduler] Обновляю лидерборд...")
-            update_leaderboard_cache()
             await asyncio.sleep(60)
         await asyncio.sleep(30)
 
@@ -186,8 +185,6 @@ async def main():
     dp.include_router(program_handler.router)
     dp.include_router(shop_handler.router)
     dp.message.middleware(EnsureUserMiddleware())
-
-    update_leaderboard_cache()
 
     # Устанавливаем webhook Telegram
     await bot.set_webhook(
