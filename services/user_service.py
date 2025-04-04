@@ -100,8 +100,7 @@ def can_ask_question(user_id: int) -> bool:
     if not row:
         return False
     user = UserRow(row)
-
-    return user.get("free_questions", 0) > 0 or user.get("paid_questions", 0) > 0
+    return user.get_int("free_questions") > 0 or user.get_int("paid_questions") > 0
 
 def decrement_question_balance(user_id: int) -> bool:
     user = UserRow(user_id)
