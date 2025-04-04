@@ -3,8 +3,7 @@ from google.oauth2 import service_account
 from datetime import datetime, timedelta
 from config import USER_SHEET_ID, PROGRAM_SHEETS, PROGRAM_SHEETS_LIST, USER_SHEET_NAME, USER_FIELDS
 from functools import lru_cache
-from services.google_sheets_service import update_sheet_row, get_user_row, set_user_cache
-
+from services.user_helpers import get_user_row, set_user_cache
 
 # Подключение к Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
