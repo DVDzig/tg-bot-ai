@@ -8,11 +8,13 @@ bot = Bot(token=TOKEN)
 
 # Получение пользователя или регистрация
 def get_or_create_user(user_id, username="Unknown", first_name="", last_name="", language_code="", is_premium=False):
-    i, row = get_user_row(user_id)
-    if row:
+    i, row = get_user_row(user_id)  # Получаем информацию о пользователе
+    if row:  # Если пользователь уже есть
+        print(f"[INFO] Пользователь {user_id} уже существует.")
         user = UserRow(row)
         user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
 
+        # Проверка статуса подписки и напоминание о сроке действия подписки
         premium_status = user.get("premium_status").strip().lower()
         premium_until = user.get("premium_until").strip()
 
@@ -52,25 +54,15 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
             except Exception as e:
                 print(f"[ERROR] Ошибка проверки подписки: {e}")
 
+        # Обновляем существующего пользователя
         if i is not None:
-            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())  # Обновляем существующую строку
 
         return user.data()
 
-    # Повторно проверим через get_user_row — даже если кеш был пуст
-    j, duplicate_row = get_user_row(user_id)
-    if duplicate_row:
-        print(f"[WARN] Повторная регистрация пользователя {user_id} заблокирована")
-        user = UserRow(duplicate_row)
-        user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
-        if j is not None:
-            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, j, user.data())
-        return user.data()
-
-    # 👉 Если действительно нет пользователя — регистрируем нового
+    # Если нет, регистрируем нового пользователя
     print(f"[INFO] Регистрируем нового пользователя {user_id}")
-    new_user = register_user(user_id, username, first_name, last_name, language_code, is_premium)
-    return new_user
+    return register_user(user_id, username, first_name, last_name, language_code, is_premium)
 
 def register_user(user_id, username, first_name, last_name, language_code, is_premium):
     now = datetime.now()
@@ -91,58 +83,7 @@ def register_user(user_id, username, first_name, last_name, language_code, is_pr
     append_to_sheet(USER_SHEET_ID, USER_SHEET_NAME, row_data)
     return row_data
 
-def can_ask_question(user_id: int) -> bool:
-    _, row = get_user_row(user_id)
-    if not row:
-        return False
-    user = UserRow(row)
-    return user.get_int("free_questions") > 0 or user.get_int("paid_questions") > 0
-
-def decrement_question_balance(user_id: int) -> bool:
-    i, row = get_user_row(user_id)
-    if not row:
-        return False
-    user = UserRow(row)
-
-    free = user.get_int("free_questions")
-    paid = user.get_int("paid_questions")
-
-    if free > 0:
-        user.set("free_questions", free - 1)
-    elif paid > 0:
-        user.set("paid_questions", paid - 1)
-    else:
-        return False
-
-    user.save(user_id)
-    return True
-
-def update_user_xp(user_id, xp_gain=1):
-    i, row = get_user_row(user_id)
-    if not row:
-        return 0, "новичок"
-
-    user = UserRow(row)
-
-    if user.get("premium_status").lower() in ("light", "pro"):
-        return user.get_int("xp"), user.get("status")
-
-    user.add_to_int("xp", xp_gain)
-    new_status, _, _ = determine_status(user.get_int("xp"))
-    user.set("status", new_status)
-
-    if i is not None:
-        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
-
-    update_activity_rewards(user_id)  # 🧩 вызываем после обновления XP
-
-    return user.get_int("xp"), new_status
-
-def get_user_profile(user_id):
-    _, row = get_user_row(user_id)
-    if not row:
-        return {}
-
+def get_user_profile_from_row(row: list[str]) -> dict:
     profile = {}
     for i, field in enumerate(USER_FIELDS):
         value = row[i] if i < len(row) else ""
@@ -331,3 +272,39 @@ def check_thematic_challenge(user_id: int) -> bool:
         return True
 
     return False
+
+def can_ask_question_row(row: list[str]) -> bool:
+    user = UserRow(row)
+    return (
+        user.get("premium_status") in ("light", "pro")
+        or user.get_int("free_questions") > 0
+        or user.get_int("paid_questions") > 0
+    )
+
+def decrement_question_balance_row(i: int, row: list[str]) -> bool:
+    user = UserRow(row)
+    if user.get("premium_status") in ("light", "pro"):
+        return True
+
+    if user.get_int("free_questions") > 0:
+        user.set("free_questions", user.get_int("free_questions") - 1)
+    elif user.get_int("paid_questions") > 0:
+        user.set("paid_questions", user.get_int("paid_questions") - 1)
+    else:
+        return False
+
+    update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+    return True
+
+def update_user_xp_row(i: int, row: list[str]):
+    user = UserRow(row)
+    if user.get("premium_status").lower() in ("light", "pro"):
+        return user.get_int("xp"), user.get("status")
+
+    xp = user.get_int("xp") + 1
+    user.set("xp", xp)
+    status, _, _ = determine_status(xp)
+    user.set("status", status)
+
+    update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+    return xp, status

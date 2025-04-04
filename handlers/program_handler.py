@@ -34,16 +34,17 @@ from services.google_sheets_service import (
 from services.youtube_search import search_youtube_videos
 from services.qa_keywords_updater import update_keywords_from_qa
 from services.user_service import (
-    get_user_profile,
-    get_or_create_user,
-    can_ask_question,
-    update_user_xp,
     determine_status,
-    decrement_question_balance,
     check_and_apply_daily_challenge,
     update_user_data,
-    check_thematic_challenge
+    check_thematic_challenge,
+    get_user_row,
+    can_ask_question_row,
+    decrement_question_balance_row,
+    update_user_xp_row,
+    get_user_profile_from_row,
 )
+
 
 from services.missions import get_all_missions
 
@@ -216,11 +217,15 @@ async def handle_user_question(message: Message, state: FSMContext):
     if message.text in ["📗 Модуль", "📕 Дисциплина", "⬅️ Назад", "🔁 Начать сначала"]:
         return
 
-    from handlers.start_handler import go_to_start_screen
-
     user_id = message.from_user.id
-    if not can_ask_question(user_id):
-        profile = get_user_profile(user_id)
+    i, row = get_user_row(user_id)
+    if not row:
+        await message.answer("❌ Ошибка доступа к профилю. Попробуй позже.")
+        await state.clear()
+        return
+
+    if not can_ask_question_row(row):
+        profile = get_user_profile_from_row(row)
         premium = profile.get("premium_status", "none")
 
         text = "❌ У тебя закончились вопросы!\n\n"
@@ -255,7 +260,7 @@ async def handle_user_question(message: Message, state: FSMContext):
         )
         return
 
-    if not decrement_question_balance(user_id):
+    if not decrement_question_balance_row(i, row):
         await state.clear()
         await message.answer("❌ У тебя закончились вопросы!\n")
         await go_to_start_screen(message)
@@ -265,8 +270,8 @@ async def handle_user_question(message: Message, state: FSMContext):
     save_question_answer(user_id, program, module, discipline, question, ai_response)
 
     # XP и профиль
-    new_xp, new_status = update_user_xp(user_id)
-    profile = get_user_profile(user_id)
+    new_xp, new_status = update_user_xp_row(i, row)
+    profile = get_user_profile_from_row(row)
     premium = profile.get("premium_status", "none")
     free_q = profile.get("free_questions", 0)
     last_prompt = profile.get("last_upgrade_prompt", "")

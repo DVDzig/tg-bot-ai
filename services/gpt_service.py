@@ -45,7 +45,7 @@ def generate_ai_response(prompt, keywords, similar_qas=None):
     try:
         full_prompt = build_full_prompt(prompt, keywords, similar_qas)
 
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4-turbo",
             messages=[
                 {
