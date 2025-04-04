@@ -77,13 +77,17 @@ def register_user(user_id, username, first_name, last_name, language_code, is_pr
     ]
 
     # Заполним до длины USER_FIELDS
-    if len(row_data) < len(USER_FIELDS):
-        row_data += [""] * (len(USER_FIELDS) - len(row_data))
+    if isinstance(row_data, list) and isinstance(USER_FIELDS, list):
+        if len(row_data) < len(USER_FIELDS):
+            row_data += [""] * (len(USER_FIELDS) - len(row_data))
 
     append_to_sheet(USER_SHEET_ID, USER_SHEET_NAME, row_data)
     return row_data
 
 def get_user_profile_from_row(row: list[str]) -> dict:
+    if not isinstance(row, list):
+        raise ValueError(f"Ожидался список, получено: {type(row).__name__}")
+    
     profile = {}
     for i, field in enumerate(USER_FIELDS):
         value = row[i] if i < len(row) else ""
@@ -95,7 +99,7 @@ def get_user_profile_from_row(row: list[str]) -> dict:
 
 def apply_xp_penalty_if_needed(user_id):
     i, row = get_user_row(user_id)
-    if not row:
+    if not row or not isinstance(row, list):
         return
 
     last_index = USER_FIELDS.index("last_interaction")
@@ -139,7 +143,7 @@ def get_user_activity_stats(user_id):
     total = today_count = week_count = 0
 
     for row in qa_log:
-        if len(row) < 2 or str(row[0]) != str(user_id):
+        if isinstance(row, list) and (len(row) < 2 or str(row[0]) != str(user_id)):
             continue
         try:
             ts = datetime.strptime(row[1], "%d %B %Y, %H:%M")
@@ -165,7 +169,7 @@ def check_and_apply_daily_challenge(user_id: int) -> bool:
     today_str = today.strftime("%d.%m.%Y")
 
     i, row = get_user_row(user_id)
-    if not row:
+    if not row or not isinstance(row, list):  # Проверка типа для row
         return False
     user = UserRow(row)
 
@@ -192,11 +196,9 @@ def check_and_apply_daily_challenge(user_id: int) -> bool:
 
     return False
 
-    return False
-
 def add_paid_questions(user_id: int, count: int) -> bool:
     i, row = get_user_row(user_id)
-    if not row:
+    if not row or not isinstance(row, list):  # Проверка типа для row
         return False
     user = UserRow(row)
     current = user.get_int("paid_questions")
@@ -208,7 +210,7 @@ def add_paid_questions(user_id: int, count: int) -> bool:
 
 def update_user_data(user_id: int, updates: dict) -> bool:
     i, row = get_user_row(user_id)
-    if not row:
+    if not row or not isinstance(row, list):  # Проверка типа для row
         return False
     user = UserRow(row)
     for key, value in updates.items():
@@ -231,7 +233,7 @@ def refresh_monthly_free_questions():
         row = pad_user_row(row)
         user_id = int(row[0])
         i, row = get_user_row(user_id)
-        if not row:
+        if not row or not isinstance(row, list):
             continue
         user = UserRow(row)
 
@@ -240,13 +242,13 @@ def refresh_monthly_free_questions():
         user.set("free_questions", user.get_int("free_questions") + bonus)
         user.save(user_id)
 
-def check_thematic_challenge(user_id: int) -> bool: 
+def check_thematic_challenge(user_id: int) -> bool:
     qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
     today = datetime.now().date()
     today_str = today.strftime("%d.%m.%Y")
 
     i, row = get_user_row(user_id)
-    if not row:
+    if not row or not isinstance(row, list):  # Проверка типа для row
         return False
     user = UserRow(row)
 
@@ -263,7 +265,7 @@ def check_thematic_challenge(user_id: int) -> bool:
             except:
                 continue
 
-    if len(disciplines) >= 3:
+    if isinstance(disciplines, set) and len(disciplines) >= 3:  # Проверка типа для disciplines
         xp = user.get_int("xp") + 5
         user.set("xp", xp)
         user.set("status", determine_status(xp)[0])
@@ -274,6 +276,9 @@ def check_thematic_challenge(user_id: int) -> bool:
     return False
 
 def can_ask_question_row(row: list[str]) -> bool:
+    if not isinstance(row, list):  # Проверка типа row
+        raise ValueError("Ожидался список данных о пользователе.")
+    
     user = UserRow(row)
     return (
         user.get("premium_status") in ("light", "pro")
@@ -282,14 +287,21 @@ def can_ask_question_row(row: list[str]) -> bool:
     )
 
 def decrement_question_balance_row(i: int, row: list[str]) -> bool:
+    if not isinstance(row, list):  # Проверка типа row
+        raise ValueError("Ожидался список данных о пользователе.")
+    
     user = UserRow(row)
+    
     if user.get("premium_status") in ("light", "pro"):
         return True
 
-    if user.get_int("free_questions") > 0:
-        user.set("free_questions", user.get_int("free_questions") - 1)
-    elif user.get_int("paid_questions") > 0:
-        user.set("paid_questions", user.get_int("paid_questions") - 1)
+    free = user.get_int("free_questions")
+    paid = user.get_int("paid_questions")
+
+    if free > 0:
+        user.set("free_questions", free - 1)
+    elif paid > 0:
+        user.set("paid_questions", paid - 1)
     else:
         return False
 
@@ -297,6 +309,9 @@ def decrement_question_balance_row(i: int, row: list[str]) -> bool:
     return True
 
 def update_user_xp_row(i: int, row: list[str]):
+    if not isinstance(row, list):  # Проверка типа row
+        raise ValueError("Ожидался список данных о пользователе.")
+    
     user = UserRow(row)
     if user.get("premium_status").lower() in ("light", "pro"):
         return user.get_int("xp"), user.get("status")

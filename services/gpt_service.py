@@ -29,7 +29,7 @@ def build_full_prompt(prompt, keywords, similar_qas):
 
     history_block = "\n\n".join(trimmed_qas)
     user_prompt = prompt.strip()
-    if len(user_prompt) > MAX_PROMPT_LENGTH:
+    if isinstance(user_prompt, str) and len(user_prompt) > MAX_PROMPT_LENGTH:
         user_prompt = user_prompt[:MAX_PROMPT_LENGTH] + "..."
 
     full_prompt = INSTRUCTION_TEXT

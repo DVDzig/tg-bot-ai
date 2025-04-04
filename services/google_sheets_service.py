@@ -63,7 +63,7 @@ def get_keywords_for_discipline(module, discipline):
     for sheet in all_sheets:
         values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:C")
         for row in values:
-            if len(row) >= 3 and row[0] == module and row[1] == discipline:
+            if isinstance(row, list) and len(row) >= 3 and row[0] == module and row[1] == discipline:
                 return row[2]
     return None
 
@@ -76,9 +76,8 @@ def get_leaderboard(top_n=10):
         if not row or not str(row[0]).strip().isdigit():
             continue  # Пропустить пустые или некорректные строки
 
-        if len(row) < len(USER_FIELDS):
+        if isinstance(row, list) and len(row) < len(USER_FIELDS):
             row += [""] * (len(USER_FIELDS) - len(row))
-
 
         try:
             xp_raw = row[USER_FIELDS.index("xp")]
@@ -120,7 +119,7 @@ def get_disciplines(module):
     for sheet in PROGRAM_SHEETS_LIST.values():
         values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:B")
         for row in values:
-            if len(row) >= 2:
+            if isinstance(row, list) and len(row) >= 2:
                 row_module = " ".join(row[0].replace("\n", " ").split()).strip().lower()
                 if row_module == module:
                     discipline = " ".join(row[1].replace("\n", " ").split()).strip()
@@ -176,7 +175,7 @@ def find_similar_questions(discipline, keywords, limit=3):
     similar_qas = []
 
     for row in values:
-        if len(row) < 7:
+        if isinstance(row, list) and len(row) < 7:
             continue
 
         row_discipline = row[4].lower().strip()
@@ -231,8 +230,9 @@ def log_payment_event(user_id: str, amount: str, questions: str, status: str, ev
 def pad_user_row(row: list[str]) -> list[str]:
     if not isinstance(row, list):
         raise TypeError(f"Ожидался список строк, получено: {type(row).__name__}")
-    if len(row) < len(USER_FIELDS):
+    if isinstance(row, list) and len(row) < len(USER_FIELDS):
         row += [""] * (len(USER_FIELDS) - len(row))
+
     elif len(row) > len(USER_FIELDS):
         row = row[:len(USER_FIELDS)]
     return row
@@ -319,6 +319,6 @@ def get_user_row(user_id: int):
     values = get_sheet_data(USER_SHEET_ID, USER_SHEET_NAME)
     for i, row in enumerate(values, start=2):
         row = pad_user_row(row)
-        if str(row[0]).strip() == str(user_id):
+        if isinstance(row, list) and str(row[0]).strip() == str(user_id):
             return i, row
     return None, None

@@ -95,7 +95,7 @@ def get_modules_keyboard(program: str, include_back=True, is_admin=False):
 
     for module in modules:
         label = module.strip()
-        if len(label) > 35:
+        if isinstance(label, str) and len(label) > 35:
             parts = label.split(" ")
             half = len(parts) // 2
             label = " ".join(parts[:half]) + "\n" + " ".join(parts[half:])
@@ -114,7 +114,7 @@ def get_disciplines_keyboard(module: str, include_back=True):
 
     for discipline in disciplines:
         label = discipline.strip()
-        if len(label) > 35:
+        if isinstance(label, str) and len(label) > 35:
             parts = label.split(" ")
             half = len(parts) // 2
             label = " ".join(parts[:half]) + "\n" + " ".join(parts[half:])

@@ -11,7 +11,7 @@ def update_keywords_from_qa():
     grouped = defaultdict(list)
 
     for row in all_qa:
-        if len(row) >= 7:
+        if isinstance(row, list) and len(row) >= 7:
             module = row[3].strip()
             discipline = row[4].strip()
             question = row[5].strip()
@@ -22,9 +22,15 @@ def update_keywords_from_qa():
     for (module, discipline), qa_pairs in grouped.items():
         print(f"\n📚 Обновляем: {module} → {discipline} ({len(qa_pairs)} QA)")
         text = ""
-        for q, a in qa_pairs[-10:]:  # используем последние 10
-            text += f"Q: {q}\nA: {a}\n"
-
+    
+        # Используем последние 10 элементов, проверяя, что qa_pairs — это список
+        for q, a in qa_pairs[-10:]:
+            # Проверка типа данных перед использованием len()
+            if isinstance(q, str) and isinstance(a, str):
+                text += f"Q: {q}\nA: {a}\n"
+            else:
+                print(f"⚠️ Пропускаем некорректную пару вопрос-ответ: Q: {q}, A: {a}")
+    
         prompt = (
             f"Ты — методист. Проанализируй следующие вопросы и ответы по дисциплине «{discipline}». "
             f"На их основе выдели 200 ключевых слов, которые отражают суть темы. "
@@ -35,8 +41,8 @@ def update_keywords_from_qa():
             keywords = generate_ai_response(prompt)
             if keywords:
                 existing = get_keywords_for_discipline(module, discipline) or ""
-                existing_list = [kw.strip() for kw in existing.split(",") if kw.strip()]
-                new_list = [kw.strip() for kw in keywords.split(",") if kw.strip()]
+                existing_list = [kw.strip() for kw in existing.split(",") if isinstance(kw, str) and kw.strip()]
+                new_list = [kw.strip() for kw in keywords.split(",") if isinstance(kw, str) and kw.strip()]
                 merged_keywords = sorted(set(existing_list + new_list))
                 final_keywords = ", ".join(merged_keywords)
 
@@ -46,3 +52,4 @@ def update_keywords_from_qa():
                 print("⚠️ GPT не вернул ключевые слова")
         except Exception as e:
             print(f"❌ Ошибка при обновлении: {e}")
+
