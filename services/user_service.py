@@ -1,83 +1,65 @@
 from datetime import datetime, timedelta
 from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN, USER_FIELDS
-from .google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow
+from services.google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow
+from services.user_helpers import get_user_row, set_user_cache
 from aiogram import Bot
 from services.missions import update_activity_rewards, determine_status
 import asyncio
 bot = Bot(token=TOKEN)
 
-_user_cache = {}
-
-def get_user_row(user_id: int):
-    if user_id in _user_cache:
-        return _user_cache[user_id]
-
-    values = get_sheet_data(USER_SHEET_ID, "Users")
-    for i, row in enumerate(values, start=2):
-        row = pad_user_row(row)
-        if str(row[0]) == str(user_id):
-            _user_cache[user_id] = (i, row)
-            return i, row
-    return None, None
-
 # Получение пользователя или регистрация
 def get_or_create_user(user_id, username="Unknown", first_name="", last_name="", language_code="", is_premium=False):
-    if user_id in _user_cache:
-        return _user_cache[user_id][1]
+    i, row = get_user_row(user_id)
+    if row:
+        user = UserRow(row)
+        user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
 
-    values = get_sheet_data(USER_SHEET_ID, f"{USER_SHEET_NAME}!A2:U")
-    for idx, row in enumerate(values, start=2):
-        row = pad_user_row(row)
-        if str(row[0]).strip() == str(user_id):
-            user = UserRow(row)
-            user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
+        premium_status = user.get("premium_status").strip().lower()
+        premium_until = user.get("premium_until").strip()
 
-            premium_status = user.get("premium_status").strip().lower()
-            premium_until = user.get("premium_until").strip()
+        if premium_status in ("light", "pro") and premium_until:
+            try:
+                end_date = datetime.strptime(premium_until, "%Y-%m-%d").date()
+                today = datetime.now().date()
+                days_left = (end_date - today).days
 
-            if premium_status in ("light", "pro") and premium_until:
-                try:
-                    end_date = datetime.strptime(premium_until, "%Y-%m-%d").date()
-                    today = datetime.now().date()
-                    days_left = (end_date - today).days
-
-                    if end_date < today:
-                        user.set("premium_status", "none")
-                        user.set("premium_until", "")
-                        asyncio.create_task(
-                            bot.send_message(
-                                chat_id=user_id,
-                                text=(
-                                    "⛔️ <b>Срок действия твоего статуса истёк</b>\n"
-                                    "Ты снова на базовом доступе.\n\n"
-                                    "💡 Хочешь продолжить без ограничений?\n"
-                                    "Попробуй <b>Лайт</b> или <b>Про</b> доступ 👉 «Купить доступ»"
-                                ),
-                                parse_mode="HTML"
-                            )
+                if end_date < today:
+                    user.set("premium_status", "none")
+                    user.set("premium_until", "")
+                    asyncio.create_task(
+                        bot.send_message(
+                            chat_id=user_id,
+                            text=(
+                                "⛔️ <b>Срок действия твоего статуса истёк</b>\n"
+                                "Ты снова на базовом доступе.\n\n"
+                                "💡 Хочешь продолжить без ограничений?\n"
+                                "Попробуй <b>Лайт</b> или <b>Про</b> доступ 👉 «Купить доступ»"
+                            ),
+                            parse_mode="HTML"
                         )
-                    elif days_left == 1:
-                        asyncio.create_task(
-                            bot.send_message(
-                                chat_id=user_id,
-                                text=(
-                                    f"⏳ <b>Внимание!</b>\n"
-                                    f"Твой статус <b>{premium_status.capitalize()}</b> истекает завтра ({premium_until})!\n\n"
-                                    f"Если хочешь продлить — открой «Купить доступ» и выбери нужный вариант 🛒"
-                                ),
-                                parse_mode="HTML"
-                            )
+                    )
+                elif days_left == 1:
+                    asyncio.create_task(
+                        bot.send_message(
+                            chat_id=user_id,
+                            text=(
+                                f"⏳ <b>Внимание!</b>\n"
+                                f"Твой статус <b>{premium_status.capitalize()}</b> истекает завтра ({premium_until})!\n\n"
+                                f"Если хочешь продлить — открой «Купить доступ» и выбери нужный вариант 🛒"
+                            ),
+                            parse_mode="HTML"
                         )
-                except Exception as e:
-                    print(f"[ERROR] Ошибка проверки подписки: {e}")
+                    )
+            except Exception as e:
+                print(f"[ERROR] Ошибка проверки подписки: {e}")
 
-            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, idx, user.data())
-            _user_cache[user_id] = (idx, user.data())
-            return user.data()
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+        set_user_cache(user_id, (i, user.data()))
+        return user.data()
 
     print(f"[INFO] Регистрируем нового пользователя {user_id}")
     new_user = register_user(user_id, username, first_name, last_name, language_code, is_premium)
-    _user_cache[user_id] = (None, new_user)
+    set_user_cache(user_id, (None, new_user))
     return new_user
 
 def register_user(user_id, username, first_name, last_name, language_code, is_premium):
@@ -133,7 +115,7 @@ def update_user_xp(user_id, xp_gain=1):
     user.set("status", new_status)
 
     update_sheet_row(USER_SHEET_ID, "Users", i, user.data())
-    _user_cache[user_id] = (i, user.data())
+    set_user_cache[user_id] = (i, user.data())
 
     update_activity_rewards(user_id)  # 🧩 вызываем после обновления XP
 
@@ -180,7 +162,8 @@ def apply_xp_penalty_if_needed(user_id):
     row[status_index] = new_status
 
     update_sheet_row(USER_SHEET_ID, "Users", i, row)
-    _user_cache[user_id] = (i, row)
+    set_user_cache(user_id, (i, row))
+
 
 def get_user_activity_stats(user_id):
     qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
