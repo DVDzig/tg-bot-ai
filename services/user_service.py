@@ -58,7 +58,7 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
 
         set_user_cache(user_id, (i, user.data()))
         return user.data()
-    
+
     # Повторно проверим через get_user_row — даже если кеш был пуст
     j, duplicate_row = get_user_row(user_id)
     if duplicate_row:
@@ -85,7 +85,7 @@ def register_user(user_id, username, first_name, last_name, language_code, is_pr
         str(user_id), username, first_name, last_name, language_code, str(is_premium),
         formatted_now, formatted_now,  # first_interaction, last_interaction
         "0", "0", "новичок", "", "", "", "0", "0", "0", "0", today_str, "10", "",
-        "none", "", "", "", "", "", "", "", "", "", "", "", ""
+        "none", "", "", "", "", "", "", "", "", "", "", ""
     ]
 
     # Заполним до длины USER_FIELDS
@@ -103,9 +103,13 @@ def can_ask_question(user_id: int) -> bool:
     return user.get_int("free_questions") > 0 or user.get_int("paid_questions") > 0
 
 def decrement_question_balance(user_id: int) -> bool:
-    user = UserRow(user_id)
-    free = user.get("free_questions", 0)
-    paid = user.get("paid_questions", 0)
+    i, row = get_user_row(user_id)
+    if not row:
+        return False  # или аналогичная обработка
+    user = UserRow(row)
+
+    free = user.get_int("free_questions")
+    paid = user.get_int("paid_questions")
 
     if free > 0:
         user.set("free_questions", free - 1)
@@ -185,7 +189,6 @@ def apply_xp_penalty_if_needed(user_id):
 
     set_user_cache(user_id, (i, row))
 
-
 def get_user_activity_stats(user_id):
     try:
         qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
@@ -228,7 +231,11 @@ def check_and_apply_daily_challenge(user_id: int) -> bool:
     today = datetime.now().date()
     today_str = today.strftime("%d.%m.%Y")
 
-    user = UserRow(user_id)
+    i, row = get_user_row(user_id)
+    if not row:
+        return False  # или аналогичная обработка
+    user = UserRow(row)
+
     if user.get("last_daily_challenge") == today_str:
         return False
 
@@ -243,7 +250,7 @@ def check_and_apply_daily_challenge(user_id: int) -> bool:
                 continue
 
     if count >= 3:
-        xp = user.get("xp", 0) + 2
+        xp = user.get_int("xp") + 2
         user.set("xp", xp)
         user.set("status", determine_status(xp)[0])
         user.set("last_daily_challenge", today_str)
@@ -257,7 +264,7 @@ def add_paid_questions(user_id: int, count: int) -> bool:
     if not row:
         return False
     user = UserRow(row)
-    current = user.get("paid_questions", 0)
+    current = user.get_int("paid_questions")
     user.set("paid_questions", current + count)
     if i is not None:
         update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
@@ -290,10 +297,14 @@ def refresh_monthly_free_questions():
     for i, row in enumerate(values, start=2):
         row = pad_user_row(row)
         user_id = int(row[0])
-        user = UserRow(user_id)
+        i, row = get_user_row(user_id)
+        if not row:
+            return False  # или аналогичная обработка
+        user = UserRow(row)
+
         status = user.get("status", "новичок").strip().lower()
         bonus = bonus_by_status.get(status, 5)
-        user.set("free_questions", user.get("free_questions", 0) + bonus)
+        user.set("free_questions", user.get_int("free_questions") + bonus)
         user.save()
 
 def check_thematic_challenge(user_id: int) -> bool:
@@ -301,7 +312,11 @@ def check_thematic_challenge(user_id: int) -> bool:
     today = datetime.now().date()
     today_str = today.strftime("%d.%m.%Y")
 
-    user = UserRow(user_id)
+    i, row = get_user_row(user_id)
+    if not row:
+        return False  # или аналогичная обработка
+    user = UserRow(row)
+
     if user.get("last_thematic_challenge") == today_str:
         return False
 
@@ -316,7 +331,7 @@ def check_thematic_challenge(user_id: int) -> bool:
                 continue
 
     if len(disciplines) >= 3:
-        xp = user.get("xp", 0) + 5
+        xp = user.get_int("xp") + 5
         user.set("xp", xp)
         user.set("status", determine_status(xp)[0])
         user.set("last_thematic_challenge", today_str)
@@ -324,4 +339,3 @@ def check_thematic_challenge(user_id: int) -> bool:
         return True
 
     return False
-
