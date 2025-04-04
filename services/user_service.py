@@ -13,8 +13,8 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         user = UserRow(row)
         user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
 
-        premium_status = user.get_int("premium_status").strip().lower()
-        premium_until = user.get_int("premium_until").strip()
+        premium_status = user.get("premium_status").strip().lower()
+        premium_until = user.get("premium_until").strip()
 
         if premium_status in ("light", "pro") and premium_until:
             try:
@@ -124,8 +124,8 @@ def update_user_xp(user_id, xp_gain=1):
 
     user = UserRow(row)
 
-    if user.get_int("premium_status").lower() in ("light", "pro"):
-        return user.get_int("xp"), user.get_int("status")
+    if user.get("premium_status").lower() in ("light", "pro"):
+        return user.get_int("xp"), user.get("status")
 
     user.add_to_int("xp", xp_gain)
     new_status, _, _ = determine_status(user.get_int("xp"))
