@@ -12,10 +12,14 @@ def get_user_row(user_id: int):
 
     values = get_sheet_data(USER_SHEET_ID, "Users!A2:Z")
     for i, row in enumerate(values, start=2):
+        if not row or len(row) < 1 or not row[0].strip().isdigit():
+            continue  # пропускаем полностью пустые строки
+
         row = pad_user_row(row)
         if str(row[0]).strip() == str(user_id):
             set_user_cache(user_id, (i, row))
             return i, row
+
     return None, None
 
 def set_user_cache(user_id: int, value: tuple):

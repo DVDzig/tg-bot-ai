@@ -96,7 +96,11 @@ def register_user(user_id, username, first_name, last_name, language_code, is_pr
     return row_data
 
 def can_ask_question(user_id: int) -> bool:
-    user = UserRow(user_id)
+    _, row = get_user_row(user_id)
+    if not row:
+        return False
+    user = UserRow(row)
+
     return user.get("free_questions", 0) > 0 or user.get("paid_questions", 0) > 0
 
 def decrement_question_balance(user_id: int) -> bool:
