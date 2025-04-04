@@ -57,6 +57,13 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         set_user_cache(user_id, (i, user.data()))
         return user.data()
 
+    # Проверка вручную: нет ли дубликатов в таблице
+    all_users = get_sheet_data(USER_SHEET_ID, f"{USER_SHEET_NAME}!A2:A")
+    for existing in all_users:
+        if existing and existing[0] == str(user_id):
+            print(f"[WARN] Повторная регистрация пользователя {user_id} заблокирована")
+            return get_user_profile(user_id)
+
     print(f"[INFO] Регистрируем нового пользователя {user_id}")
     new_user = register_user(user_id, username, first_name, last_name, language_code, is_premium)
     set_user_cache(user_id, (None, new_user))
