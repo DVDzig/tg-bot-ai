@@ -56,10 +56,21 @@ def get_sheet_data(spreadsheet_id, range_):
     ).execute()
     return result.get("values", [])
 
-
 def append_to_sheet(spreadsheet_id, sheet_name, row_data):
-    write_to_sheet(spreadsheet_id, sheet_name, row_data, mode="append")
+    # Получаем существующие строки
+    values = get_sheet_data(spreadsheet_id, f"{sheet_name}!A2:A")
+    
+    # Ищем первую пустую строку
+    row_index = 2
+    for i, row in enumerate(values, start=2):
+        if not row or not row[0].strip():
+            row_index = i
+            break
+    else:
+        row_index = len(values) + 2
 
+    # Запись
+    write_to_sheet(spreadsheet_id, sheet_name, pad_user_row(row_data), mode="update", row_index=row_index)
 
 def update_sheet_row(sheet_id, sheet_name, row_index, row_data):
     row_data = pad_user_row(row_data)
