@@ -90,8 +90,12 @@ def get_leaderboard(top_n=10):
     users = []
 
     for row in values:
+        if not row or not str(row[0]).strip().isdigit():
+            continue  # Пропустить пустые или некорректные строки
+
         if len(row) < len(USER_FIELDS):
             row += [""] * (len(USER_FIELDS) - len(row))
+
 
         try:
             xp_raw = row[USER_FIELDS.index("xp")]

@@ -1,5 +1,3 @@
-# services/user_helpers.py
-
 from config import USER_SHEET_ID
 from services.google_sheets_service import get_sheet_data, pad_user_row
 
@@ -15,6 +13,8 @@ def get_user_row(user_id: int):
     values = get_sheet_data(USER_SHEET_ID, "Users")
     for i, row in enumerate(values, start=2):
         row = pad_user_row(row)
+        if not row or not str(row[0]).strip().isdigit():
+            continue  # Пропускаем пустые или некорректные строки
         if str(row[0]) == str(user_id):
             _user_cache[user_id] = (i, row)
             return i, row
