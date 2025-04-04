@@ -12,7 +12,7 @@ def get_user_row(user_id: int):
     values = get_sheet_data(USER_SHEET_ID, "Users")
     for i, row in enumerate(values, start=2):
         row = pad_user_row(row)
-        if row and str(row[0]).strip() == str(user_id):
+        if str(row[0]).strip().isdigit() and str(row[0]).strip() == str(user_id):
             set_user_cache(user_id, (i, row))
             return i, row
     return None, None

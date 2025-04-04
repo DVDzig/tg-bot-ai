@@ -326,7 +326,7 @@ class UserRow:
         return value if value else default
 
     def get_int(self, field: str) -> int:
-        val = self.get(field, "0")
+        val = self.get_int(field, "0")
         return int(val) if str(val).isdigit() else 0
 
     def set(self, field: str, value):
