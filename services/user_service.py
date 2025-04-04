@@ -53,7 +53,9 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
             except Exception as e:
                 print(f"[ERROR] Ошибка проверки подписки: {e}")
 
-        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+
         set_user_cache(user_id, (i, user.data()))
         return user.data()
 
@@ -63,7 +65,9 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         print(f"[WARN] Повторная регистрация пользователя {user_id} заблокирована")
         user = UserRow(duplicate_row)
         user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
-        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, j, user.data())
+        if j is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, j, user.data())
+
         set_user_cache(user_id, (j, user.data()))
         return user.data()
 
@@ -124,8 +128,10 @@ def update_user_xp(user_id, xp_gain=1):
     new_status, _, _ = determine_status(user.get_int("xp"))
     user.set("status", new_status)
 
-    update_sheet_row(USER_SHEET_ID, "Users", i, user.data())
-    set_user_cache[user_id] = (i, user.data())
+    if i is not None:
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+
+    set_user_cache(user_id, (i, user.data()))
 
     update_activity_rewards(user_id)  # 🧩 вызываем после обновления XP
 
@@ -171,7 +177,9 @@ def apply_xp_penalty_if_needed(user_id):
     row[xp_index] = str(new_xp)
     row[status_index] = new_status
 
-    update_sheet_row(USER_SHEET_ID, "Users", i, row)
+    if i is not None:
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
     set_user_cache(user_id, (i, row))
 
 
@@ -242,18 +250,30 @@ def check_and_apply_daily_challenge(user_id: int) -> bool:
     return False
 
 def add_paid_questions(user_id: int, count: int) -> bool:
-    user = UserRow(user_id)
+    i, row = get_user_row(user_id)
+    if not row:
+        return False
+    user = UserRow(row)
     current = user.get("paid_questions", 0)
     user.set("paid_questions", current + count)
-    user.save()
-    return True
+    if i is not None:
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+        set_user_cache(user_id, (i, user.data()))
+        return True
+    return False
 
 def update_user_data(user_id: int, updates: dict) -> bool:
-    user = UserRow(user_id)
+    i, row = get_user_row(user_id)
+    if not row:
+        return False
+    user = UserRow(row)
     for key, value in updates.items():
         user.set(key, value)
-    user.save()
-    return True
+    if i is not None:
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+        set_user_cache(user_id, (i, user.data()))
+        return True
+    return False
 
 def refresh_monthly_free_questions():
     values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")

@@ -7,7 +7,10 @@ _user_cache = {}
 
 def get_user_row(user_id: int):
     if user_id in _user_cache:
-        return _user_cache[user_id]
+        i, row = _user_cache[user_id]
+        if i is not None:
+            return i, row
+        # Если индекс None — принудительно ищем снова
 
     values = get_sheet_data(USER_SHEET_ID, "Users")
     for i, row in enumerate(values, start=2):
@@ -16,6 +19,3 @@ def get_user_row(user_id: int):
             _user_cache[user_id] = (i, row)
             return i, row
     return None, None
-
-def set_user_cache(user_id: int, value: tuple):
-    _user_cache[user_id] = value

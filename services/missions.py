@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from config import USER_SHEET_ID, PROGRAM_SHEETS, TOKEN, USER_FIELDS
+from config import USER_SHEET_ID, PROGRAM_SHEETS, TOKEN, USER_FIELDS, USER_SHEET_NAME
 from services.google_sheets_service import (
     get_sheet_data, update_sheet_row, pad_user_row
 )
@@ -74,7 +74,9 @@ def update_activity_rewards(user_id):
     row[free_index] = str(free)
     row[bonus_index] = str(last_bonus)
 
-    update_sheet_row(USER_SHEET_ID, "Users", i, row)
+    if i is not None:
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
     return True
 
 def determine_status(xp: int):
@@ -136,7 +138,9 @@ def daily_3_questions(user_id):
     if today_count >= 3:
         apply_mission_reward(row, xp_index, status_index, 2)
         row[field_index] = today_str
-        update_sheet_row(USER_SHEET_ID, "Users", i, row)
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
         return True
 
     return False
@@ -173,7 +177,9 @@ def three_disciplines(user_id):
     if len(disciplines) >= 3:
         apply_mission_reward(row, xp_index, status_index, 5)
         row[field_index] = today_str
-        update_sheet_row(USER_SHEET_ID, "Users", i, row)
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
         return True
 
     return False
@@ -211,7 +217,9 @@ def weekly_10_questions(user_id):
     if count >= 10:
         apply_mission_reward(row, xp_index, status_index, 10)
         row[field_index] = week_str
-        update_sheet_row(USER_SHEET_ID, "Users", i, row)
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
         return True
 
     return False
@@ -242,7 +250,9 @@ def weekly_50_xp(user_id):
     if (current_xp - start_xp) >= 50:
         apply_mission_reward(row, xp_index, status_index, 10)
         row[field_index] = week_str
-        update_sheet_row(USER_SHEET_ID, "Users", i, row)
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
         return True
 
     return False
@@ -280,7 +290,9 @@ def weekly_5_disciplines(user_id):
     if len(disciplines) >= 5:
         apply_mission_reward(row, xp_index, status_index, 10)
         row[field_index] = week_str
-        update_sheet_row(USER_SHEET_ID, "Users", i, row)
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
         return True
 
     return False
@@ -321,7 +333,9 @@ def streak_3_days(user_id):
     if streak:
         apply_mission_reward(row, xp_index, status_index, 7)
         row[field_index] = today_str
-        update_sheet_row(USER_SHEET_ID, "Users", i, row)
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+
         return True
 
     return False
