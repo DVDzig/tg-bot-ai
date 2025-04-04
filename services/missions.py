@@ -3,7 +3,7 @@ from config import USER_SHEET_ID, PROGRAM_SHEETS, TOKEN, USER_FIELDS
 from services.google_sheets_service import (
     get_sheet_data, update_sheet_row, pad_user_row
 )
-from services.user_service import determine_status, get_user_row  
+from services.user_service import get_user_row  
 
 class Mission:
     def __init__(self, id, title, type_, reward, check_fn):
