@@ -57,12 +57,15 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         set_user_cache(user_id, (i, user.data()))
         return user.data()
 
-    # Проверка вручную: нет ли дубликатов в таблице
-    all_users = get_sheet_data(USER_SHEET_ID, f"{USER_SHEET_NAME}!A2:A")
-    for existing in all_users:
-        if existing and existing[0] == str(user_id):
-            print(f"[WARN] Повторная регистрация пользователя {user_id} заблокирована")
-            return get_user_profile(user_id)
+    # Повторно проверим через get_user_row — даже если кеш был пуст
+    j, duplicate_row = get_user_row(user_id)
+    if duplicate_row:
+        print(f"[WARN] Повторная регистрация пользователя {user_id} заблокирована")
+        user = UserRow(duplicate_row)
+        user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, j, user.data())
+        set_user_cache(user_id, (j, user.data()))
+        return user.data()
 
     print(f"[INFO] Регистрируем нового пользователя {user_id}")
     new_user = register_user(user_id, username, first_name, last_name, language_code, is_premium)
@@ -173,7 +176,16 @@ def apply_xp_penalty_if_needed(user_id):
 
 
 def get_user_activity_stats(user_id):
-    qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
+    try:
+        qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
+    except Exception as e:
+        print(f"[ERROR] Не удалось получить QA_Log: {e}")
+        return {
+            "total": 0,
+            "today": 0,
+            "week": 0
+        }
+
     today = datetime.now().date()
     week_ago = today - timedelta(days=7)
 

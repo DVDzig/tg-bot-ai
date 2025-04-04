@@ -277,12 +277,25 @@ async def handle_subscription_shop(message: types.Message):
         reply_markup=get_subscription_packages_keyboard()
     )
     
-@router.message(lambda msg: msg.text == "⬅️ Назад")
-async def back_to_shop_menu(message: types.Message):
-    await message.answer(
-        "🔙 Возврат в магазин.\n\nВыбери, что тебя интересует 👇",
-        reply_markup=get_shop_keyboard()
-    )
+@router.message(F.text == "⬅️ Назад")
+async def handle_back_button(message: types.Message):
+    last_text = message.reply_to_message.text if message.reply_to_message else ""
+
+    if "Выбери нужный пакет" in last_text or "Выбирай нужный тариф" in last_text:
+        # Назад из покупки → в магазин
+        await message.answer(
+            "🔙 Возврат в магазин.\n\nВыбери, что тебя интересует 👇",
+            reply_markup=get_shop_keyboard()
+        )
+    elif "Выбери, что тебя интересует" in last_text:
+        # Назад из магазина → в главное меню
+        await message.answer(
+            "🔙 Возврат в главное меню",
+            reply_markup=get_main_keyboard()
+        )
+    else:
+        # На всякий случай — fallback в главное меню
+        await message.answer("🔙 Главное меню", reply_markup=get_main_keyboard())
 
 # === Инфо о статусах и подписках ===
 @router.message(lambda msg: msg.text == "ℹ️ Статусы и подписки")
