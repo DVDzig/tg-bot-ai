@@ -58,7 +58,7 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
 
         set_user_cache(user_id, (i, user.data()))
         return user.data()
-
+    
     # Повторно проверим через get_user_row — даже если кеш был пуст
     j, duplicate_row = get_user_row(user_id)
     if duplicate_row:
@@ -67,10 +67,10 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
         if j is not None:
             update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, j, user.data())
-
         set_user_cache(user_id, (j, user.data()))
         return user.data()
 
+    # 👉 Если действительно нет пользователя — регистрируем нового
     print(f"[INFO] Регистрируем нового пользователя {user_id}")
     new_user = register_user(user_id, username, first_name, last_name, language_code, is_premium)
     set_user_cache(user_id, (None, new_user))
