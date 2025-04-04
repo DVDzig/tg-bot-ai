@@ -3,6 +3,8 @@ from google.oauth2 import service_account
 from datetime import datetime, timedelta
 from config import USER_SHEET_ID, PROGRAM_SHEETS, PROGRAM_SHEETS_LIST, USER_SHEET_NAME, USER_FIELDS
 from functools import lru_cache
+from services.google_sheets_service import update_sheet_row, get_user_row
+
 
 # Подключение к Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -258,6 +260,8 @@ def log_payment_event(user_id: str, amount: str, questions: str, status: str, ev
     write_to_sheet(USER_SHEET_ID, "PaymentsLog", row, mode="append")
 
 def pad_user_row(row: list[str]) -> list[str]:
+    if not isinstance(row, list):
+        raise TypeError(f"Ожидался список строк, получено: {type(row).__name__}")
     if len(row) < len(USER_FIELDS):
         row += [""] * (len(USER_FIELDS) - len(row))
     elif len(row) > len(USER_FIELDS):
@@ -325,9 +329,9 @@ class UserRow:
         value = self.row[idx]
         return value if value else default
 
-    def get_int(self, field: str) -> int:
-        val = self.get_int(field, "0")
-        return int(val) if str(val).isdigit() else 0
+    def get_int(self, field: str, default=0) -> int:
+        val = self.get(field, str(default))
+        return int(val) if str(val).isdigit() else default
 
     def set(self, field: str, value):
         if field not in USER_FIELDS:
@@ -341,3 +345,11 @@ class UserRow:
 
     def data(self) -> list[str]:
         return self.row.copy()
+
+    def save(self, user_id=None):
+        if user_id is None:
+            user_id = self.get("user_id")
+        i, _ = get_user_row(user_id)
+        if i is not None:
+            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, self.data())
+            set_user_cache(int(user_id), (i, self.data()))
