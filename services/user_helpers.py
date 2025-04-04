@@ -16,7 +16,7 @@ def get_user_row(user_id: int):
             continue  # пропускаем полностью пустые строки
 
         row = pad_user_row(row)
-        if str(row[0]).strip() == str(user_id):
+        if str(row[0]).strip() == str(user_id) and any(cell.strip() for cell in row):
             set_user_cache(user_id, (i, row))
             return i, row
 
