@@ -16,7 +16,7 @@ from config import USER_SHEET_ID
 from services.missions import get_all_missions
 from datetime import datetime
 from functools import lru_cache
-from aiogram.handlers import BaseMiddleware
+from aiogram.dispatcher.middlewares.base import BaseMiddleware
 from typing import Callable, Dict, Any, Awaitable
 
 
