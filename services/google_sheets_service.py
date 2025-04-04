@@ -22,6 +22,32 @@ def format_datetime():
     now = datetime.now()
     return f"{now.day} {months[now.month - 1]} {now.year}, {now.hour:02}:{now.minute:02}"
 
+leaderboard_cache = []
+
+def update_leaderboard_cache():
+    global leaderboard_cache
+    rows = get_sheet_data(USER_SHEET_ID, USER_SHEET_NAME)
+    users = []
+
+    for row in rows[1:]:
+        if not row or len(row) < 12:
+            continue
+        try:
+            users.append({
+                "user_id": row[0],
+                "username": row[1],
+                "first_name": row[2],
+                "xp": int(row[10]) if row[10].isdigit() else 0
+            })
+        except Exception as e:
+            print(f"[Leaderboard] Ошибка обработки строки: {e}")
+
+    users.sort(key=lambda x: x["xp"], reverse=True)
+    leaderboard_cache = users
+
+def get_leaderboard(top_n=100):
+    return leaderboard_cache[:top_n]
+
 
 def get_sheet_data(spreadsheet_id, range_):
     result = service.spreadsheets().values().get(

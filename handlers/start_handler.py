@@ -167,16 +167,19 @@ async def leaderboard_handler(message: types.Message):
         top_text += f"{place_emoji} {name} — {icon} {entry_status.capitalize()}, {entry['xp']} XP{is_you}\n"
 
     for idx, entry in enumerate(leaderboard, start=1):
-        if entry["user_id"] == user_id:
+        if str(entry["user_id"]) == str(user_id):
             user_place = idx
             break
 
-    tail = f"\n👤 Ты сейчас на {user_place} месте"
-    if current_status == "создатель":
-        tail += "\n🛸 Ты достиг вершины! Легенда среди легенд 👑"
+    if user_place is None:
+        tail = "\n👤 Ты пока не в рейтинге. Начни задавать вопросы — и попадёшь в топ! 🏁"
     else:
-        xp_left = max(0, xp_target - current_xp)
-        tail += f"\n📈 До уровня «{next_status}» осталось {xp_left} XP\nПродолжай в том же духе! 💪"
+        tail = f"\n👤 Ты сейчас на {user_place} месте"
+        if current_status == "создатель":
+            tail += "\n🛸 Ты достиг вершины! Легенда среди легенд 👑"
+        else:
+            xp_left = max(0, xp_target - current_xp)
+            tail += f"\n📈 До уровня «{next_status}» осталось {xp_left} XP\nПродолжай в том же духе! 💪"
 
     await message.answer(top_text + tail, parse_mode="HTML")
 

@@ -15,7 +15,7 @@ from aiohttp import web
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 from handlers import start_handler, program_handler, shop_handler
-from services.google_sheets_service import get_all_users, log_payment_event
+from services.google_sheets_service import get_all_users, log_payment_event, update_leaderboard_cache
 from services.user_service import add_paid_questions
 from utils.keyboard import get_question_packages_keyboard, get_subscription_packages_keyboard
 from handlers.start_handler import EnsureUserMiddleware
@@ -166,6 +166,16 @@ async def send_daily_reminder(bot: Bot):
 
         await asyncio.sleep(30)
 
+# Плановое обновление лидерборда в 7:00 МСК
+async def schedule_leaderboard_update():
+    while True:
+        now = datetime.now(pytz.timezone("Europe/Moscow"))
+        if now.time().hour == 7 and now.time().minute == 0:
+            print("[Scheduler] Обновляю лидерборд...")
+            update_leaderboard_cache()
+            await asyncio.sleep(60)
+        await asyncio.sleep(30)
+
 # --- Основная функция ---
 async def main():
     logging.basicConfig(level=logging.WARNING)
@@ -177,13 +187,13 @@ async def main():
     dp.include_router(shop_handler.router)
     dp.message.middleware(EnsureUserMiddleware())
 
+    update_leaderboard_cache()
 
-    # Устанавливаем webhook Telegram (важно — ДО старта сервера)
+    # Устанавливаем webhook Telegram
     await bot.set_webhook(
         "https://tg-bot-ai-teyr.onrender.com/telegram",
         drop_pending_updates=True
     )
-
 
     # Telegram + YooKassa webhook
     app = web.Application()
@@ -199,10 +209,10 @@ async def main():
     logging.info("✅ Webhook для Telegram запущен на /telegram")
     logging.info("✅ Webhook для YooKassa запущен на /payment/result")
 
-    # Напоминание о челлендже
+    # Планировщики
     asyncio.create_task(send_daily_reminder(bot))
+    asyncio.create_task(schedule_leaderboard_update())
 
-    # Держим приложение живым
     await asyncio.Event().wait()
 
 
