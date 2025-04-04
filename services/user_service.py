@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN, USER_FIELDS
-from services.google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow
-from services.user_helpers import get_user_row, set_user_cache
+from services.google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow, get_user_row, set_user_cache
 from aiogram import Bot
 from services.missions import update_activity_rewards, determine_status
 import asyncio
@@ -14,8 +13,8 @@ def get_or_create_user(user_id, username="Unknown", first_name="", last_name="",
         user = UserRow(row)
         user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
 
-        premium_status = user.get("premium_status").strip().lower()
-        premium_until = user.get("premium_until").strip()
+        premium_status = user.get_int("premium_status").strip().lower()
+        premium_until = user.get_int("premium_until").strip()
 
         if premium_status in ("light", "pro") and premium_until:
             try:
@@ -105,7 +104,7 @@ def can_ask_question(user_id: int) -> bool:
 def decrement_question_balance(user_id: int) -> bool:
     i, row = get_user_row(user_id)
     if not row:
-        return False  # или аналогичная обработка
+        return False
     user = UserRow(row)
 
     free = user.get_int("free_questions")
@@ -118,7 +117,7 @@ def decrement_question_balance(user_id: int) -> bool:
     else:
         return False
 
-    user.save()
+    user.save(user_id)
     return True
 
 def update_user_xp(user_id, xp_gain=1):
@@ -128,8 +127,8 @@ def update_user_xp(user_id, xp_gain=1):
 
     user = UserRow(row)
 
-    if user.get("premium_status").lower() in ("light", "pro"):
-        return user.get_int("xp"), user.get("status")
+    if user.get_int("premium_status").lower() in ("light", "pro"):
+        return user.get_int("xp"), user.get_int("status")
 
     user.add_to_int("xp", xp_gain)
     new_status, _, _ = determine_status(user.get_int("xp"))
@@ -233,7 +232,7 @@ def check_and_apply_daily_challenge(user_id: int) -> bool:
 
     i, row = get_user_row(user_id)
     if not row:
-        return False  # или аналогичная обработка
+        return False
     user = UserRow(row)
 
     if user.get("last_daily_challenge") == today_str:
@@ -254,8 +253,10 @@ def check_and_apply_daily_challenge(user_id: int) -> bool:
         user.set("xp", xp)
         user.set("status", determine_status(xp)[0])
         user.set("last_daily_challenge", today_str)
-        user.save()
+        user.save(user_id)
         return True
+
+    return False
 
     return False
 
@@ -299,22 +300,22 @@ def refresh_monthly_free_questions():
         user_id = int(row[0])
         i, row = get_user_row(user_id)
         if not row:
-            return False  # или аналогичная обработка
+            continue
         user = UserRow(row)
 
         status = user.get("status", "новичок").strip().lower()
         bonus = bonus_by_status.get(status, 5)
         user.set("free_questions", user.get_int("free_questions") + bonus)
-        user.save()
+        user.save(user_id)
 
-def check_thematic_challenge(user_id: int) -> bool:
+def check_thematic_challenge(user_id: int) -> bool: 
     qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
     today = datetime.now().date()
     today_str = today.strftime("%d.%m.%Y")
 
     i, row = get_user_row(user_id)
     if not row:
-        return False  # или аналогичная обработка
+        return False
     user = UserRow(row)
 
     if user.get("last_thematic_challenge") == today_str:
@@ -335,7 +336,7 @@ def check_thematic_challenge(user_id: int) -> bool:
         user.set("xp", xp)
         user.set("status", determine_status(xp)[0])
         user.set("last_thematic_challenge", today_str)
-        user.save()
+        user.save(user_id)
         return True
 
     return False

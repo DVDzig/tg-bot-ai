@@ -1,9 +1,8 @@
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-from datetime import datetime, timedelta
+from datetime import datetime
 from config import USER_SHEET_ID, PROGRAM_SHEETS, PROGRAM_SHEETS_LIST, USER_SHEET_NAME, USER_FIELDS
 from functools import lru_cache
-from services.user_helpers import get_user_row, set_user_cache
 
 # Подключение к Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -22,33 +21,6 @@ def format_datetime():
               "июля", "августа", "сентября", "октября", "ноября", "декабря"]
     now = datetime.now()
     return f"{now.day} {months[now.month - 1]} {now.year}, {now.hour:02}:{now.minute:02}"
-
-leaderboard_cache = []
-
-def update_leaderboard_cache():
-    global leaderboard_cache
-    rows = get_sheet_data(USER_SHEET_ID, USER_SHEET_NAME)
-    users = []
-
-    for row in rows[1:]:
-        if not row or len(row) < 12:
-            continue
-        try:
-            users.append({
-                "user_id": row[0],
-                "username": row[1],
-                "first_name": row[2],
-                "xp": int(row[10]) if row[10].isdigit() else 0
-            })
-        except Exception as e:
-            print(f"[Leaderboard] Ошибка обработки строки: {e}")
-
-    users.sort(key=lambda x: x["xp"], reverse=True)
-    leaderboard_cache = users
-
-def get_leaderboard(top_n=100):
-    return leaderboard_cache[:top_n]
-
 
 def get_sheet_data(spreadsheet_id, range_):
     result = service.spreadsheets().values().get(
@@ -352,3 +324,25 @@ class UserRow:
         if i is not None:
             update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, self.data())
             set_user_cache(int(user_id), (i, self.data()))
+
+# === 👤 Вспомогательные функции для пользователей ===
+
+_user_cache = {}
+
+def get_user_row(user_id: int):
+    if user_id in _user_cache:
+        i, row = _user_cache[user_id]
+        if i is not None and row and str(row[0]) == str(user_id):
+            return i, row
+        # ⚠️ Фикс: продолжим проверку, если строка некорректна
+
+    values = get_sheet_data(USER_SHEET_ID, USER_SHEET_NAME)
+    for i, row in enumerate(values, start=2):
+        row = pad_user_row(row)
+        if str(row[0]).strip() == str(user_id):
+            _user_cache[user_id] = (i, row)
+            return i, row
+    return None, None
+
+def set_user_cache(user_id: int, value: tuple):
+    _user_cache[user_id] = value

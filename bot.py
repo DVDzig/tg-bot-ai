@@ -15,7 +15,7 @@ from aiohttp import web
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 from handlers import start_handler, program_handler, shop_handler
-from services.google_sheets_service import get_all_users, log_payment_event, update_leaderboard_cache
+from services.google_sheets_service import get_all_users, log_payment_event
 from services.user_service import add_paid_questions
 from utils.keyboard import get_question_packages_keyboard, get_subscription_packages_keyboard
 from handlers.start_handler import EnsureUserMiddleware
