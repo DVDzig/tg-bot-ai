@@ -1,25 +1,13 @@
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from datetime import datetime, timedelta
-from config import USER_SHEET_ID, PROGRAM_SHEETS, PROGRAM_SHEETS_LIST, USER_SHEET_NAME
+from config import USER_SHEET_ID, PROGRAM_SHEETS, PROGRAM_SHEETS_LIST, USER_SHEET_NAME, USER_FIELDS
 from functools import lru_cache
 
 # Подключение к Google Sheets API
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SERVICE_ACCOUNT_FILE = 'credentials.json'
 
-USER_FIELDS = [
-    "user_id", "username", "first_name", "last_name", "language_code", "is_premium",
-    "first_interaction", "last_interaction",
-    "question_count", "day_count", "status", "plan",
-    "discipline", "module", "xp", "xp_today", "xp_week",
-    "paid_questions", "last_free_reset", "free_questions", "last_bonus_date",
-    "premium_status", "premium_until", "last_daily_challenge", "last_thematic_challenge",
-    "last_daily_3", "last_multi_disc",
-    "last_weekly_10", "last_weekly_50xp", "last_weekly_5disc", "last_streak3", "xp_start_of_week", 
-    "streak_days", "last_streak_date", "last_xp_bonus",
-    "missions_streak", "last_mission_day"
-]
 
 
 # Создание API клиента
@@ -44,28 +32,13 @@ def get_sheet_data(spreadsheet_id, range_):
 
 
 def append_to_sheet(spreadsheet_id, sheet_name, row_data):
-    service.spreadsheets().values().append(
-        spreadsheetId=spreadsheet_id,
-        range=f"{sheet_name}!A1",
-        valueInputOption="RAW",
-        body={"values": [row_data]}
-    ).execute()
+    write_to_sheet(spreadsheet_id, sheet_name, row_data, mode="append")
 
 
 def update_sheet_row(sheet_id, sheet_name, row_index, row_data):
-    from . import pad_user_row  # если pad_user_row в том же модуле — не нужно
-    row_data = pad_user_row(row_data)  # 🔒 защита от неверной длины строки
-
-    # Генерация последней буквы колонки (A, B, ..., Z, AA и т.д.)
-    def col_letter(n):
-        result = ''
-        while n:
-            n, r = divmod(n - 1, 26)
-            result = chr(65 + r) + result
-        return result
-
-    last_col = col_letter(len(row_data))  # например: V если 22 столбца
-    range_ = f"{sheet_name}!A{row_index}:{last_col}{row_index}"
+    row_data = pad_user_row(row_data)
+    last_col_letter = col_letter(len(row_data))
+    range_ = f"{sheet_name}!A{row_index}:{last_col_letter}{row_index}"
 
     body = {"values": [row_data]}
     service.spreadsheets().values().update(
@@ -79,7 +52,7 @@ def update_sheet_row(sheet_id, sheet_name, row_index, row_data):
 def get_keywords_for_discipline(module, discipline):
     all_sheets = PROGRAM_SHEETS_LIST.values()
     for sheet in all_sheets:
-        values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:C")
+        values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet}!A2:C")
         for row in values:
             if len(row) >= 3 and row[0] == module and row[1] == discipline:
                 return row[2]
@@ -87,7 +60,7 @@ def get_keywords_for_discipline(module, discipline):
 
 
 def get_leaderboard(top_n=10):
-    values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
+    values = get_sheet_data_cached(USER_SHEET_ID, "Users!A2:U")
     users = []
 
     for row in values:
@@ -119,31 +92,33 @@ def get_modules(program):
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
     if not sheet_name:
         return []
-    values = get_sheet_data(PROGRAM_SHEETS, f"{sheet_name}!A2:A")
-    modules = sorted({
+
+    values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet_name}!A2:A")
+    modules = {
         " ".join(row[0].replace("\n", " ").split()).strip()
-        for row in values if len(row) > 0 and row[0].strip()
-    })
-    return modules
+        for row in values if row and row[0].strip()
+    }
+    return sorted(modules)
 
 def get_disciplines(module):
-    module = " ".join(module.replace("\n", " ").split()).strip()
-    all_sheets = PROGRAM_SHEETS_LIST.values()
+    module = " ".join(module.replace("\n", " ").split()).strip().lower()
     disciplines = set()
-    for sheet in all_sheets:
-        values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:B")
-        for row in values:
-            row_module = " ".join(row[0].replace("\n", " ").split()).strip()
-            if len(row) >= 2 and row_module == module:
-                discipline = " ".join(row[1].replace("\n", " ").split()).strip()
-                disciplines.add(discipline)
-    return sorted(disciplines)
 
+    for sheet in PROGRAM_SHEETS_LIST.values():
+        values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet}!A2:B")
+        for row in values:
+            if len(row) >= 2:
+                row_module = " ".join(row[0].replace("\n", " ").split()).strip().lower()
+                if row_module == module:
+                    discipline = " ".join(row[1].replace("\n", " ").split()).strip()
+                    disciplines.add(discipline)
+
+    return sorted(disciplines)
 
 def log_user_activity(user_id, plan=None, module=None, discipline=None):
     timestamp = datetime.now().strftime("%d %B %Y, %H:%M")
     row = [str(user_id), timestamp, plan or "", module or "", discipline or ""]
-    append_to_sheet(USER_SHEET_ID, "Log", row)
+    write_to_sheet(USER_SHEET_ID, "Log", row, mode="append")
 
 def update_keywords_for_discipline(module, discipline, keywords):
     all_sheets = PROGRAM_SHEETS_LIST.items()
@@ -176,29 +151,34 @@ def update_keywords_for_discipline(module, discipline, keywords):
 
     return False
 
-
 def save_question_answer(user_id, program, module, discipline, question, answer):
     timestamp = datetime.now().strftime("%d %B %Y, %H:%M")
     row = [str(user_id), timestamp, program, module, discipline, question, answer]
-    append_to_sheet(PROGRAM_SHEETS, "QA_Log", row)
+    write_to_sheet(PROGRAM_SHEETS, "QA_Log", row, mode="append")
 
-
+@lru_cache(maxsize=256)
 def find_similar_questions(discipline, keywords, limit=3):
-    values = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
+    discipline = discipline.lower().strip()
+    values = get_sheet_data_cached(PROGRAM_SHEETS, "QA_Log!A2:G")
+    seen_questions = set()
     similar_qas = []
 
     for row in values:
         if len(row) < 7:
             continue
 
-        row_discipline = row[4]
-        row_question = row[5]
-        row_answer = row[6]
+        row_discipline = row[4].lower().strip()
+        row_question = row[5].strip()
+        row_answer = row[6].strip()
 
         if row_discipline != discipline:
             continue
 
-        if any(kw.lower() in row_question.lower() for kw in (keywords or "").split(",") if kw.strip()):
+        if row_question in seen_questions:
+            continue
+
+        if any(kw.lower().strip() in row_question.lower() for kw in (keywords or "").split(",") if kw.strip()):
+            seen_questions.add(row_question)
             similar_qas.append({"question": row_question, "answer": row_answer})
 
         if len(similar_qas) >= limit:
@@ -207,7 +187,7 @@ def find_similar_questions(discipline, keywords, limit=3):
     return similar_qas
 
 def get_all_users():
-    values = get_sheet_data(USER_SHEET_ID, "Users!A2:A")
+    values = get_sheet_data_cached(USER_SHEET_ID, "Users!A2:A")
     return [{"user_id": row[0]} for row in values if row]
 
 # Атоматическая подгрузка разрешённых модулей/дисциплин
@@ -222,7 +202,7 @@ def get_all_valid_buttons():
         buttons.add(program)
 
         sheet = PROGRAM_SHEETS_LIST[program]
-        values = get_sheet_data(PROGRAM_SHEETS, f"{sheet}!A2:C")
+        values = get_sheet_data_cached(PROGRAM_SHEETS, f"{sheet}!A2:C")
         for row in values:
             if len(row) > 0:
                 buttons.add(f"📗 {row[0]}")  # модуль
@@ -232,10 +212,9 @@ def get_all_valid_buttons():
     return buttons
 
 def log_payment_event(user_id: str, amount: str, questions: str, status: str, event: str, payment_id: str):
-    from datetime import datetime
     timestamp = datetime.now().strftime("%d.%m.%Y %H:%M")
     row = [user_id, amount, questions, status, event, payment_id, timestamp]
-    append_to_sheet(USER_SHEET_ID, "PaymentsLog", row)
+    write_to_sheet(USER_SHEET_ID, "PaymentsLog", row, mode="append")
 
 def pad_user_row(row: list[str]) -> list[str]:
     if len(row) < len(USER_FIELDS):
@@ -243,3 +222,81 @@ def pad_user_row(row: list[str]) -> list[str]:
     elif len(row) > len(USER_FIELDS):
         row = row[:len(USER_FIELDS)]
     return row
+
+@lru_cache(maxsize=256)
+def get_sheet_data_cached(spreadsheet_id, range_):
+    print(f"[CACHE MISS] {spreadsheet_id} — {range_}")
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id,
+        range=range_
+    ).execute()
+    return result.get("values", [])
+
+# 🔡 Преобразование номера столбца в букву (A1 формат)
+def col_letter(n):
+    result = ''
+    while n:
+        n, r = divmod(n - 1, 26)
+        result = chr(65 + r) + result
+    return result
+
+
+# 🔍 Получение значения отдельной ячейки
+def get_cell_value(spreadsheet_id, sheet_name, row_index, column_index):
+    col = col_letter(column_index)
+    cell_range = f"{sheet_name}!{col}{row_index}"
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id,
+        range=cell_range
+    ).execute()
+    values = result.get("values", [])
+    return values[0][0] if values and values[0] else ""
+
+def write_to_sheet(spreadsheet_id, sheet_name, row_data, mode="append", row_index=None):
+    row_data = pad_user_row(row_data)
+
+    if mode == "append":
+        service.spreadsheets().values().append(
+            spreadsheetId=spreadsheet_id,
+            range=f"{sheet_name}!A1",
+            valueInputOption="RAW",
+            body={"values": [row_data]}
+        ).execute()
+
+    elif mode == "update" and row_index:
+        last_col = col_letter(len(row_data))
+        range_ = f"{sheet_name}!A{row_index}:{last_col}{row_index}"
+        service.spreadsheets().values().update(
+            spreadsheetId=spreadsheet_id,
+            range=range_,
+            valueInputOption="RAW",
+            body={"values": [row_data]}
+        ).execute()
+
+class UserRow:
+    def __init__(self, row: list[str]):
+        self.row = pad_user_row(row)
+
+    def get(self, field: str, default=""):
+        if field not in USER_FIELDS:
+            raise ValueError(f"Unknown field: {field}")
+        idx = USER_FIELDS.index(field)
+        value = self.row[idx]
+        return value if value else default
+
+    def get_int(self, field: str) -> int:
+        val = self.get(field, "0")
+        return int(val) if str(val).isdigit() else 0
+
+    def set(self, field: str, value):
+        if field not in USER_FIELDS:
+            raise ValueError(f"Unknown field: {field}")
+        idx = USER_FIELDS.index(field)
+        self.row[idx] = str(value)
+
+    def add_to_int(self, field: str, amount: int):
+        current = self.get_int(field)
+        self.set(field, current + amount)
+
+    def data(self) -> list[str]:
+        return self.row.copy()

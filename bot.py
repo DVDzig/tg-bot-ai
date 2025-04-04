@@ -2,9 +2,9 @@ import asyncio
 import logging
 import pytz
 import aiogram
-print("Aiogram version:", aiogram.__version__)
+logging.info("Aiogram version:", aiogram.__version__)
 
-from datetime import datetime, time as dt_time, timedelta
+from datetime import datetime, time as dt_time
 from config import TOKEN
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
@@ -15,9 +15,8 @@ from aiohttp import web
 
 from config import TOKEN
 from handlers import start_handler, program_handler, shop_handler
-from services.google_sheets_service import get_all_users
+from services.google_sheets_service import get_all_users, log_payment_event
 from services.user_service import add_paid_questions
-from services.google_sheets_service import log_payment_event
 from utils.keyboard import get_question_packages_keyboard, get_subscription_packages_keyboard
 
 # --- Webhook от ЮКассы ---
@@ -35,12 +34,12 @@ async def handle_payment_webhook(request):
     payment_id = obj.get("id", "")
     status = obj.get("status", "unknown")
 
-    print(f"[YooKassa] Event: {event_type} | Status: {status} | User: {user_id} | Questions: {questions}")
+    logging.info(f"[YooKassa] Event: {event_type} | Status: {status} | User: {user_id} | Questions: {questions}")
 
     if event_type == "payment.succeeded":
         from services.user_service import add_paid_questions, get_user_profile, determine_status, update_user_data
         success = add_paid_questions(int(user_id), int(questions))
-        print(f"[YooKassa] Вопросы зачислены: {success}")
+        logging.info(f"[YooKassa] Вопросы зачислены: {success}")
         log_payment_event(user_id, amount, questions, status, event_type, payment_id)
 
         # 👇 Вставка: обработка light/pro
@@ -65,7 +64,7 @@ async def handle_payment_webhook(request):
                     parse_mode="HTML"
                 )
             except Exception as e:
-                print(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
+                logging.info(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
 
         if success:
             try:
@@ -107,13 +106,13 @@ async def handle_payment_webhook(request):
                     text=text
                 )
             except Exception as e:
-                print(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
+                logging.info(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
 
         return web.Response(text="OK")
 
     elif event_type == "payment.canceled":
         log_payment_event(user_id, amount, questions, status, event_type, payment_id)
-        print(f"[YooKassa] Платёж отменён пользователем {user_id}")
+        logging.info(f"[YooKassa] Платёж отменён пользователем {user_id}")
         try:
             await bot.send_message(
                 chat_id=int(user_id),
@@ -123,7 +122,7 @@ async def handle_payment_webhook(request):
                 )
             )
         except Exception as e:
-            print(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
+            logging.info(f"[YooKassa] Не удалось отправить сообщение пользователю {user_id}: {e}")
 
         return web.Response(text="CANCELLED")
 
@@ -143,7 +142,7 @@ async def send_daily_reminder(bot: Bot):
                         disable_notification=True
                     )
                 except Exception as e:
-                    print(f"❌ Утром: не удалось отправить сообщение {user['user_id']}: {e}")
+                    logging.info(f"❌ Утром: не удалось отправить сообщение {user['user_id']}: {e}")
             await asyncio.sleep(60)
 
         # Вечернее напоминание — в 18:34
@@ -162,14 +161,14 @@ async def send_daily_reminder(bot: Bot):
                                 disable_notification=True
                             )
                 except Exception as e:
-                    print(f"❌ Вечером: не удалось отправить сообщение {user['user_id']}: {e}")
+                    logging.info(f"❌ Вечером: не удалось отправить сообщение {user['user_id']}: {e}")
             await asyncio.sleep(60)
 
         await asyncio.sleep(30)
 
 # --- Основная функция ---
 async def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.WARNING)
 
     dp = Dispatcher(storage=MemoryStorage())
 
@@ -187,14 +186,18 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", 8080)
     await site.start()
-    print("✅ Webhook для YooKassa запущен на https://tg-bot-ai-teyr.onrender.com/payment/result")
+    logging.info("✅ Webhook для YooKassa запущен на https://tg-bot-ai-teyr.onrender.com/payment/result")
 
     # --- Задача напоминания ---
     asyncio.create_task(send_daily_reminder(bot))
 
     # --- Запуск бота ---
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    # await bot.delete_webhook(drop_pending_updates=True)
+    # await dp.start_polling(bot)
+
+    # Вместо polling — запустим aiohttp web-сервер
+    await asyncio.Event().wait()  # держит процесс живым
+
 
 
 if __name__ == "__main__":

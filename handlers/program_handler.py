@@ -10,10 +10,9 @@ from functools import lru_cache
 
 from config import OPENAI_API_KEY
 
-from handlers.start_handler import go_to_start_screen, get_shop_keyboard
+from handlers.start_handler import go_to_start_screen
 
 from utils.keyboard import (
-    get_programs_keyboard,
     get_modules_keyboard,
     get_disciplines_keyboard,
     get_question_keyboard,
@@ -220,16 +219,14 @@ async def block_input(message: Message, state: FSMContext):
 @router.message(ProgramStates.asking_question)
 async def handle_user_question(message: Message, state: FSMContext):
     if message.text in ["📗 Модуль", "📕 Дисциплина", "⬅️ Назад", "🔁 Начать сначала"]:
-        return  # пропустить навигационные кнопки
+        return
 
     from handlers.start_handler import go_to_start_screen
 
-    logging.debug(f"[DEBUG] Вошли в состояние задавания вопроса. Сообщение: {message.text}")
-
     user_id = message.from_user.id
     if not can_ask_question(user_id):
-        user_data = get_user_profile(user_id)
-        premium = user_data.get("premium_status", "none")
+        profile = get_user_profile(user_id)
+        premium = profile.get("premium_status", "none")
 
         text = "❌ У тебя закончились вопросы!\n\n"
         if premium == "none":
@@ -253,8 +250,6 @@ async def handle_user_question(message: Message, state: FSMContext):
     question = message.text
 
     keywords = cached_get_keywords(module, discipline)
-    print(f"[DEBUG] Keywords: {keywords}")
-    print(f"[DEBUG] User question: {question}")
     history = find_similar_questions(discipline, keywords or "")
 
     if not keywords or not any(kw.strip().lower() in question.lower() for kw in keywords.split(",") if kw.strip()):
@@ -274,12 +269,15 @@ async def handle_user_question(message: Message, state: FSMContext):
     ai_response = generate_ai_response(question, keywords, history)
     save_question_answer(user_id, program, module, discipline, question, ai_response)
 
+    # XP и профиль
     new_xp, new_status = update_user_xp(user_id)
     profile = get_user_profile(user_id)
     premium = profile.get("premium_status", "none")
+    free_q = profile.get("free_questions", 0)
     last_prompt = profile.get("last_upgrade_prompt", "")
     today = datetime.now().strftime("%Y-%m-%d")
 
+    # Предложение про апгрейд
     if premium == "none" and new_xp >= 50 and last_prompt != today:
         await message.answer(
             "🔥 Ты задал уже больше 50 вопросов — круто! 💪\n\n"
@@ -291,10 +289,7 @@ async def handle_user_question(message: Message, state: FSMContext):
         )
         update_user_data(user_id, {"last_upgrade_prompt": today})
 
-    profile = get_user_profile(user_id)
-    free_q = profile["free_questions"]
     status, _, _ = determine_status(new_xp)
-
     thresholds = {
         "новичок": (0, 10),
         "опытный": (11, 50),
@@ -304,12 +299,8 @@ async def handle_user_question(message: Message, state: FSMContext):
         "легенда": (501, 1000),
         "создатель": (1001, 5000)
     }
-
     min_xp, max_xp = thresholds.get(status, (0, new_xp + 1))
-    if max_xp > min_xp:
-        progress = min(100, int(((new_xp - min_xp) / (max_xp - min_xp)) * 100))
-    else:
-        progress = 100
+    progress = min(100, int(((new_xp - min_xp) / (max_xp - min_xp)) * 100)) if max_xp > min_xp else 100
     progress_bar = "🟩" * min(5, int(progress / 1)) + "⬜️" * (5 - min(5, int(progress / 1)))
 
     reply = (
@@ -319,13 +310,14 @@ async def handle_user_question(message: Message, state: FSMContext):
         f"🆓 Осталось бесплатных вопросов: {free_q}"
     )
 
+    # Миссии
     completed_missions = []
     for mission in get_all_missions():
         try:
             if mission.check(user_id):
                 completed_missions.append(f"🎯 {mission.title} +{mission.reward} XP")
-        except Exception as e:
-            print(f"[Mission Error] {mission.id}: {e}")
+        except:
+            continue
 
     if completed_missions:
         reply += "\n\n" + "\n".join(completed_missions)
@@ -346,17 +338,15 @@ async def handle_user_question(message: Message, state: FSMContext):
             )
             update_user_data(user_id, {"last_upgrade_prompt": today})
 
+    # Видео
     video_count = 0
-
-    # подписки: лайт/про → всегда 3 видео
     if premium in ["light", "pro"]:
         video_count = 3
-    # статусы: профи и выше → от 1 до 3 видео
     elif status == "профи":
         video_count = 1
     elif status == "эксперт":
         video_count = 2
-    elif status in ["наставник", "создатель", "легенда"]:
+    elif status in ["наставник", "легенда", "создатель"]:
         video_count = 3
 
     if video_count > 0:
@@ -366,5 +356,4 @@ async def handle_user_question(message: Message, state: FSMContext):
             for link in videos:
                 reply += f"{link}\n"
 
-    is_admin = user_id == 150532949
-    await message.answer(reply, parse_mode="HTML", reply_markup=get_question_keyboard(is_admin=is_admin))
+    await message.answer(reply, parse_mode="HTML", reply_markup=get_question_keyboard(is_admin=(user_id == 150532949)))
