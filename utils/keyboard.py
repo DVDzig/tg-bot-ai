@@ -12,7 +12,7 @@ def build_keyboard(button_layout: list[list[str]]) -> ReplyKeyboardMarkup:
 main_keyboard = build_keyboard([
     ["🎓 Выбрать программу"],
     ["👤 Мой профиль", "🛍 Магазин"],
-    ["📊 Лидерборд", "🎯 Миссии"],
+    ["📊 ТОП-10", "🎯 Миссии"],
     ["ℹ️ Статусы и подписки", "❓ Помощь"]
 ])
 

@@ -48,14 +48,17 @@ def get_main_screen_text():
 @router.message(Command("start"))
 async def start_handler(message: types.Message):
     user = message.from_user
-    get_or_create_user(
-        user_id=user.id,
-        username=user.username,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        language_code=user.language_code,
-        is_premium=getattr(user, "is_premium", False)
-    )
+    user_profile = get_user_profile_from_row(user.id)  # Добавьте проверку, чтобы избежать создания нового пользователя
+
+    if not user_profile:
+        get_or_create_user(
+            user_id=user.id,
+            username=user.username,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            language_code=user.language_code,
+            is_premium=getattr(user, "is_premium", False)
+        )
     apply_xp_penalty_if_needed(user.id)
     await message.answer(get_welcome_text(), reply_markup=get_main_keyboard())
 
@@ -66,9 +69,8 @@ async def go_to_start_screen(message: types.Message):
 @router.message(lambda message: message.text == "👤 Мой профиль")
 async def profile_handler(message: types.Message):
     user_id = message.from_user.id
-    # Заменили: теперь передаем данные пользователя, а не его ID
-    profile = get_user_profile_from_row(get_user_row(user_id)[1])
-    stats = get_user_activity_stats(user_id)
+    profile = get_user_profile_from_row(user_id)  # Убедитесь, что возвращаются данные пользователя
+    stats = get_user_activity_stats(user_id)  # Статистика активности пользователя
     current_xp = profile['xp']
     current_status, next_status, xp_to_next = determine_status(current_xp)
 
@@ -77,8 +79,12 @@ async def profile_handler(message: types.Message):
         "новичок": (0, 10),
         "опытный": (11, 50),
         "профи": (51, 100),
-        "эксперт": (101, 150)
+        "эксперт": (101, 150),
+        "наставник": (151, 300),
+        "легенда": (301, 1000),  # Новый статус для "Легенда"
+        "создатель": (1000, float('inf'))  # Статус "Создатель", достигается после 1000 XP
     }
+
     min_xp, max_xp = thresholds.get(current_status, (0, 10))
     progress = 100 if current_xp >= max_xp else int(((current_xp - min_xp) / (max_xp - min_xp)) * 100)
     bar_blocks = min(5, int(progress / 5))
@@ -136,25 +142,16 @@ async def profile_handler(message: types.Message):
 
     await message.answer(profile_text, parse_mode="HTML", reply_markup=get_main_keyboard())
 
-
-# === Лидерборд ===
-@router.message(lambda msg: msg.text == "📊 Лидерборд")
+# === ТОП-10 ===
+@router.message(lambda msg: msg.text == "📊 ТОП-10")  # Исправляем название кнопки на "ТОП-10"
 async def leaderboard_handler(message: types.Message):
-    leaderboard = get_leaderboard(top_n=100)
+    leaderboard = get_leaderboard(top_n=100)  # Получаем список пользователей
     if not leaderboard:
         await message.answer("🏆 Пока что нет пользователей в рейтинге.")
         return
 
     user_id = str(message.from_user.id)
-    # Получаем строку данных пользователя
-    row = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
-    row = next((r for r in row if r[0] == user_id), None)  # Получаем строку с данными
-
-    if row is None:
-        await message.answer("❌ Не найден пользователь в базе данных.")
-        return
-
-    profile = get_user_profile_from_row(row)  # Передаем строку
+    profile = get_user_profile_from_row(int(user_id))  # Получаем профиль пользователя
     current_xp = profile["xp"]
     current_status, next_status, xp_target = determine_status(current_xp)
 
@@ -194,13 +191,13 @@ async def leaderboard_handler(message: types.Message):
 @router.message(lambda msg: msg.text == "🎯 Миссии")
 async def show_missions(message: types.Message):
     user_id = message.from_user.id
-    profile = get_user_profile_from_row(user_id)
-    today = datetime.now().strftime("%d.%m.%Y")
+    profile = get_user_profile_from_row(user_id)  # Убедитесь, что эта функция работает правильно
+    today_str = datetime.now().strftime("%d.%m.%Y")
 
     lines = ["🎯 <b>Твои миссии на сегодня:</b>\n"]
-    for mission in get_all_missions():
+    for mission in get_all_missions():  # Убедитесь, что эта функция возвращает все миссии
         key = f"last_{mission.id}"
-        done_today = profile.get(key, "") == today
+        done_today = profile.get(key, "") == today_str
         status = "✅ Выполнено" if done_today else "⏳ В процессе"
         lines.append(f"{mission.title} — {status} (+{mission.reward} XP)")
 
@@ -337,28 +334,6 @@ async def show_status_info(message: types.Message):
         parse_mode="HTML"
     )
 
-
-@router.message(lambda msg: msg.text == "🎯 Миссии")
-async def show_missions(message: types.Message):
-    user_id = message.from_user.id
-    profile = get_user_profile_from_row(user_id)
-    today_str = datetime.now().strftime("%d.%m.%Y")
-
-    lines = ["🎯 <b>Твои миссии на сегодня:</b>\n"]
-
-    for mission in get_all_missions():
-        last_key = f"last_{mission.id}"
-        last_done = profile.get(last_key, "")
-
-        if last_done == today_str:
-            status = "✅ Выполнено"
-        else:
-            status = "⏳ В процессе"
-
-        lines.append(f"{mission.title} — {status} (+{mission.reward} XP)")
-
-    await message.answer("\n".join(lines), parse_mode="HTML")
-    
 @router.message(lambda msg: msg.text and msg.text.strip() == "💬 Вопросы")
 async def handle_question_shop(message: types.Message):
     print("[DEBUG] Кнопка ВОПРОСЫ сработала")

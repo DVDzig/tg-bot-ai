@@ -62,3 +62,28 @@ def generate_ai_response(prompt, keywords, similar_qas=None):
     except Exception as e:
         logging.error(f"[GPT Error] {e}")
         return "❌ Ошибка генерации ответа. Попробуй позже."
+
+def handle_question_answer(user_id, question):
+    answer = generate_ai_response(question)  # Генерация ответа ИИ
+    
+    if not answer:
+        return "Извините, я не могу ответить на этот вопрос."  # Если ответа нет
+    
+    # Получаем данные о пользователе
+    i, row = get_user_row(user_id)
+    if not row:
+        return "Пользователь не найден."
+    
+    # Начисляем XP за каждый вопрос
+    xp = int(row[USER_FIELDS.index("xp")])  # Получаем текущий XP пользователя
+    xp += 1  # Начисляем XP (1 XP за вопрос)
+    row[USER_FIELDS.index("xp")] = str(xp)  # Обновляем XP в данных пользователя
+    
+    # Определяем новый статус пользователя
+    status, _, _ = determine_status(xp)  # Получаем новый статус в зависимости от XP
+    row[USER_FIELDS.index("status")] = status  # Обновляем статус в данных пользователя
+    
+    # Сохраняем обновления в таблице
+    update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)  # Сохраняем изменения в Google Sheets
+    
+    return answer  # Возвращаем ответ от ИИ

@@ -99,7 +99,7 @@ def get_user_profile_from_row(row: list[str]) -> dict:
 
 def apply_xp_penalty_if_needed(user_id):
     i, row = get_user_row(user_id)
-    if not row:
+    if not row or not isinstance(row, list):
         return
     
     premium_status = row[USER_FIELDS.index("premium_status")].strip().lower()
@@ -128,7 +128,7 @@ def apply_xp_penalty_if_needed(user_id):
     row[status_index] = new_status
 
     if i is not None:
-        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)  # Обновление данных
 
 def get_user_activity_stats(user_id):
     try:
@@ -291,25 +291,21 @@ def can_ask_question_row(row: list[str]) -> bool:
     )
 
 def decrement_question_balance_row(i: int, row: list[str]) -> bool:
-    if not isinstance(row, list):  # Проверка типа row
-        raise ValueError("Ожидался список данных о пользователе.")
-    
-    user = UserRow(row)
-    
-    if user.get("premium_status") in ("light", "pro"):
+    user = UserRow(row)  # Создаем объект пользователя
+    if user.get("premium_status") in ("light", "pro"):  # Если статус Лайт или Про, вопросы не уменьшаются
         return True
 
     free = user.get_int("free_questions")
     paid = user.get_int("paid_questions")
 
     if free > 0:
-        user.set("free_questions", free - 1)
+        user.set("free_questions", free - 1)  # Уменьшаем количество бесплатных вопросов
     elif paid > 0:
-        user.set("paid_questions", paid - 1)
+        user.set("paid_questions", paid - 1)  # Уменьшаем количество платных вопросов
     else:
-        return False
+        return False  # Если нет доступных вопросов
 
-    update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
+    update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())  # Сохраняем изменения в таблице
     return True
 
 def update_user_xp_row(i: int, row: list[str]):
@@ -334,3 +330,9 @@ def get_user_row(user_id: int):
         if row and row[0] == str(user_id):  # Добавлена проверка на пустую строку
             return i, row
     return None, None
+
+def get_user_profile_from_row(user_id):
+    i, row = get_user_row(user_id)
+    if row:
+        return get_user_profile_from_row(row)
+    return {}

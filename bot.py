@@ -166,12 +166,12 @@ async def send_daily_reminder(bot: Bot):
 
         await asyncio.sleep(30)
 
-# Плановое обновление лидерборда в 7:00 МСК
+# Плановое обновление ТОП-10 в 7:00 МСК
 async def schedule_leaderboard_update():
     while True:
         now = datetime.now(pytz.timezone("Europe/Moscow"))
         if now.time().hour == 7 and now.time().minute == 0:
-            print("[Scheduler] Обновляю лидерборд...")
+            print("[Scheduler] Обновляю ТОП-10...")
             await asyncio.sleep(60)
         await asyncio.sleep(30)
 
