@@ -1,4 +1,5 @@
 import uuid
+import requests
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from yookassa import Payment
@@ -72,3 +73,35 @@ async def handle_buy_subscription(call: CallbackQuery):
         f"<a href='{confirm_url}'>💳 Оплатить через YooKassa</a>",
         disable_web_page_preview=True
     )
+
+
+
+def generate_payment_link(amount: float, description: str, user_id: int) -> str:
+    url = "https://api.yookassa.ru/v3/labels"
+    
+    headers = {
+        "Authorization": f"Bearer {YOOKASSA_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "amount": {
+            "value": amount,
+            "currency": "RUB"
+        },
+        "capture_mode": "AUTOMATIC",
+        "description": description,
+        "metadata": {
+            "user_id": user_id
+        }
+    }
+
+    # Отправляем запрос для генерации ссылки
+    response = requests.post(url, json=data, headers=headers)
+    
+    # Обработка ответа
+    if response.status_code == 200:
+        response_data = response.json()
+        return response_data["confirmation"]["confirmation_url"]
+    else:
+        raise Exception("Ошибка при генерации платёжной ссылки")

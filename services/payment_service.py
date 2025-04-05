@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from services.payment_service import generate_payment_link
+from handlers.shop_subscription_handler import generate_payment_link
 
 router = Router()
 
