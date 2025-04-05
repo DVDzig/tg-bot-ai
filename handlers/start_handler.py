@@ -7,7 +7,8 @@ from services.user_service import (
     get_user_activity_stats,
     determine_status,
     get_user_profile_from_row, 
-    get_or_create_user
+    get_or_create_user,
+    get_user_row
 )
 from services.google_sheets_service import get_leaderboard, get_sheet_data
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, Message
@@ -65,14 +66,8 @@ async def go_to_start_screen(message: types.Message):
 @router.message(lambda message: message.text == "👤 Мой профиль")
 async def profile_handler(message: types.Message):
     user_id = message.from_user.id
-    # Получаем строку данных пользователя
-    row = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
-    row = next((r for r in row if r[0] == str(user_id)), None)  # Получаем строку с данными
-        
-    if row is None:
-        await message.answer("❌ Не найден пользователь в базе данных.")
-        return
-    profile = get_user_profile_from_row(user_id)
+    # Заменили: теперь передаем данные пользователя, а не его ID
+    profile = get_user_profile_from_row(get_user_row(user_id)[1])
     stats = get_user_activity_stats(user_id)
     current_xp = profile['xp']
     current_status, next_status, xp_to_next = determine_status(current_xp)

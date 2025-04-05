@@ -99,8 +99,12 @@ def get_user_profile_from_row(row: list[str]) -> dict:
 
 def apply_xp_penalty_if_needed(user_id):
     i, row = get_user_row(user_id)
-    if not row or not isinstance(row, list):
+    if not row:
         return
+    
+    premium_status = row[USER_FIELDS.index("premium_status")].strip().lower()
+    if premium_status in ("light", "pro"):
+        return  # Пользователь с подпиской не должен получать штрафы по XP
 
     last_index = USER_FIELDS.index("last_interaction")
     xp_index = USER_FIELDS.index("xp")
@@ -323,3 +327,10 @@ def update_user_xp_row(i: int, row: list[str]):
 
     update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
     return xp, status
+
+def get_user_row(user_id: int):
+    values = get_sheet_data(USER_SHEET_ID, USER_SHEET_NAME)
+    for i, row in enumerate(values, start=2):
+        if row and row[0] == str(user_id):  # Добавлена проверка на пустую строку
+            return i, row
+    return None, None
