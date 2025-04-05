@@ -9,7 +9,7 @@ from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramForbiddenError
-
+  
 
 router = Router()
 
