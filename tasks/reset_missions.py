@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
-from google_sheets_service import get_all_users, update_sheet_row
-from utils.sheets import get_sheets_service, get_column_index_by_name, UserRow
+from services.google_sheets_service import get_all_users, update_sheet_row
+from services.sheets import get_sheets_service, get_column_index_by_name, UserRow
 
 
 async def reset_daily_missions():

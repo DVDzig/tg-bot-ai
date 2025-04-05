@@ -5,13 +5,9 @@ from services.sheets import (
     find_user_row_index,
     get_user_row_by_id, 
     update_sheet_row
-)
+) 
 from datetime import datetime
-from googleapiclient.discovery import build
 
-# Создание Google Sheets API клиента (один раз, глобально)
-def get_sheets_service():
-    return build("sheets", "v4", developerKey=USER_SHEET_ID)
 
 async def get_all_users() -> list[UserRow]:
     service = get_sheets_service()

@@ -1,7 +1,7 @@
 from config import USER_SHEET_ID, USER_SHEET_NAME
-from utils.sheets import get_sheets_service
+from services.sheets import get_sheets_service
 from utils.xp_logic import get_status_by_xp, get_next_status_info
-from google_sheets_service import get_all_users
+from services.google_sheets_service import get_all_users
 
 
 async def get_leaderboard_text(current_user_id: int) -> str:

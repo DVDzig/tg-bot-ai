@@ -4,9 +4,9 @@ from google_sheets_service import (
     update_keywords_for_discipline
 )
 from config import USER_SHEET_ID
-from utils.sheets import get_sheets_service
+from services.sheets import get_sheets_service
 import openai
-
+from config import OPENAI_API_KEY
 openai.api_key = OPENAI_API_KEY
 
 

@@ -1,7 +1,11 @@
 from config import USER_SHEET_ID, USER_SHEET_NAME
-from services.google_sheets_service import get_sheets_service
+from googleapiclient.discovery import build
 
 _column_cache = {}  # чтобы не запрашивать каждый раз
+
+# Создание Google Sheets API клиента (один раз, глобально)
+def get_sheets_service():
+    return build("sheets", "v4", developerKey=USER_SHEET_ID)
 
 async def get_column_index_by_name(sheet_id: str, sheet_name: str, column_name: str) -> int | None:
     key = f"{sheet_id}:{sheet_name}"
