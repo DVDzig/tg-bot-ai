@@ -1,6 +1,6 @@
 fastapi>=0.95.0
-aiogram==3.2.0
-requests==2.x.x
+aiogram
+requests
 aiohttp
 openai
 python-dotenv
