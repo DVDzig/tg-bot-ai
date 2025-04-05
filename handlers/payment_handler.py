@@ -1,37 +1,81 @@
-from aiogram import Router
-from aiogram.types import Message
-from services.user_service import add_paid_questions
+import uuid
+from aiogram import Router, F
+from aiogram.types import CallbackQuery, Message
+from yookassa import Payment
+
+from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
+from services.payment_service import log_pending_payment, generate_payment_link
+from keyboards.shop import get_question_packages_keyboard
+
 
 router = Router()
 
-@router.message(lambda message: message.text.startswith("/payment_success"))
-async def handle_payment_success(message: Message):
-    """
-    Обработка успешной оплаты от Robokassa (временное решение через команду).
-    Пример команды: /payment_success 123456789 10
-    Где 123456789 — user_id, 10 — количество купленных вопросов.
-    """
+# Назначаем секретный ключ YooKassa
+import yookassa
+yookassa.Configuration.account_id = YOOKASSA_SHOP_ID
+yookassa.Configuration.secret_key = YOOKASSA_SECRET_KEY
+
+@router.message(F.text == "💳 Подписка")
+async def handle_subscription_payment(message: Message):
+    user_id = message.from_user.id
+    # Пример: цена подписки на 7 дней
+    amount = 500  # Платёжная сумма
+    description = "Подписка Лайт на 7 дней"
+    
     try:
-        parts = message.text.strip().split()
-        if len(parts) != 3:
-            raise ValueError("Неверный формат команды")
-
-        _, user_id, questions = parts
-        user_id = int(user_id)
-        questions = int(questions)
-
-        success = add_paid_questions(user_id, questions)
-        if success:
-            await message.answer(
-                f"✅ Успешно зачислено {questions} платных вопросов пользователю {user_id}."
-            )
-        else:
-            await message.answer(
-                f"⚠️ Пользователь с ID {user_id} не найден в таблице."
-            )
-
+        payment_link = generate_payment_link(amount, description, user_id)
+        await message.answer(f"Для оплаты подписки перейди по ссылке: {payment_link}")
     except Exception as e:
-        await message.answer(
-            "❌ Ошибка при обработке оплаты. Убедитесь в корректности команды."
-        )
-        print(f"[ERROR] Ошибка обработки оплаты: {e}")
+        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+
+@router.callback_query(F.data.startswith("buy_questions_"))
+async def handle_buy_questions(call: CallbackQuery):
+    await call.answer()
+
+    quantity = int(call.data.split("_")[-1])
+    prices = {
+        1: 10,
+        10: 90,
+        50: 450,
+        100: 900,
+    }
+
+    amount = prices.get(quantity)
+    if not amount:
+        await call.message.answer("Ошибка: неизвестный пакет.")
+        return
+
+    payment_id = str(uuid.uuid4())
+    user_id = call.from_user.id
+
+    # Логируем ожидаемый платёж
+    await log_pending_payment(user_id, payment_id, quantity, "questions")
+
+    # Создаём платёж
+    payment = Payment.create({
+        "amount": {
+            "value": f"{amount:.2f}",
+            "currency": "RUB"
+        },
+        "confirmation": {
+            "type": "redirect",
+            "return_url": "https://t.me/TGTutorBot"  # заменить на нужное
+        },
+        "capture": True,
+        "description": f"{quantity} вопросов для user_id {user_id}",
+        "metadata": {
+            "user_id": str(user_id),
+            "payment_type": "questions",
+            "quantity": quantity,
+            "internal_id": payment_id
+        }
+    })
+
+    confirm_url = payment.confirmation.confirmation_url
+    await call.message.answer(
+        f"🧾 <b>Оплата</b>\n\n"
+        f"Ты выбрал {quantity} вопрос(ов) за {amount}₽.\n"
+        f"Перейди по ссылке, чтобы оплатить:\n\n"
+        f"<a href='{confirm_url}'>💳 Оплатить через YooKassa</a>",
+        disable_web_page_preview=True
+    )

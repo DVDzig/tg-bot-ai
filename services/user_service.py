@@ -1,338 +1,228 @@
+from utils.xp_logic import get_status_by_xp, get_next_status
+from services.google_sheets_service import (
+    get_user_row_by_id, 
+    update_user_plan, 
+    get_all_users,
+    get_column_index, 
+    get_sheets_service,
+    update_sheet_row  # Импорт функции чтения из таблицы
+)
 from datetime import datetime, timedelta
-from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN, USER_FIELDS
-from services.google_sheets_service import get_sheet_data, append_to_sheet, update_sheet_row, pad_user_row, UserRow, get_user_row
-from aiogram import Bot
-from services.missions import update_activity_rewards, determine_status
-import asyncio
-bot = Bot(token=TOKEN)
 
-# Получение пользователя или регистрация
-def get_or_create_user(user_id, username="Unknown", first_name="", last_name="", language_code="", is_premium=False):
-    i, row = get_user_row(user_id)  # Получаем информацию о пользователе
-    if row:  # Если пользователь уже есть
-        print(f"[INFO] Пользователь {user_id} уже существует.")
-        user = UserRow(row)
-        user.set("last_interaction", datetime.now().strftime("%d %B %Y, %H:%M"))
+async def activate_subscription(user_id: int, duration_days: int, internal_id: str):
+    # "lite" или "pro" читаем из логов по internal_id (добавим позже или передадим как аргумент)
+    plan_type = "lite" if "lite" in internal_id else "pro"
 
-        # Проверка статуса подписки и напоминание о сроке действия подписки
-        premium_status = user.get("premium_status").strip().lower()
-        premium_until = user.get("premium_until").strip()
+    until_date = (datetime.utcnow() + timedelta(days=duration_days)).strftime("%Y-%m-%d")
+    await update_user_plan(user_id, plan_type, until_date)
 
-        if premium_status in ("light", "pro") and premium_until:
-            try:
-                end_date = datetime.strptime(premium_until, "%Y-%m-%d").date()
-                today = datetime.now().date()
-                days_left = (end_date - today).days
+async def get_user_profile_text(user) -> str:
+    if user.id == 150532949:
+        return (
+            f"👤 Имя: {user.first_name}\n"
+            f"👑 Статус: Создатель — 🟩🟩🟩🟩🟩 100%\n"
+            f"⭐ Твой XP: 9999 XP\n"
+            f"📅 Последний вход: —\n\n"
+            f"🎁 Доступные вопросы:\n"
+            f"• Бесплатные: 999\n"
+            f"• Платные: 999\n\n"
+            f"📈 Активность:\n"
+            f"• Сегодня: ∞\n"
+            f"• За неделю: ∞\n"
+            f"• Всего: ∞\n\n"
+            f"🔥 У тебя безлимит — ты Создатель.\n\n"
+            f"🔓 Подписка: Полный доступ (админ)\n"
+        )
 
-                if end_date < today:
-                    user.set("premium_status", "none")
-                    user.set("premium_until", "")
-                    asyncio.create_task(
-                        bot.send_message(
-                            chat_id=user_id,
-                            text=(
-                                "⛔️ <b>Срок действия твоего статуса истёк</b>\n"
-                                "Ты снова на базовом доступе.\n\n"
-                                "💡 Хочешь продолжить без ограничений?\n"
-                                "Попробуй <b>Лайт</b> или <b>Про</b> доступ 👉 «Купить доступ»"
-                            ),
-                            parse_mode="HTML"
-                        )
-                    )
-                elif days_left == 1:
-                    asyncio.create_task(
-                        bot.send_message(
-                            chat_id=user_id,
-                            text=(
-                                f"⏳ <b>Внимание!</b>\n"
-                                f"Твой статус <b>{premium_status.capitalize()}</b> истекает завтра ({premium_until})!\n\n"
-                                f"Если хочешь продлить — открой «Купить доступ» и выбери нужный вариант 🛒"
-                            ),
-                            parse_mode="HTML"
-                        )
-                    )
-            except Exception as e:
-                print(f"[ERROR] Ошибка проверки подписки: {e}")
+    # Стандартный путь
+    row = await get_user_row_by_id(user.id)
+    if not row:
+        return "Профиль не найден."
 
-        # Обновляем существующего пользователя
-        if i is not None:
-            update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())  # Обновляем существующую строку
+    first_name = row.get("first_name") or user.first_name
+    xp = int(row.get("xp", 0))
+    status = get_status_by_xp(xp)
+    next_status, to_next = get_next_status(xp)
 
-        return user.data()
+    free_q = int(row.get("free_questions", 0))
+    paid_q = int(row.get("paid_questions", 0))
 
-    # Если нет, регистрируем нового пользователя
-    print(f"[INFO] Регистрируем нового пользователя {user_id}")
-    return register_user(user_id, username, first_name, last_name, language_code, is_premium)
+    last_login = row.get("last_interaction", "")
+    last_login_str = datetime.strptime(last_login, "%Y-%m-%d %H:%M:%S").strftime("%d %B %Y, %H:%M") if last_login else "—"
 
-def register_user(user_id, username, first_name, last_name, language_code, is_premium):
-    now = datetime.now()
-    formatted_now = now.strftime("%d %B %Y, %H:%M")
-    today_str = now.strftime("%d.%m.%Y")
+    today_q = int(row.get("day_count", 0))
+    week_q = int(row.get("xp_week", 0))
+    total_q = int(row.get("question_count", 0))
 
-    row_data = [
-        str(user_id), username, first_name, last_name, language_code, str(is_premium),
-        formatted_now, formatted_now,  # first_interaction, last_interaction
-        "0", "0", "новичок", "", "", "", "0", "0", "0", "0", today_str, "10", "",
-        "none", "", "", "", "", "", "", "", "", "", "", ""
-    ]
+    plan = row.get("plan", "")
+    plan_text = ""
+    if plan == "lite":
+        plan_text = "🔓 Подписка: Лайт (безлимит)"
+    elif plan == "pro":
+        plan_text = "🔓 Подписка: Про (приоритет, 100 вопросов, видео)"
 
-    # Заполним до длины USER_FIELDS
-    if isinstance(row_data, list) and isinstance(USER_FIELDS, list):
-        if len(row_data) < len(USER_FIELDS):
-            row_data += [""] * (len(USER_FIELDS) - len(row_data))
+    # Прогресс-бар из 5 кубиков
+    filled_blocks = min(xp * 5 // max(to_next + xp, 1), 5)
+    progress_bar = f"{'🟩' * filled_blocks}{'⬜️' * (5 - filled_blocks)}"
+    progress_percent = round((xp / (xp + to_next)) * 100) if to_next else 100
 
-    append_to_sheet(USER_SHEET_ID, USER_SHEET_NAME, row_data)
-    return row_data
-
-def get_user_profile_from_row(row: list[str]) -> dict:
-    if not isinstance(row, list):
-        raise ValueError(f"Ожидался список, получено: {type(row).__name__}")
-    
-    profile = {}
-    for i, field in enumerate(USER_FIELDS):
-        value = row[i] if i < len(row) else ""
-        if field in ["xp", "free_questions", "paid_questions"]:
-            profile[field] = int(value) if str(value).isdigit() else 0
-        else:
-            profile[field] = value
-    return profile
-
-def apply_xp_penalty_if_needed(user_id):
-    i, row = get_user_row(user_id)
-    if not row or not isinstance(row, list):
-        return
-    
-    premium_status = row[USER_FIELDS.index("premium_status")].strip().lower()
-    if premium_status in ("light", "pro"):
-        return  # Пользователь с подпиской не должен получать штрафы по XP
-
-    last_index = USER_FIELDS.index("last_interaction")
-    xp_index = USER_FIELDS.index("xp")
-    status_index = USER_FIELDS.index("status")
-
-    try:
-        last_date = datetime.strptime(row[last_index], "%d %B %Y, %H:%M")
-        days_inactive = (datetime.now() - last_date).days
-    except:
-        return
-
-    penalty = 5 if 5 <= days_inactive < 10 else 10 if days_inactive >= 10 else 0
-    if penalty == 0:
-        return
-
-    xp = int(row[xp_index]) if row[xp_index].isdigit() else 0
-    new_xp = max(xp - penalty, 0)
-    new_status, _, _ = determine_status(new_xp)
-
-    row[xp_index] = str(new_xp)
-    row[status_index] = new_status
-
-    if i is not None:
-        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)  # Обновление данных
-
-def get_user_activity_stats(user_id):
-    try:
-        qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
-    except Exception as e:
-        print(f"[ERROR] Не удалось получить QA_Log: {e}")
-        return {
-            "total": 0,
-            "today": 0,
-            "week": 0
-        }
-
-    today = datetime.now().date()
-    week_ago = today - timedelta(days=7)
-
-    total = today_count = week_count = 0
-
-    for row in qa_log:
-        if isinstance(row, list) and (len(row) < 2 or str(row[0]) != str(user_id)):
-            continue
-        try:
-            ts = datetime.strptime(row[1], "%d %B %Y, %H:%M")
-        except:
-            continue
-
-        total += 1
-        if ts.date() == today:
-            today_count += 1
-        if ts.date() >= week_ago:
-            week_count += 1
-
-    return {
-        "total": total,
-        "today": today_count,
-        "week": week_count
-    }
-
-def check_and_apply_daily_challenge(user_id: int) -> bool:
-    from services.google_sheets_service import get_sheet_data
-    qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
-    today = datetime.now().date()
-    today_str = today.strftime("%d.%m.%Y")
-
-    i, row = get_user_row(user_id)
-    if not row or not isinstance(row, list):  # Проверка типа для row
-        return False
-    user = UserRow(row)
-
-    if user.get("last_daily_challenge") == today_str:
-        return False
-
-    count = 0
-    for qa in qa_log:
-        if str(qa[0]) == str(user_id):
-            try:
-                ts = datetime.strptime(qa[1], "%d %B %Y, %H:%M")
-                if ts.date() == today:
-                    count += 1
-            except:
-                continue
-
-    if count >= 3:
-        xp = user.get_int("xp") + 2
-        user.set("xp", xp)
-        user.set("status", determine_status(xp)[0])
-        user.set("last_daily_challenge", today_str)
-        user.save(user_id)
-        return True
-
-    return False
-
-def add_paid_questions(user_id: int, count: int) -> bool:
-    i, row = get_user_row(user_id)
-    if not row or not isinstance(row, list):  # Проверка типа для row
-        return False
-    user = UserRow(row)
-    current = user.get_int("paid_questions")
-    user.set("paid_questions", current + count)
-    if i is not None:
-        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
-        return True
-    return False
-
-def update_user_data(user_id: int, updates: dict) -> bool:
-    i, row = get_user_row(user_id)
-    if not row or not isinstance(row, list):  # Проверка типа для row
-        return False
-    user = UserRow(row)
-    for key, value in updates.items():
-        user.set(key, value)
-    if i is not None:
-        update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
-        return True
-    return False
-
-def refresh_monthly_free_questions():
-    values = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
-
-    bonus_by_status = {
-        "новичок": 5, "опытный": 10, "профи": 20,
-        "эксперт": 30, "наставник": 50,
-        "легенда": 75, "создатель": 100
-    }
-
-    for i, row in enumerate(values, start=2):
-        row = pad_user_row(row)
-        user_id = int(row[0])
-        i, row = get_user_row(user_id)
-        if not row or not isinstance(row, list):
-            continue
-        user = UserRow(row)
-
-        status = user.get("status", "новичок").strip().lower()
-        bonus = bonus_by_status.get(status, 5)
-        user.set("free_questions", user.get_int("free_questions") + bonus)
-        user.save(user_id)
-
-def check_thematic_challenge(user_id: int) -> bool:
-    qa_log = get_sheet_data(PROGRAM_SHEETS, "QA_Log!A2:G")
-    today = datetime.now().date()
-    today_str = today.strftime("%d.%m.%Y")
-
-    i, row = get_user_row(user_id)
-    if not row or not isinstance(row, list):  # Проверка типа для row
-        return False
-    user = UserRow(row)
-
-    if user.get("last_thematic_challenge") == today_str:
-        return False
-
-    disciplines = set()
-    for qa in qa_log:
-        if str(qa[0]) == str(user_id):
-            try:
-                ts = datetime.strptime(qa[1], "%d %B %Y, %H:%M")
-                if ts.date() == today and len(qa) > 4:
-                    disciplines.add(qa[4].strip().lower())
-            except:
-                continue
-
-    if isinstance(disciplines, set) and len(disciplines) >= 3:  # Проверка типа для disciplines
-        xp = user.get_int("xp") + 5
-        user.set("xp", xp)
-        user.set("status", determine_status(xp)[0])
-        user.set("last_thematic_challenge", today_str)
-        user.save(user_id)
-        return True
-
-    return False
-
-def can_ask_question_row(row: list[str]) -> bool:
-    if not isinstance(row, list):  # Проверка типа row
-        raise ValueError("Ожидался список данных о пользователе.")
-    
-    user = UserRow(row)
     return (
-        user.get("premium_status") in ("light", "pro")
-        or user.get_int("free_questions") > 0
-        or user.get_int("paid_questions") > 0
+        f"👤 Имя: {first_name}\n"
+        f"🎖️ Статус: {status} — {progress_bar} {progress_percent}%\n"
+        f"⭐ Твой XP: {xp} XP\n"
+        f"📅 Последний вход: {last_login_str}\n\n"
+
+        f"🎁 Доступные вопросы:\n"
+        f"• Бесплатные: {free_q}\n"
+        f"• Платные: {paid_q}\n\n"
+
+        f"📈 Активность:\n"
+        f"• Сегодня: {today_q} вопрос(ов)\n"
+        f"• За неделю: {week_q} вопрос(ов)\n"
+        f"• Всего: {total_q} вопрос(ов)\n\n"
+
+        f"🔥 Сегодня ты уже задал {today_q} из 3 вопросов!\n\n"
+        f"💡 Ближайший статус: {next_status} (ещё {to_next} XP)\n\n"
+        f"{plan_text}\n\n"
+        f"👉 Подписку можно купить в разделе «🛒 Магазин»"
     )
 
-def decrement_question_balance_row(i: int, row: list[str]) -> bool:
-    user = UserRow(row)  # Создаем объект пользователя
-    if user.get("premium_status") in ("light", "pro"):  # Если статус Лайт или Про, вопросы не уменьшаются
-        return True
+async def increase_question_count(user_id: int):
+    row = await get_user_row_by_id(user_id)
+    if not row:
+        return
 
-    free = user.get_int("free_questions")
-    paid = user.get_int("paid_questions")
+    updates = {
+        "day_count": str(int(row.get("day_count", 0)) + 1),
+        "week_count": str(int(row.get("week_count", 0)) + 1),
+        "total_questions": str(int(row.get("total_questions", 0)) + 1)
+    }
+
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+
+
+async def decrease_question_limit(user_id: int):
+    row = await get_user_row_by_id(user_id)
+    if not row:
+        return
+
+    free = int(row.get("free_questions", 0))
+    paid = int(row.get("paid_questions", 0))
+
+    updates = {}
 
     if free > 0:
-        user.set("free_questions", free - 1)  # Уменьшаем количество бесплатных вопросов
+        updates["free_questions"] = str(free - 1)
     elif paid > 0:
-        user.set("paid_questions", paid - 1)  # Уменьшаем количество платных вопросов
-    else:
-        return False  # Если нет доступных вопросов
+        updates["paid_questions"] = str(paid - 1)
 
-    update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())  # Сохраняем изменения в таблице
-    return True
+    if updates:
+        await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
-def update_user_xp_row(i: int, row: list[str]):
-    if not isinstance(row, list):  # Проверка типа row
-        raise ValueError("Ожидался список данных о пользователе.")
+async def add_xp_and_update_status(user_id: int, delta: int = 1):
+    row = await get_user_row_by_id(user_id)
+    if not row:
+        return
+
+    # Не начисляем XP, если активна подписка
+    if row.get("plan") in ("lite", "pro"):
+        return
+
+    current_xp = int(row.get("xp", 0))
+    new_xp = current_xp + delta
+    new_status = get_status_by_xp(new_xp)
+
+    updates = {
+        "xp": str(new_xp),
+        "status": new_status
+    }
+
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+
+async def monthly_bonus_for_user(user_row):
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    last_bonus = user_row.get("last_bonus_date")
+
+    if last_bonus == today:
+        return  # Уже выдано сегодня
+
+    status = user_row.get("status", "Новичок")
+    current = int(user_row.get("free_questions", 0))
+
+    bonus_map = {
+        "Новичок": 5,
+        "Опытный": 10,
+        "Профи": 20,
+        "Эксперт": 30,
+        "Наставник": 50,
+        "Легенда": 75,
+        "Создатель": 100
+    }
+
+    bonus = bonus_map.get(status, 0)
+    updates = {
+        "free_questions": str(current + bonus),
+        "last_bonus_date": today
+    }
+
+    await update_sheet_row(user_row.sheet_id, user_row.sheet_name, user_row.index, updates)
+
+async def apply_monthly_bonus_to_all_users():
+    users = await get_all_users()
+    for user in users:
+        await monthly_bonus_for_user(user)
+        
+async def create_mission(sheet_id: str, mission_name: str, user_id: int):
+    """
+    Функция для добавления новой миссии в таблицу пользователя.
+    :param sheet_id: ID таблицы
+    :param mission_name: Название миссии
+    :param user_id: ID пользователя
+    """
+
+    # Получаем индекс колонки для миссии
+    mission_column = await get_column_index(sheet_id, "Users", mission_name)
+
+    # Создаём или обновляем статус миссии для пользователя
+    service = get_sheets_service()
+    service.spreadsheets().values().update(
+        spreadsheetId=sheet_id,
+        range=f"Users!{chr(65 + mission_column)}{user_id + 2}",  # Строки с 2 (первый пользователь)
+        valueInputOption="RAW",
+        body={"values": [["В процессе"]]}  # Статус миссии по умолчанию
+    ).execute()
     
-    user = UserRow(row)
-    if user.get("premium_status").lower() in ("light", "pro"):
-        return user.get_int("xp"), user.get("status")
-
-    xp = user.get_int("xp") + 1
-    user.set("xp", xp)
-    status, _, _ = determine_status(xp)
-    user.set("status", status)
-
-    update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, user.data())
-    return xp, status
-
-def get_user_row(user_id: int):
-    values = get_sheet_data(USER_SHEET_ID, USER_SHEET_NAME)
-    for i, row in enumerate(values, start=2):
-        if row and row[0] == str(user_id):  # Добавлена проверка на пустую строку
-            return i, row
-    return None, None
-
-def get_user_profile_from_row(user_id):
-    i, row = get_user_row(user_id)
+async def update_user_subscription(user_id: int, plan: str):
+    row = await get_user_row_by_id(user_id)
     if row:
-        return get_user_profile_from_row(row)
-    return {}
+        # Получаем индекс колонки "subscription_plan"
+        subscription_column = await get_column_index(row.sheet_id, "Users", "subscription_plan")
+        
+        # Обновляем статус подписки
+        service = get_sheets_service()
+        service.spreadsheets().values().update(
+            spreadsheetId=row.sheet_id,
+            range=f"Users!{chr(65 + subscription_column)}{row.index + 2}",
+            valueInputOption="RAW",
+            body={"values": [[plan]]}
+        ).execute()
+
+async def add_paid_questions(user_id: int, quantity: int):
+    row = await get_user_row_by_id(user_id)
+    if row:
+        # Получаем индекс колонки "paid_questions"
+        paid_questions_column = await get_column_index(row.sheet_id, "Users", "paid_questions")
+        
+        # Получаем текущее количество оплаченных вопросов
+        current_paid_questions = int(await get_column_value_by_name(row.sheet_id, "Users", row.index, "paid_questions"))
+        
+        # Обновляем количество оплаченных вопросов
+        updated_paid_questions = current_paid_questions + quantity
+
+        service = get_sheets_service()
+        service.spreadsheets().values().update(
+            spreadsheetId=row.sheet_id,
+            range=f"Users!{chr(65 + paid_questions_column)}{row.index + 2}",
+            valueInputOption="RAW",
+            body={"values": [[updated_paid_questions]]}
+        ).execute()

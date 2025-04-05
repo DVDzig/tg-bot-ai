@@ -14,6 +14,7 @@ client_email = os.getenv("CLIENT_EMAIL")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
 YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
+ADMIN_ID = os.getenv("YOOKASSA_SECRET_KEY")
 
 PROGRAM_SHEETS_LIST = {
     'МРК': os.getenv("SHEET_PLAN_MRK", "ПланМРК"),
@@ -38,4 +39,22 @@ USER_FIELDS = [
     "streak_days", "last_streak_date", "last_xp_bonus",
     "missions_streak", "last_mission_day"
 ]
+
+VIDEO_URLS = {
+    "МРК": {
+        "Модуль 1": {
+            "Дисциплина 1": [
+                "https://link_to_video_1.com",
+                "https://link_to_video_2.com",
+                "https://link_to_video_3.com"
+            ],
+            "Дисциплина 2": [
+                "https://link_to_video_4.com"
+            ]
+        }
+    },
+    "ТПР": {
+        # Ссылки на видео для других программ
+    }
+}
 

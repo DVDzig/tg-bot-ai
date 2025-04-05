@@ -1,64 +1,60 @@
 import openai
-from config import OPENAI_API_KEY
-import os
-import logging
+from config import OPENAI_API_KEY, VIDEO_URLS, YOUTUBE_API_KEY
+from google_sheets_service import get_keywords_for_discipline
+from googleapiclient.discovery import build
 
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+openai.api_key = OPENAI_API_KEY
 
-# ——— Константы ———
-INSTRUCTION_TEXT = (
-    "Ты — ИИ-ассистент, который отвечает строго по теме учебной дисциплины.\n"
-    "Используй ключевые слова и похожие вопросы, чтобы дать краткий, точный и структурированный ответ.\n\n"
-)
+async def generate_answer(program, module, discipline, user_question) -> str:
+    # Можно собрать системное сообщение
+    prompt = (
+        f"Ты — образовательный помощник. Отвечай только по теме дисциплины «{discipline}».\n"
+        f"Вопрос: {user_question}"
+    )
 
-MAX_PROMPT_LENGTH = 1000
-MAX_QA_HISTORY = 2
-MAX_QA_LENGTH = 300
+    # Генерация ответа через OpenAI
+    import openai
+    from config import OPENAI_API_KEY
+    openai.api_key = OPENAI_API_KEY
 
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "Ты — образовательный ассистент, помогаешь по дисциплинам."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.5,
+        max_tokens=800
+    )
 
-def build_full_prompt(prompt, keywords, similar_qas):
-    if not keywords:
-        keywords = ""
-        similar_qas = []
+    answer = response.choices[0].message.content.strip()
+    return answer
 
-    trimmed_qas = []
-    for item in (similar_qas or [])[:MAX_QA_HISTORY]:
-        q = item["question"][:MAX_QA_LENGTH].strip()
-        a = item["answer"][:MAX_QA_LENGTH].strip()
-        trimmed_qas.append(f"Q: {q}\nA: {a}")
+async def get_video_urls_by_discipline(program, module, discipline, num_videos):
+    # Возвращаем только нужное количество видео по дисциплине
+    # VIDEO_URLS — словарь, где ключи: программа, модуль, дисциплина, а значения — ссылки на видео
+    videos = VIDEO_URLS.get(program, {}).get(module, {}).get(discipline, [])
+    
+    return videos[:num_videos]
 
-    history_block = "\n\n".join(trimmed_qas)
-    user_prompt = prompt.strip()
-    if isinstance(user_prompt, str) and len(user_prompt) > MAX_PROMPT_LENGTH:
-        user_prompt = user_prompt[:MAX_PROMPT_LENGTH] + "..."
+# Настроим подключение к API
+youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
-    full_prompt = INSTRUCTION_TEXT
-    if history_block:
-        full_prompt += f"История похожих вопросов:\n{history_block}\n\n"
-    full_prompt += f"Ключевые слова: {keywords}\n\n"
-    full_prompt += f"Вопрос пользователя: {user_prompt}"
+async def search_video_on_youtube(query: str, max_results: int = 3):
+    # Запрос к YouTube API для поиска видео
+    request = youtube.search().list(
+        q=query,  # запрос (ключевые слова из дисциплины/вопроса)
+        part="snippet",
+        maxResults=max_results,
+        type="video"
+    )
+    
+    response = request.execute()
 
-    return full_prompt
+    # Получаем URL видео
+    video_urls = [
+        f"https://www.youtube.com/watch?v={item['id']['videoId']}"
+        for item in response["items"]
+    ]
 
-
-def generate_ai_response(prompt, keywords, similar_qas=None):
-    try:
-        full_prompt = build_full_prompt(prompt, keywords, similar_qas)
-
-        response = client.chat.completions.create(
-            model="gpt-4-turbo",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Ты — образовательный ИИ-консультант. Отвечай строго по теме, кратко и понятно."
-                },
-                {"role": "user", "content": full_prompt}
-            ],
-            temperature=0.5,
-            max_tokens=600,
-        )
-        return response.choices[0].message.content.strip()
-
-    except Exception as e:
-        logging.error(f"[GPT Error] {e}")
-        return "❌ Ошибка генерации ответа. Попробуй позже."
+    return video_urls

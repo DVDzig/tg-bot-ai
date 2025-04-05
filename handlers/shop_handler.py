@@ -1,61 +1,137 @@
-from aiogram import Router, types
-from aiogram.types import Message
-from utils.keyboard import (
-    get_main_keyboard,
-    get_shop_keyboard,
-    get_question_packages_keyboard,
-    get_subscription_packages_keyboard
-)
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from services.payment_service import generate_payment_link
 
 router = Router()
 
-@router.message(lambda msg: msg.text == "🛍 Магазин")
-async def shop_handler(message: Message):
+# Открытие магазина
+@router.message(F.text == "🛒 Магазин")
+async def open_shop(message: Message):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🧾 Вопросы", callback_data="shop_questions")
+    builder.button(text="💳 Подписка", callback_data="shop_subscription")
+    builder.button(text="⬅️ Назад", callback_data="back:main")
+    builder.adjust(1)
+
     await message.answer(
-        "🛍 <b>Магазин</b>\n\n"
-        "Здесь ты можешь приобрести:\n"
-        "• 💬 Пакеты вопросов (начисляют XP)\n"
-        "• 💳 Подписки Лайт и Про (безлимит, доп. функции)\n\n"
-        "🔔 Про-подписка даёт доступ к YouTube-видео, генерации изображений и приоритету.\n"
-        "❗ При подписке XP не начисляется\n\n"
-        "Выбери вариант ниже ⤵️",
-        parse_mode="HTML",
-        reply_markup=get_shop_keyboard()
+        "🛍 <b>Добро пожаловать в Магазин</b>\n\n"
+        "Здесь ты можешь:\n"
+        "• Купить дополнительные вопросы\n"
+        "• Оформить подписку с бонусами и безлимитом\n\n"
+        "Выбери, что хочешь приобрести 👇",
+        reply_markup=builder.as_markup()
     )
 
-@router.message()
-async def shop_router_handler(message: Message):
-    text = message.text.strip() if message.text else ""
+# Обработчик кнопки "Вопросы"
+@router.callback_query(F.data == "shop_questions")
+async def handle_shop_questions(call: CallbackQuery):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="💳 Купить 1 вопрос - 10₽", callback_data="purchase_1_question")
+    builder.button(text="💳 Купить 10 вопросов - 90₽", callback_data="purchase_10_questions")
+    builder.button(text="💳 Купить 50 вопросов - 450₽", callback_data="purchase_50_questions")
+    builder.button(text="💳 Купить 100 вопросов - 900₽", callback_data="purchase_100_questions")
+    builder.button(text="⬅️ Назад", callback_data="back:shop")
+    builder.adjust(1)
 
-    if text == "💬 Вопросы":
-        await message.answer(
-            "💬 <b>Покупка вопросов</b>\n\n"
-            "Если у тебя закончились бесплатные вопросы — просто купи дополнительные и продолжай обучение!\n\n"
-            "📌 Зачем это нужно:\n"
-            "• Получай ответы от ИИ по учебным дисциплинам\n"
-            "• XP будет начисляться за каждый вопрос\n"
-            "• Возможность прокачиваться, выполнять миссии, открывать достижения\n\n"
-            "Выбери нужный пакет ниже 👇",
-            parse_mode="HTML",
-            reply_markup=get_question_packages_keyboard()
-        )
+    await call.message.edit_text(
+        "🧾 <b>Выбор пакета вопросов</b>\n\n"
+        "Выбери нужное количество вопросов 👇",
+        reply_markup=builder.as_markup()
+    )
 
-    elif text == "💳 Подписка":
-        await message.answer(
-            "💳 <b>Подписка</b>\n\n"
-            "Подписка снимает все лимиты и даёт доступ к эксклюзивным функциям!\n\n"
-            "🎁 Что даёт подписка:\n"
-            "• Безлимит на вопросы (не тратятся, XP не начисляется)\n"
-            "• 🚀 Про: +100 вопросов, видео, генерация изображений, приоритет\n"
-            "• 💡 Лайт: просто безлимит на неделю\n\n"
-            "Выбирай нужный тариф ниже 👇",
-            parse_mode="HTML",
-            reply_markup=get_subscription_packages_keyboard()
-        )
+# Обработчик кнопки "Подписка"
+@router.callback_query(F.data == "shop_subscription")
+async def handle_shop_subscription(call: CallbackQuery):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="💳 Подписка Лайт (7 дней) - 149₽", callback_data="purchase_light_subscription")
+    builder.button(text="💳 Подписка Про - 299₽", callback_data="purchase_pro_subscription")
+    builder.button(text="⬅️ Назад", callback_data="back:shop")
+    builder.adjust(1)
 
-    elif text == "⬅️ Назад":
-        await message.answer("↩️ Возвращаемся в главное меню", reply_markup=get_main_keyboard())
+    await call.message.edit_text(
+        "💳 <b>Выбор подписки</b>\n\n"
+        "Выбери подписку, чтобы оформить:\n"
+        "• Лайт на 7 дней\n"
+        "• Про на неограниченный срок\n\n"
+        "Выбери, что хочешь приобрести 👇",
+        reply_markup=builder.as_markup()
+    )
 
-@router.message(lambda message: message.text == "⬅️ Назад")
-async def back_to_main(message: Message):
-    await message.answer("↩️ Возвращаемся в главное меню", reply_markup=get_main_keyboard())
+# Обработчики для покупки вопросов
+
+@router.callback_query(F.data == "purchase_1_question")
+async def handle_single_question_purchase(call: CallbackQuery):
+    user_id = call.from_user.id
+    amount = 10
+    description = "Покупка 1 вопроса"
+    
+    try:
+        payment_link = await generate_payment_link(amount, description, user_id)
+        await call.message.answer(f"Для оплаты 1 вопроса перейди по ссылке: {payment_link}")
+    except Exception as e:
+        await call.message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+
+@router.callback_query(F.data == "purchase_10_questions")
+async def handle_ten_questions_purchase(call: CallbackQuery):
+    user_id = call.from_user.id
+    amount = 90
+    description = "Покупка 10 вопросов"
+    
+    try:
+        payment_link = await generate_payment_link(amount, description, user_id)
+        await call.message.answer(f"Для оплаты 10 вопросов перейди по ссылке: {payment_link}")
+    except Exception as e:
+        await call.message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+
+@router.callback_query(F.data == "purchase_50_questions")
+async def handle_fifty_questions_purchase(call: CallbackQuery):
+    user_id = call.from_user.id
+    amount = 450
+    description = "Покупка 50 вопросов"
+    
+    try:
+        payment_link = await generate_payment_link(amount, description, user_id)
+        await call.message.answer(f"Для оплаты 50 вопросов перейди по ссылке: {payment_link}")
+    except Exception as e:
+        await call.message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+
+@router.callback_query(F.data == "purchase_100_questions")
+async def handle_hundred_questions_purchase(call: CallbackQuery):
+    user_id = call.from_user.id
+    amount = 900
+    description = "Покупка 100 вопросов"
+    
+    try:
+        payment_link = await generate_payment_link(amount, description, user_id)
+        await call.message.answer(f"Для оплаты 100 вопросов перейди по ссылке: {payment_link}")
+    except Exception as e:
+        await call.message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+
+# Обработчики для подписки
+
+# Обработчик для подписки (Лайт) — теперь на 7 дней
+@router.callback_query(F.data == "purchase_light_subscription")
+async def handle_light_subscription_payment(call: CallbackQuery):
+    user_id = call.from_user.id
+    amount = 149  # Подписка Лайт на 7 дней
+    description = "Подписка Лайт на 7 дней"
+    
+    try:
+        payment_link = await generate_payment_link(amount, description, user_id)
+        await call.message.answer(f"Для оплаты подписки Лайт перейди по ссылке: {payment_link}")
+    except Exception as e:
+        await call.message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+
+# Обработчик для подписки (Про) — теперь на 30 дней
+@router.callback_query(F.data == "purchase_pro_subscription")
+async def handle_pro_subscription_payment(call: CallbackQuery):
+    user_id = call.from_user.id
+    amount = 299  # Подписка Про на 30 дней
+    description = "Подписка Про на 30 дней"  # Изменили описание
+    
+    try:
+        payment_link = await generate_payment_link(amount, description, user_id)
+        await call.message.answer(f"Для оплаты подписки Про (30 дней) перейди по ссылке: {payment_link}")
+    except Exception as e:
+        await call.message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
