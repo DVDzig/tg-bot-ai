@@ -65,6 +65,13 @@ async def go_to_start_screen(message: types.Message):
 @router.message(lambda message: message.text == "👤 Мой профиль")
 async def profile_handler(message: types.Message):
     user_id = message.from_user.id
+    # Получаем строку данных пользователя
+    row = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
+    row = next((r for r in row if r[0] == str(user_id)), None)  # Получаем строку с данными
+        
+    if row is None:
+        await message.answer("❌ Не найден пользователь в базе данных.")
+        return
     profile = get_user_profile_from_row(user_id)
     stats = get_user_activity_stats(user_id)
     current_xp = profile['xp']
@@ -144,7 +151,15 @@ async def leaderboard_handler(message: types.Message):
         return
 
     user_id = str(message.from_user.id)
-    profile = get_user_profile_from_row(int(user_id))
+    # Получаем строку данных пользователя
+    row = get_sheet_data(USER_SHEET_ID, "Users!A2:U")
+    row = next((r for r in row if r[0] == user_id), None)  # Получаем строку с данными
+
+    if row is None:
+        await message.answer("❌ Не найден пользователь в базе данных.")
+        return
+
+    profile = get_user_profile_from_row(row)  # Передаем строку
     current_xp = profile["xp"]
     current_status, next_status, xp_target = determine_status(current_xp)
 
