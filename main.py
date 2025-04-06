@@ -10,7 +10,6 @@ from aiogram.client.default import DefaultBotProperties
 
 from config import TOKEN
 from handlers import (
-    register_all_routers,
     start_handler,
     admin_handler,
     info_handler,
@@ -55,9 +54,6 @@ bot = Bot(
 # Middleware
 dp.message.middleware(EnsureUserMiddleware())
 dp.callback_query.middleware(EnsureUserMiddleware())
-
-# Роутеры
-register_all_routers(dp)
 
 # === Webhook endpoint ===
 @app.post("/webhook")
