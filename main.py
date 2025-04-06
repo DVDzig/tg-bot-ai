@@ -22,8 +22,8 @@ app = FastAPI()
 app.include_router(yookassa_router)
 
 # === Telegram Bot & Dispatcher ===
-bot = Bot(token=TOKEN, default={'parse_mode': ParseMode.HTML})
-dp = Dispatcher(storage=MemoryStorage())
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
 # Middleware
 dp.message.middleware(EnsureUserMiddleware())
@@ -44,12 +44,9 @@ async def on_startup():
     # Устанавливаем webhook
     await set_webhook()
 
-    # Планировщик
+    # Старт планировщика
     scheduler = AsyncIOScheduler()
     schedule_leaderboard_update(scheduler)  # Запуск задачи для обновления лидерборда
     schedule_all_jobs(bot)  # Запуск всех других задач
     schedule_monthly_bonus(scheduler)  # Запуск задачи для выдачи месячного бонуса
-    
-    # Старт планировщика
     scheduler.start()
-

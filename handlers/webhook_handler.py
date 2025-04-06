@@ -5,6 +5,14 @@ from config import YOOKASSA_SECRET_KEY
 
 router = APIRouter()
 
+@router.post("/webhook")
+async def webhook_handler(request: Request):
+    json_data = await request.json()  # Получаем данные от Telegram
+    update = Update(**json_data)  # Преобразуем JSON в объект Update
+    await dp.process_update(update)  # Передаем обновление в Dispatcher
+
+    return {"status": "ok"}  # Ответ Telegram серверу
+
 @router.post("/yookassa-webhook")
 async def yookassa_webhook(request: Request):
     # Получаем данные из webhook
