@@ -5,6 +5,8 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Update
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from aiogram.client.bot import Bot
+from aiogram.client.default import DefaultBotProperties
 
 from config import TOKEN
 from handlers import register_all_routers
@@ -19,7 +21,10 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # === Telegram Bot & Dispatcher ===
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(
+    token=TOKEN,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
 dp = Dispatcher(storage=MemoryStorage())
 
 # Middleware

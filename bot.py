@@ -8,6 +8,8 @@ from middlewares.ensure_user import EnsureUserMiddleware
 from handlers import register_all_routers
 from utils.scheduler import schedule_all_jobs
 import os
+from aiogram.client.bot import Bot
+from aiogram.client.default import DefaultBotProperties
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +21,11 @@ WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "supersecret")
 BASE_WEBHOOK_URL = os.getenv("BASE_WEBHOOK_URL", "https://tg-bot-ai-teyr.onrender.com")
 
 # Инициализация бота с настройками по умолчанию
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(
+    token=TOKEN,
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
+
 dp = Dispatcher(storage=MemoryStorage())
 
 async def root_handler(request):
