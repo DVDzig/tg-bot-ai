@@ -15,23 +15,18 @@ from aiogram.exceptions import TelegramForbiddenError
 router = Router()
 
 
-@router.message(F.text == "/admin")
-async def admin_panel(message: Message):
+@router.message(F.text == "🔧 Админ")
+async def show_admin_menu(message: Message):
     if message.from_user.id != ADMIN_ID:
-        await message.answer("⛔ У тебя нет доступа к админ-панели.")
+        await message.answer("⛔ У тебя нет доступа к админке.")
         return
+    print(f"\n\U0001f6e0Вход в админку от user_id={message.from_user.id}")
 
     await message.answer(
-        "🔧 <b>Админ-панель</b>\n\n"
-        "Выбери команду:\n"
-        "• /users — Кол-во пользователей\n"
-        "• /top — Топ по XP\n"
-        "• /grant_lite [user_id] — выдать Лайт\n"
-        "• /grant_pro [user_id] — выдать Про\n"
-        "• /reset — принудительный сброс миссий/лимитов\n"
-        "• /broadcast [текст] — отправить сообщение всем"
+        text="Добро пожаловать в админ-панель!",
+        reply_markup=get_admin_menu_keyboard()
     )
-
+    
 @router.message(F.text == "/users")
 async def admin_user_stats(message: Message):
     if message.from_user.id != ADMIN_ID:
@@ -209,3 +204,9 @@ async def admin_update_keywords_callback(call: CallbackQuery):
             msg += f"• {f}\n"
 
     await call.message.answer(msg)
+    
+
+# 🔍 Логирование всех входящих сообщений (для отладки)
+@router.message()
+async def fallback_log_all(message: Message):
+    print(f"\n🔢 fallback: user_id={message.from_user.id}, text={message.text}")
