@@ -12,3 +12,4 @@ beautifulsoup4
 selenium
 pytz
 uvicorn>=0.22.0  # Или последнюю стабильную версию
+yookassa
