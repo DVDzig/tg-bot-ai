@@ -1,6 +1,6 @@
 import openai
 from config import OPENAI_API_KEY, VIDEO_URLS, YOUTUBE_API_KEY
-from google_sheets_service import get_keywords_for_discipline
+from services.google_sheets_service import get_keywords_for_discipline
 from googleapiclient.discovery import build
 
 openai.api_key = OPENAI_API_KEY

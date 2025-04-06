@@ -1,5 +1,5 @@
 from collections import defaultdict
-from google_sheets_service import (
+from services.google_sheets_service import (
     get_keywords_for_discipline,
     update_keywords_for_discipline
 )

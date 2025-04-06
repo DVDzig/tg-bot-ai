@@ -1,4 +1,4 @@
-from google_sheets_service import (
+from services.google_sheets_service import (
     update_user_xp,
     get_user_row_by_id,
     update_sheet_row,
