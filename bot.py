@@ -3,6 +3,7 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import DefaultBotProperties
 
 from config import TOKEN
 from middlewares.ensure_user import EnsureUserMiddleware
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher(storage=MemoryStorage())
 
     # Middleware для автоматической регистрации пользователей

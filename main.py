@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import DefaultBotProperties
 
 from config import TOKEN
 from webhook_handler import router as yookassa_router
@@ -21,7 +22,7 @@ app = FastAPI()
 app.include_router(yookassa_router)
 
 # === Telegram Bot & Dispatcher ===
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 
 # Middleware
