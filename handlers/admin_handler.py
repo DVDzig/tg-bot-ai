@@ -3,7 +3,8 @@ from aiogram.types import Message, CallbackQuery
 from config import ADMIN_ID
 from services.google_sheets_service import get_all_users
 from utils.xp_logic import get_status_by_xp
-from keyboards.admin import get_admin_menu_keyboard, get_main_menu_keyboard
+from keyboards.admin import get_admin_menu_keyboard
+from keyboards.main_menu import get_main_menu_keyboard
 from aiogram.fsm.context import FSMContext
 from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription

@@ -1,12 +1,12 @@
+import openai
 from collections import defaultdict
 from services.google_sheets_service import (
     get_keywords_for_discipline,
     update_keywords_for_discipline
 )
-from config import USER_SHEET_ID
+from config import USER_SHEET_ID, OPENAI_API_KEY
 from services.sheets import get_sheets_service
-import openai
-from config import OPENAI_API_KEY
+
 openai.api_key = OPENAI_API_KEY
 
 
