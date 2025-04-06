@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import TOKEN
@@ -21,7 +22,9 @@ app = FastAPI()
 app.include_router(yookassa_router)
 
 # === Telegram Bot & Dispatcher ===
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+# Вместо передачи параметров в конструктор Bot, передаем их через DefaultBotProperties
+bot_properties = DefaultBotProperties(parse_mode=ParseMode.HTML)
+bot = Bot(token=TOKEN, default=bot_properties)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 # Middleware
