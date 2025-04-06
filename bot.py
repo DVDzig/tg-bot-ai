@@ -3,7 +3,6 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import DefaultBotProperties
 
 from config import TOKEN
 from middlewares.ensure_user import EnsureUserMiddleware
@@ -16,11 +15,16 @@ logger = logging.getLogger(__name__)
 
 async def main():
     # Инициализация бота с настройками по умолчанию
-    bot_properties = DefaultBotProperties(parse_mode=ParseMode.HTML)
-    bot = Bot(token=TOKEN, default=bot_properties)
+    bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)  # Прямо указываем параметр parse_mode
     
     # Инициализация диспетчера с памятью
     dp = Dispatcher(bot, storage=MemoryStorage())
+    
+    # Настроим параметр по умолчанию
+    bot.set_my_commands([
+        {"command": "start", "description": "Start the bot"},
+    ])
+    bot.default_parse_mode = ParseMode.HTML  # Задаём по умолчанию parse_mode для сообщений
 
     # Middleware для автоматической регистрации пользователей
     dp.message.middleware(EnsureUserMiddleware())
