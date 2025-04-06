@@ -27,3 +27,7 @@ async def cmd_start(message: Message):
 @router.message(F.text == "/help")
 async def show_help(message: Message):
     await message.answer(HELP_TEXT, disable_web_page_preview=True)
+    
+@router.message()
+async def fallback(message: Message):
+    await message.answer(f"Ты написал: {message.text}\nЭто не команда /start 🤔")

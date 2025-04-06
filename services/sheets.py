@@ -11,7 +11,7 @@ def get_sheets_service():
     service_account_info = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
     creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
-    return build("sheets", "v4", credentials=creds)
+    return build("sheets", "v4", credentials=creds, cache_discovery=False)
 
 # Получение индекса колонки по названию
 async def get_column_index_by_name(sheet_id: str, sheet_name: str, column_name: str) -> int | None:
