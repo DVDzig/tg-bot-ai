@@ -1,9 +1,7 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 from typing import Callable, Dict, Any, Awaitable, Union
-
 from services.user_service import get_or_create_user
-
 
 class EnsureUserMiddleware(BaseMiddleware):
     async def __call__(
@@ -15,4 +13,5 @@ class EnsureUserMiddleware(BaseMiddleware):
         user = event.from_user
         if user:
             await get_or_create_user(user)
+            data["event_from_user"] = user  # ✅ добавляем в data
         return await handler(event, data)

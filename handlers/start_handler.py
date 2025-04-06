@@ -20,7 +20,8 @@ async def cmd_start(message: Message):
         "💡 Вопросы заканчиваются? Можно купить новые или оформить подписку.\n"
         "🎥 В подписке Про или Лайт ты получишь доступ к видео и другим бонусам.\n\n"
         "<b>Готов начать? Выбирай действие ⤵️</b>",
-        reply_markup=get_main_menu_keyboard(message.from_user.id)
+        reply_markup=get_main_menu_keyboard(message.from_user.id),
+        disable_web_page_preview=True  # ✅ правильный аргумент
     )
 
 @router.message(F.text == "❓ Помощь")
@@ -30,4 +31,4 @@ async def show_help(message: Message):
     
 @router.message()
 async def fallback(message: Message):
-    await message.answer(f"Ты написал: {message.text}\nЭто не команда /start 🤔")
+    await message.answer("Команда не распознана. Напиши /start.")
