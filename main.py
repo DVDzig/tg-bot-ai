@@ -22,7 +22,7 @@ app.include_router(yookassa_router)
 
 # === Telegram Bot & Dispatcher ===
 bot = Bot(token=TOKEN, default={'parse_mode': ParseMode.HTML})  # Изменено
-dp = Dispatcher(bot, storage=MemoryStorage())  # Используем аргументы как ключевые параметры
+dp = Dispatcher(storage=MemoryStorage())  # Используем аргументы как ключевые параметры
 
 # Middleware
 dp.message.middleware(EnsureUserMiddleware())

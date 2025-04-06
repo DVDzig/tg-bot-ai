@@ -18,7 +18,7 @@ async def main():
     bot = Bot(token=TOKEN, default={'parse_mode': ParseMode.HTML})  # Изменено
     
     # Инициализация диспетчера с памятью
-    dp = Dispatcher(bot, storage=MemoryStorage())  # Используем аргументы как ключевые параметры
+    dp = Dispatcher(storage=MemoryStorage())  # Используем аргументы как ключевые параметры
     
     # Настроим параметр по умолчанию
     bot.set_my_commands([  # Это тоже лучше оставить как есть
