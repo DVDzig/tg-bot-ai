@@ -273,3 +273,11 @@ async def get_column_index(sheet_id: str, sheet_name: str, column_name: str) -> 
         ).execute()
         
         return column_index
+
+async def get_column_value_by_name(sheet_id: str, sheet_name: str, row_index: int, column_name: str) -> str:
+    service = get_sheets_service()
+    result = service.spreadsheets().values().get(
+        spreadsheetId=sheet_id,
+        range=f"{sheet_name}!{column_name}{row_index}"
+    ).execute()
+    return result.get("values", [])[0][0] if result.get("values") else ""

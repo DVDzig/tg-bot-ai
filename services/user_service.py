@@ -5,9 +5,64 @@ from services.google_sheets_service import (
     get_all_users,
     get_column_index, 
     get_sheets_service,
+    get_column_value_by_name,
     update_sheet_row  # Импорт функции чтения из таблицы
 )
 from datetime import datetime, timedelta
+from config import USER_SHEET_ID, USER_SHEET_NAME
+
+async def get_or_create_user(user) -> None:
+    """
+    Проверяет, существует ли пользователь в таблице. Если нет — создаёт нового.
+    """
+    # Проверяем, есть ли пользователь в таблице
+    row = await get_user_row_by_id(user.id)
+    
+    if row:
+        return  # Если пользователь уже есть, ничего не делаем
+
+    # Если пользователя нет, создаем новую строку с данными пользователя
+    new_user_data = {
+        "user_id": user.id,
+        "username": user.username or "",  # Подставляем пустую строку, если нет username
+        "first_name": user.first_name,
+        "last_name": user.last_name or "",  # Если last_name пустое, ставим пустую строку
+        "language_code": user.language_code or "en",  # Язык по умолчанию - "en"
+        "is_premium": "false",  # По умолчанию пользователь не премиум
+        "first_interaction": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "last_interaction": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "question_count": 0,
+        "day_count": 0,
+        "status": "Новичок",
+        "xp": 0,
+        "xp_week": 0,
+        "paid_questions": 0,
+        "last_free_reset": "2025-01-01 00:00:00",
+        "free_questions": 10,  # Начальное количество бесплатных вопросов
+        "streak_days": 0,
+        "daily_mission_done": "0",
+        "weekly_mission_done": "0",
+        "streak_mission_done": "0",
+        "subscription_plan": "none"  # Начальная подписка "none"
+    }
+
+    # Добавляем нового пользователя в таблицу
+    service = get_sheets_service()
+    range_ = f"{USER_SHEET_NAME}!A2:Z"  # Начинаем с 2-й строки (первая — это заголовок)
+    
+    # Записываем данные пользователя в таблицу
+    body = {
+        "values": [list(new_user_data.values())]
+    }
+    service.spreadsheets().values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range=range_,
+        valueInputOption="RAW",
+        body=body
+    ).execute()
+
+    # Выводим информацию о создании нового пользователя
+    print(f"Создан новый пользователь: {user.id} - {user.first_name}")
 
 async def activate_subscription(user_id: int, duration_days: int, internal_id: str):
     # "lite" или "pro" читаем из логов по internal_id (добавим позже или передадим как аргумент)
