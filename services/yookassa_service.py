@@ -56,3 +56,33 @@ def create_payment(amount_rub: int, description: str, user_id: int, questions: i
     else:
         print("❌ Ошибка при создании платежа:", result)
         return None
+
+def generate_payment_link(amount: float, description: str, user_id: int) -> str:
+    url = "https://api.yookassa.ru/v3/labels"
+    
+    headers = {
+        "Authorization": f"Bearer {YOOKASSA_SECRET_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+        "amount": {
+            "value": amount,
+            "currency": "RUB"
+        },
+        "capture_mode": "AUTOMATIC",
+        "description": description,
+        "metadata": {
+            "user_id": user_id
+        }
+    }
+
+    # Отправляем запрос для генерации ссылки
+    response = requests.post(url, json=data, headers=headers)
+    
+    # Обработка ответа
+    if response.status_code == 200:
+        response_data = response.json()
+        return response_data["confirmation"]["confirmation_url"]
+    else:
+        raise Exception("Ошибка при генерации платёжной ссылки")

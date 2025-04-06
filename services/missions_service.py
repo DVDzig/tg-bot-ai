@@ -1,4 +1,9 @@
-from google_sheets_service import update_user_xp, get_user_row_by_id, update_sheet_row
+from google_sheets_service import (
+    update_user_xp,
+    get_user_row_by_id,
+    update_sheet_row,
+    get_column_index
+)
 from datetime import datetime
 
 async def check_and_apply_missions(user_id: int) -> list[str]:

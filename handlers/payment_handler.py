@@ -1,17 +1,17 @@
 import uuid
+import yookassa
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
-from yookassa import Payment
+from services.yookassa_service import Payment, generate_payment_link
 
 from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
-from services.payment_service import log_pending_payment, generate_payment_link
+from handlers.shop_subscription_handler import log_pending_payment
 from keyboards.shop import get_question_packages_keyboard
 
 
 router = Router()
 
 # Назначаем секретный ключ YooKassa
-import yookassa
 yookassa.Configuration.account_id = YOOKASSA_SHOP_ID
 yookassa.Configuration.secret_key = YOOKASSA_SECRET_KEY
 

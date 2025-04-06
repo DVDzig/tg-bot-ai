@@ -1,7 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from handlers.shop_subscription_handler import generate_payment_link
+from services.yookassa_service import generate_payment_link
 
 router = Router()
 
