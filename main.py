@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # === Telegram Bot & Dispatcher ===
-bot = Bot(token=TOKEN, default={'parse_mode': ParseMode.HTML})
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 
 # Middleware
