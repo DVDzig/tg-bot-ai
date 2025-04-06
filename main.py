@@ -9,9 +9,23 @@ from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
 
 from config import TOKEN
-from handlers import register_all_routers
+from handlers import (
+    register_all_routers,
+    start_handler,
+    admin_handler,
+    info_handler,
+    missions_handler,
+    profile_handler,
+    payment_handler,
+    shop_handler,
+    shop_questions_handler,
+    shop_subscription_handler,
+    leaderboard_handler
+)
 from middlewares.ensure_user import EnsureUserMiddleware
 from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus, schedule_leaderboard_update
+
+dp = Dispatcher(storage=MemoryStorage())
 
 # === Настройка логирования ===
 logging.basicConfig(level=logging.INFO)
@@ -20,12 +34,23 @@ logger = logging.getLogger(__name__)
 # === FastAPI app ===
 app = FastAPI()
 
+# === Диспетчеры хендлеров ===
+dp.include_router(start_handler.router)
+dp.include_router(admin_handler.router)
+dp.include_router(info_handler.router)
+dp.include_router(missions_handler.router)
+dp.include_router(profile_handler.router)
+dp.include_router(payment_handler.router)
+dp.include_router(shop_handler.router)
+dp.include_router(shop_questions_handler.router)
+dp.include_router(shop_subscription_handler.router)
+dp.include_router(leaderboard_handler.router)
+
 # === Telegram Bot & Dispatcher ===
 bot = Bot(
     token=TOKEN,
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
-dp = Dispatcher(storage=MemoryStorage())
 
 # Middleware
 dp.message.middleware(EnsureUserMiddleware())

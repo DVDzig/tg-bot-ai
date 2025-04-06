@@ -28,7 +28,7 @@ async def get_or_create_user(user) -> None:
         "first_name": user.first_name,
         "last_name": user.last_name or "",  # Если last_name пустое, ставим пустую строку
         "language_code": user.language_code or "en",  # Язык по умолчанию - "en"
-        "is_premium": "false",  # По умолчанию пользователь не премиум
+        "is_premium": str(getattr(user, "is_premium", False)).lower(),
         "first_interaction": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
         "last_interaction": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
         "question_count": 0,
