@@ -2,16 +2,15 @@ import logging
 import asyncio
 from fastapi import FastAPI
 from aiogram import Bot, Dispatcher
-from aiogram.enums import DefaultBotProperties, ParseMode
+from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import TOKEN
 from webhook_handler import router as yookassa_router
 from handlers import register_all_routers
 from middlewares.ensure_user import EnsureUserMiddleware
 from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus, schedule_leaderboard_update
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -22,8 +21,8 @@ app = FastAPI()
 app.include_router(yookassa_router)
 
 # === Telegram Bot & Dispatcher ===
-bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher(storage=MemoryStorage())
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
+dp = Dispatcher(bot, storage=MemoryStorage())
 
 # Middleware
 dp.message.middleware(EnsureUserMiddleware())
@@ -41,7 +40,9 @@ async def on_startup():
     
     # Планировщик
     scheduler = AsyncIOScheduler()
-    schedule_leaderboard_update(scheduler)
-    schedule_all_jobs(bot)
-    schedule_monthly_bonus(scheduler)
+    schedule_leaderboard_update(scheduler)  # Запуск задачи для обновления лидерборда
+    schedule_all_jobs(bot)  # Запуск всех других задач
+    schedule_monthly_bonus(scheduler)  # Запуск задачи для выдачи месячного бонуса
+    
+    # Старт планировщика
     scheduler.start()
