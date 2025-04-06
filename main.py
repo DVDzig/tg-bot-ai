@@ -1,21 +1,20 @@
 import logging
-import asyncio
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
+from aiohttp import web
+from starlette.middleware.wsgi import WSGIMiddleware
 from aiogram import Bot, Dispatcher
-from aiogram.types import WebhookInfo
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import nest_asyncio
+nest_asyncio.apply()
+
 from config import TOKEN
 from webhook_handler import router as yookassa_router
 from handlers import register_all_routers
 from middlewares.ensure_user import EnsureUserMiddleware
 from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus, schedule_leaderboard_update
-from aiogram import types
-
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # === FastAPI app ===
 app = FastAPI()
@@ -32,21 +31,37 @@ dp.callback_query.middleware(EnsureUserMiddleware())
 # Роутеры
 register_all_routers(dp)
 
+# === Webhook URL ===
+WEBHOOK_PATH = "/webhook"
+BASE_WEBHOOK_URL = "https://tg-bot-ai-teyr.onrender.com"
+WEBHOOK_SECRET = "supersecret"
+WEBHOOK_FULL_URL = BASE_WEBHOOK_URL + WEBHOOK_PATH
+
 async def set_webhook():
-    # Установим webhook
-    webhook_url = "https://tg-bot-ai-teyr.onrender.com/webhook"  # Укажите свой URL
-    await bot.set_webhook(webhook_url)
+    await bot.set_webhook(WEBHOOK_FULL_URL, secret_token=WEBHOOK_SECRET)
+
+@app.get("/")
+async def root():
+    return {"status": "Bot is running"}
 
 @app.on_event("startup")
 async def on_startup():
-    logger.info("🚀 Старт Telegram-бота и планировщика")
-    
-    # Устанавливаем webhook
+    logging.info("🚀 Старт Telegram-бота и планировщика")
+
+    # Устанавливаем Webhook
     await set_webhook()
 
-    # Старт планировщика
+    # Планировщик
     scheduler = AsyncIOScheduler()
-    schedule_leaderboard_update(scheduler)  # Запуск задачи для обновления лидерборда
-    schedule_all_jobs(bot)  # Запуск всех других задач
-    schedule_monthly_bonus(scheduler)  # Запуск задачи для выдачи месячного бонуса
+    schedule_leaderboard_update(scheduler)
+    schedule_all_jobs(bot)
+    schedule_monthly_bonus(scheduler)
     scheduler.start()
+
+    # === Интеграция Telegram webhook ===
+    aiohttp_app = web.Application()
+    SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET).register(
+        aiohttp_app, path=WEBHOOK_PATH
+    )
+    setup_application(aiohttp_app, dp, bot=bot)
+    app.mount("/webhook", WSGIMiddleware(aiohttp_app))
