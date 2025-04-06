@@ -46,6 +46,10 @@ async def telegram_webhook(request: Request):
 async def root():
     return {"status": "Bot is running"}
 
+@app.head("/")
+async def root_head():
+    return
+
 # === Startup event ===
 @app.on_event("startup")
 async def on_startup():
