@@ -1,14 +1,13 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.types import Message
 from keyboards.shop import get_question_packages_keyboard
 
 router = Router()
 
 
-@router.callback_query(F.data == "shop_questions")
-async def show_question_packages(call: CallbackQuery):
-    await call.answer()
-    await call.message.edit_text(
+@router.message(F.text == "💎 Вопросы")
+async def shop_questions_entry_point(message: Message):
+    await message.answer(
         "🧾 <b>Покупка вопросов</b>\n\n"
         "Ты можешь задать:\n"
         "• 1 вопрос — 10₽\n"

@@ -2,7 +2,7 @@ import uuid
 import requests
 import yookassa
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from services.yookassa_service import Payment
 
 from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
@@ -15,10 +15,9 @@ yookassa.Configuration.account_id = YOOKASSA_SHOP_ID
 yookassa.Configuration.secret_key = YOOKASSA_SECRET_KEY
 
 
-@router.callback_query(F.data == "shop_subscription")
-async def show_subscriptions(call: CallbackQuery):
-    await call.answer()
-    await call.message.edit_text(
+@router.message(F.text == "💼 Подписки")
+async def shop_subscription_entry_point(message: Message):
+    await call.answer(
         "💳 <b>Подписки</b>\n\n"
         "🔓 <b>Лайт</b> — 7 дней безлимита. Идеально, если хочешь прокачаться за неделю. XP не начисляется.\n"
         "🔓 <b>Про</b> — максимум: безлимит, +100 вопросов, видео, приоритет, генерация изображений.\n\n"
