@@ -2,9 +2,9 @@ import logging
 import asyncio
 from fastapi import FastAPI
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
+from aiogram.enums import DefaultBotProperties, ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import DefaultBotProperties
+
 
 from config import TOKEN
 from webhook_handler import router as yookassa_router

@@ -1,9 +1,8 @@
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher
-from aiogram.enums import ParseMode
+from aiogram.enums import DefaultBotProperties, ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import DefaultBotProperties
 
 from config import TOKEN
 from middlewares.ensure_user import EnsureUserMiddleware
