@@ -7,9 +7,9 @@ from keyboards.main_menu import get_main_menu_keyboard
 from handlers.profile_handler import show_profile
 from handlers.leaderboard_handler import show_leaderboard
 from handlers.missions_handler import show_missions
-from handlers.shop_handler import show_shop
-from handlers.program_handler import choose_program
-from handlers.info_handler import show_info
+from handlers.shop_handler import open_shop
+from handlers.program_handler import start_program_selection
+from handlers.info_handler import show_info_menu
 
 router = Router()
 
@@ -53,15 +53,15 @@ async def handle_missions(message: Message):
 
 @router.message(F.text == "🛒 Магазин")
 async def handle_shop(message: Message):
-    await show_shop(message)
+    await open_shop(message)
 
 @router.message(F.text == "💬 Выбор программы")
 async def handle_program_selection(message: Message):
-    await choose_program(message)
+    await start_program_selection(message)
 
 @router.message(F.text == "ℹ️ Info")
 async def handle_info(message: Message):
-    await show_info(message)
+    await show_info_menu(message)
 
 #@router.message()
 #async def fallback(message: Message):
