@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 async def main():
     # Инициализация бота с настройками по умолчанию
-    bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)  # Прямо указываем параметр parse_mode
+    bot = Bot(token=TOKEN, default={'parse_mode': ParseMode.HTML})  # Изменено
     
     # Инициализация диспетчера с памятью
     dp = Dispatcher(bot, storage=MemoryStorage())
     
     # Настроим параметр по умолчанию
-    bot.set_my_commands([
+    bot.set_my_commands([  # Это тоже лучше оставить как есть
         {"command": "start", "description": "Start the bot"},
     ])
     bot.default_parse_mode = ParseMode.HTML  # Задаём по умолчанию parse_mode для сообщений

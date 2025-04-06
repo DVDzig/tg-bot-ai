@@ -21,7 +21,7 @@ app = FastAPI()
 app.include_router(yookassa_router)
 
 # === Telegram Bot & Dispatcher ===
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)  # Прямо указываем параметр parse_mode
+bot = Bot(token=TOKEN, default={'parse_mode': ParseMode.HTML})  # Изменено
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 # Middleware
