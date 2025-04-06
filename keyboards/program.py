@@ -38,17 +38,3 @@ def get_discipline_keyboard(disciplines: list[str]):
         keyboard=[[KeyboardButton(text=d)] for d in disciplines] + [[KeyboardButton(text="⬅️ Назад")]],
         resize_keyboard=True
     )
-
-
-def get_back_keyboard(from_state: str):
-    mapping = {
-        "level": "🎓 Бакалавриат / Магистратура",
-        "program": "💬 Выбор программы",
-        "module": "📘 Программа",
-        "discipline": "📘 Дисциплина",
-        "context": "Задание вопросов"
-    }
-    return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="⬅️ Назад")]],
-        resize_keyboard=True
-    )

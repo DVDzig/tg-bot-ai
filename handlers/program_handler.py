@@ -25,8 +25,8 @@ from keyboards.program import (
     get_program_keyboard,
     get_module_keyboard,
     get_discipline_keyboard,
-    get_back_keyboard
 )
+from keyboards.common import get_back_keyboard
 from services.missions_service import check_and_apply_missions
 from services.gpt_service import search_video_on_youtube
 
