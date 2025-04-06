@@ -8,6 +8,9 @@ from texts.subscriptions_text import SUBSCRIPTIONS_TEXT
 router = Router()
 
 @router.message(F.text == "ℹ️ Info")
+async def log_wrapper(message: Message):
+    print(f'🧪 Нажата кнопка: {message.text}')
+    return await real_ℹ️ Info_handler(message)
 async def show_info_menu(message: Message):
     await message.answer("ℹ️ Выбери, что тебе интересно:", reply_markup=get_info_menu_keyboard())
 

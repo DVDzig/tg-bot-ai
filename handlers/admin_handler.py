@@ -16,6 +16,9 @@ router = Router()
 
 
 @router.message(F.text == "🔧 Админ")
+async def log_wrapper(message: Message):
+    print(f'🧪 Нажата кнопка: {message.text}')
+    return await real_🔧 Админ_handler(message)
 async def show_admin_menu(message: Message):
     if message.from_user.id != ADMIN_ID:
         await message.answer("⛔ У тебя нет доступа к админке.")
@@ -28,6 +31,9 @@ async def show_admin_menu(message: Message):
     )
     
 @router.message(F.text == "/users")
+async def log_wrapper(message: Message):
+    print(f'🧪 Нажата кнопка: {message.text}')
+    return await real_/users_handler(message)
 async def admin_user_stats(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -48,6 +54,9 @@ async def admin_user_stats(message: Message):
     )
 
 @router.message(F.text == "/top")
+async def log_wrapper(message: Message):
+    print(f'🧪 Нажата кнопка: {message.text}')
+    return await real_/top_handler(message)
 async def admin_top_xp(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -74,6 +83,9 @@ async def admin_top_xp(message: Message):
     await message.answer(text)
     
 @router.message(F.text == "🛠 Админ")
+async def log_wrapper(message: Message):
+    print(f'🧪 Нажата кнопка: {message.text}')
+    return await real_🛠 Админ_handler(message)
 async def show_admin_menu(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
@@ -94,6 +106,9 @@ async def show_admin_top_callback(call: CallbackQuery):
     await admin_top_xp(call.message)  # вызываем уже существующую функцию
 
 @router.message(F.text == "/top")
+async def log_wrapper(message: Message):
+    print(f'🧪 Нажата кнопка: {message.text}')
+    return await real_/top_handler(message)
 async def admin_top_xp(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
