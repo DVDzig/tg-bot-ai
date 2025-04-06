@@ -36,9 +36,17 @@ async def main():
     # Планировщик фоновых задач (ежедневные миссии, топ и т.д.)
     schedule_all_jobs(bot)
 
-    logger.info("🚀 Бот запущен")
-    # Запуск бота
-    await dp.start_polling()
+    # Настройка вебхука
+    webhook_url = "https://your-domain.com/webhook"  # Замените на ваш URL
+    await bot.set_webhook(webhook_url)  # Устанавливаем вебхук
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    logger.info(f"Вебхук установлен: {webhook_url}")
+
+# === Вебхук обработчик ===
+@app.post("/webhook")
+async def webhook_handler(request: Request):
+    json_data = await request.json()  # Получаем данные от Telegram
+    update = Update(**json_data)  # Преобразуем JSON в объект Update
+    await dp.process_update(update)  # Передаем обновление в Dispatcher
+
+    return {"status": "ok"}  # Ответ Telegram серверу
