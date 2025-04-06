@@ -1,8 +1,45 @@
 from aiogram import Router, F
 from aiogram.types import Message
 from services.yookassa_service import generate_payment_link
+from config import USER_SHEET_ID
+from services.sheets import get_sheets_service
+from datetime import datetime
+
 
 router = Router()
+
+async def log_pending_payment(user_id: int, payment_id: str, quantity: int, payment_type: str):
+    # Название листа в Google Sheets, куда будем записывать логи
+    SHEET_NAME = "PaymentsLog"
+    
+    # Получаем сервис для работы с Google Sheets
+    service = get_sheets_service()
+
+    # Текущая дата и время для записи в столбец timestamp
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Заполнение данных для записи в таблицу
+    row = [
+        str(user_id),           # Идентификатор пользователя
+        str(quantity),          # Количество (вопросов или дней подписки)
+        str(payment_type),      # Тип платежа (например, "subscription" или "questions")
+        "pending",              # Статус платежа (пока он в ожидании)
+        "payment",              # Место для "события" — например, "создание платежа"
+        payment_id,             # Уникальный идентификатор платежа
+        timestamp               # Время создания записи
+    ]
+    
+    # Создаем тело запроса для записи в таблицу
+    body = {"values": [row]}
+
+    # Выполняем запрос на добавление строки в таблицу
+    sheet = service.spreadsheets().values()
+    sheet.append(
+        spreadsheetId=USER_SHEET_ID,   # ID таблицы
+        range=f"{SHEET_NAME}!A:G",     # Диапазон, куда записываем данные (все колонки от A до G)
+        valueInputOption="RAW",        # Записываем данные как есть
+        body=body                      # Данные для записи
+    ).execute()
 
 # Обработчик для подписки (Лайт)
 @router.message(F.text == "💳 Подписка Лайт (7 дней)")

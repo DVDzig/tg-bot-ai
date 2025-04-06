@@ -5,7 +5,7 @@ from aiogram.types import CallbackQuery, Message
 from services.yookassa_service import Payment, generate_payment_link
 
 from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
-from handlers.shop_subscription_handler import log_pending_payment
+from services.payment_service import log_pending_payment
 from keyboards.shop import get_question_packages_keyboard
 
 
