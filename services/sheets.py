@@ -1,12 +1,19 @@
 from config import USER_SHEET_ID, USER_SHEET_NAME
 from googleapiclient.discovery import build
+import json
+import os
+from google.oauth2.service_account import Credentials
 
 _column_cache = {}  # чтобы не запрашивать каждый раз
 
-# Создание Google Sheets API клиента (один раз, глобально)
+# ✅ Авторизация через сервисный аккаунт
 def get_sheets_service():
-    return build("sheets", "v4", developerKey=USER_SHEET_ID)
+    service_account_info = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
+    scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+    creds = Credentials.from_service_account_info(service_account_info, scopes=scopes)
+    return build("sheets", "v4", credentials=creds)
 
+# Получение индекса колонки по названию
 async def get_column_index_by_name(sheet_id: str, sheet_name: str, column_name: str) -> int | None:
     key = f"{sheet_id}:{sheet_name}"
     if key not in _column_cache:
@@ -20,7 +27,7 @@ async def get_column_index_by_name(sheet_id: str, sheet_name: str, column_name: 
 
     return _column_cache[key].get(column_name)
 
-# Получение индекса строки по user_id
+# Поиск строки пользователя
 async def find_user_row_index(user_id: str):
     service = get_sheets_service()
     result = service.spreadsheets().values().get(
@@ -31,11 +38,10 @@ async def find_user_row_index(user_id: str):
     values = result.get("values", [])
     for i, row in enumerate(values):
         if row and row[0] == user_id:
-            return i + 1  # строки начинаются с 1
+            return i + 1
     return None
 
-
-# Обновление ячеек по ключам (например, plan, premium_until)
+# Обновление строки по ключам
 async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updates: dict):
     service = get_sheets_service()
     body = {"valueInputOption": "RAW", "data": []}
@@ -57,6 +63,7 @@ async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updat
             body=body
         ).execute()
 
+# Класс строки пользователя
 class UserRow:
     def __init__(self, row: list, header_map: dict, row_index: int):
         self.row = row
@@ -74,6 +81,7 @@ class UserRow:
     async def get_index(self):
         return self.index
 
+# Получение строки пользователя по ID
 async def get_user_row_by_id(user_id: int) -> UserRow | None:
     service = get_sheets_service()
     sheet = service.spreadsheets().values()
