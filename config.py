@@ -14,7 +14,7 @@ client_email = os.getenv("CLIENT_EMAIL")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
 YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
-ADMIN_ID = os.getenv("YOOKASSA_SECRET_KEY")
+ADMIN_ID = os.getenv("ADMIN_ID")
 
 PROGRAM_SHEETS_LIST = {
     'МРК': os.getenv("SHEET_PLAN_MRK", "ПланМРК"),
