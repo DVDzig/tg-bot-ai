@@ -1,12 +1,13 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from keyboards.shop import get_question_packages_keyboard, get_shop_keyboard
+from keyboards.shop import get_question_packages_keyboard 
+from handlers.shop_handler import get_shop_keyboard
 
 router = Router()
 
 
 @router.message(F.text == "💎 Вопросы")
-async def shop_questions_entry_point(message: Message):
+async def get_question_packages_keyboard(message: Message):
     await message.answer(
         "🧾 <b>Покупка вопросов</b>\n\n"
         "Ты можешь задать:\n"
