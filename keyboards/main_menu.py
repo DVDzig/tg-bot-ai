@@ -3,6 +3,7 @@ from config import ADMIN_ID
 
 
 def get_main_menu_keyboard(user_id: int) -> ReplyKeyboardMarkup:
+    print(f"🧪 get_main_menu_keyboard → user_id={user_id}, ADMIN_ID={ADMIN_ID}")
     buttons = [
         [KeyboardButton(text="💬 Выбор программы")],
         [KeyboardButton(text="👤 Мой профиль"), KeyboardButton(text="📊 ТОП-10")],
