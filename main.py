@@ -35,7 +35,6 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # === Диспетчеры хендлеров ===
-dp.include_router(start_handler.router)
 dp.include_router(admin_handler.router)
 dp.include_router(info_handler.router)
 dp.include_router(missions_handler.router)
@@ -46,6 +45,7 @@ dp.include_router(shop_questions_handler.router)
 dp.include_router(shop_subscription_handler.router)
 dp.include_router(leaderboard_handler.router)
 dp.include_router(program_handler.router)
+dp.include_router(start_handler.router)
 
 # === Telegram Bot & Dispatcher ===
 bot = Bot(

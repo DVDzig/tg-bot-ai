@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from keyboards.shop import get_question_packages_keyboard
+from keyboards.shop import get_question_packages_keyboard, get_shop_keyboard
 
 router = Router()
 
@@ -18,3 +18,8 @@ async def shop_questions_entry_point(message: Message):
         "Выбери нужный пакет 👇",
         reply_markup=get_question_packages_keyboard()
     )
+
+
+@router.message(F.text == "⬅️ Назад в магазин")
+async def back_to_shop(message: Message):
+    await message.answer("📦 Возвращаемся в магазин ⬇️", reply_markup=get_shop_keyboard())

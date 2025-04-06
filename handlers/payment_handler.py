@@ -1,57 +1,56 @@
-import uuid
-import yookassa
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import Message
 from services.yookassa_service import Payment, generate_payment_link
-
-from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
 from services.payment_service import log_pending_payment
-from keyboards.shop import get_question_packages_keyboard
-
+from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
+import yookassa
+import uuid
 
 router = Router()
 
-# Назначаем секретный ключ YooKassa
+# Настройка ключей YooKassa
 yookassa.Configuration.account_id = YOOKASSA_SHOP_ID
 yookassa.Configuration.secret_key = YOOKASSA_SECRET_KEY
 
+# Подписка
 @router.message(F.text == "💳 Подписка")
 async def handle_subscription_payment(message: Message):
     user_id = message.from_user.id
-    # Пример: цена подписки на 7 дней
-    amount = 500  # Платёжная сумма
+    amount = 500
     description = "Подписка Лайт на 7 дней"
-    
     try:
         payment_link = generate_payment_link(amount, description, user_id)
-        await message.answer(f"Для оплаты подписки перейди по ссылке: {payment_link}")
+        await message.answer(f"Для оплаты подписки перейди по ссылке:\n{payment_link}")
     except Exception as e:
         await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
 
-@router.callback_query(F.data.startswith("buy_questions_"))
-async def handle_buy_questions(call: CallbackQuery):
-    await call.answer()
+# Покупка 1 вопроса
+@router.message(F.text == "🟢 Купить 1 вопрос (10₽)")
+async def buy_1_question(message: Message):
+    await process_question_payment(message, 1, 10)
 
-    quantity = int(call.data.split("_")[-1])
-    prices = {
-        1: 10,
-        10: 90,
-        50: 450,
-        100: 900,
-    }
+# Покупка 10 вопросов
+@router.message(F.text == "🔹 Купить 10 вопросов (90₽)")
+async def buy_10_questions(message: Message):
+    await process_question_payment(message, 10, 90)
 
-    amount = prices.get(quantity)
-    if not amount:
-        await call.message.answer("Ошибка: неизвестный пакет.")
-        return
+# Покупка 50 вопросов
+@router.message(F.text == "🚀 Купить 50 вопросов (450₽)")
+async def buy_50_questions(message: Message):
+    await process_question_payment(message, 50, 450)
 
+# Покупка 100 вопросов
+@router.message(F.text == "👑 Купить 100 вопросов (900₽)")
+async def buy_100_questions(message: Message):
+    await process_question_payment(message, 100, 900)
+
+# Общая функция оплаты
+async def process_question_payment(message: Message, quantity: int, amount: int):
+    user_id = message.from_user.id
     payment_id = str(uuid.uuid4())
-    user_id = call.from_user.id
 
-    # Логируем ожидаемый платёж
     await log_pending_payment(user_id, payment_id, quantity, "questions")
 
-    # Создаём платёж
     payment = Payment.create({
         "amount": {
             "value": f"{amount:.2f}",
@@ -59,7 +58,7 @@ async def handle_buy_questions(call: CallbackQuery):
         },
         "confirmation": {
             "type": "redirect",
-            "return_url": "https://t.me/TGTutorBot"  # заменить на нужное
+            "return_url": "https://t.me/TGTutorBot"
         },
         "capture": True,
         "description": f"{quantity} вопросов для user_id {user_id}",
@@ -72,7 +71,7 @@ async def handle_buy_questions(call: CallbackQuery):
     })
 
     confirm_url = payment.confirmation.confirmation_url
-    await call.message.answer(
+    await message.answer(
         f"🧾 <b>Оплата</b>\n\n"
         f"Ты выбрал {quantity} вопрос(ов) за {amount}₽.\n"
         f"Перейди по ссылке, чтобы оплатить:\n\n"

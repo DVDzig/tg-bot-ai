@@ -1,9 +1,14 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def get_info_menu_keyboard() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🎖️ Статусы", callback_data="info_statuses")],
-        [InlineKeyboardButton(text="💳 Подписки", callback_data="info_subscriptions")],
-        [InlineKeyboardButton(text="❓ Помощь", callback_data="info_help")],
-        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back:main")]
-    ])
+def get_info_menu_keyboard() -> ReplyKeyboardMarkup:
+    keyboard = [
+        [KeyboardButton(text="🎖️ Статусы")],
+        [KeyboardButton(text="💳 Подписки")],
+        [KeyboardButton(text="❓ Помощь")],
+        [KeyboardButton(text="⬅️ Назад")]
+    ]
+    return ReplyKeyboardMarkup(
+        keyboard=keyboard,
+        resize_keyboard=True,
+        input_field_placeholder="Выберите раздел ⤵️"
+    )
