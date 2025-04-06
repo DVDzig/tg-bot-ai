@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 async def main():
     # Инициализация бота с настройками по умолчанию
-    bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
-    dp = Dispatcher(bot, storage=MemoryStorage())
+    bot = Bot(token=TOKEN, default={'parse_mode': ParseMode.HTML})
+    dp = Dispatcher(storage=MemoryStorage())
     
     # Middleware для автоматической регистрации пользователей
     dp.message.middleware(EnsureUserMiddleware())
