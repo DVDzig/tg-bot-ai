@@ -37,7 +37,7 @@ async def main():
     schedule_all_jobs(bot)
 
     # Настройка вебхука
-    webhook_url = "https://your-domain.com/webhook"  # Замените на ваш URL
+    webhook_url = "https://tg-bot-ai-teyr.onrender.com/webhook"  # Замените на ваш URL
     await bot.set_webhook(webhook_url)  # Устанавливаем вебхук
 
     logger.info(f"Вебхук установлен: {webhook_url}")

@@ -34,7 +34,7 @@ register_all_routers(dp)
 
 async def set_webhook():
     # Установим webhook
-    webhook_url = "https://yourdomain.com/webhook"  # Укажите свой URL
+    webhook_url = "https://tg-bot-ai-teyr.onrender.com/webhook"  # Укажите свой URL
     await bot.set_webhook(webhook_url)
 
 @app.on_event("startup")
