@@ -8,7 +8,6 @@ from middlewares.ensure_user import EnsureUserMiddleware
 from handlers import register_all_routers
 from utils.scheduler import schedule_all_jobs
 import os
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
