@@ -64,4 +64,5 @@ async def on_startup():
         aiohttp_app, path=WEBHOOK_PATH
     )
     setup_application(aiohttp_app, dp, bot=bot)
-    app.mount("/webhook", WSGIMiddleware(aiohttp_app))
+    app.mount("/", WSGIMiddleware(aiohttp_app))
+
