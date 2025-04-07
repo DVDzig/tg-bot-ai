@@ -1,12 +1,10 @@
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
-from openai import error as openai_error
+import openai  # для обработки ошибок
+
 from config import OPENAI_API_KEY, VIDEO_URLS, YOUTUBE_API_KEY
 from services.google_sheets_service import get_keywords_for_discipline
 from googleapiclient.discovery import build
-
-# Настройка OpenAI
-client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 client = AsyncOpenAI()
 
@@ -15,7 +13,7 @@ async def generate_answer(program: str, module: str, discipline: str, user_quest
         chat: ChatCompletion = await client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": f"Ты — преподаватель по дисциплине. Отвечай только по дисциплине: {discipline} модуля {module} программы {program}."},
+                {"role": "system", "content": f"Ты ИИ-консультант. Отвечай только по дисциплине: {discipline} модуля {module} программы {program}."},
                 {"role": "user", "content": user_question}
             ],
             temperature=0.7,
@@ -23,17 +21,16 @@ async def generate_answer(program: str, module: str, discipline: str, user_quest
         )
         return chat.choices[0].message.content.strip()
 
-    except openai_error.RateLimitError:
-        return "⚠️ Превышен лимит обращений к ИИ. Попробуй чуть позже."
-    except openai_error.AuthenticationError:
-        return "🚫 Ошибка авторизации при обращении к ИИ. Проверь OpenAI API ключ."
-    except openai_error.Timeout:
-        return "⏳ Время ожидания ответа от ИИ истекло. Попробуй повторить позже."
-    except openai_error.APIError as e:
-        return f"⚠️ Ошибка со стороны OpenAI: {e}"
+    except openai.RateLimitError:
+        return "⚠️ Превышен лимит обращений к ИИ. Попробуй позже."
+    except openai.AuthenticationError:
+        return "🚫 Ошибка авторизации. Проверь OpenAI API ключ."
+    except openai.APIConnectionError:
+        return "🔌 Проблемы с подключением к OpenAI. Повтори попытку позже."
+    except openai.APIError as e:
+        return f"⚠️ Ошибка на стороне OpenAI: {e}"
     except Exception as e:
-        return f"❌ Не удалось получить ответ от ИИ: {e}"
-
+        return f"❌ Произошла ошибка при обращении к ИИ: {e}"
 
 async def get_video_urls_by_discipline(program, module, discipline, num_videos):
     videos = VIDEO_URLS.get(program, {}).get(module, {}).get(discipline, [])
