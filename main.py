@@ -25,12 +25,6 @@ from handlers import (
 from middlewares.ensure_user import EnsureUserMiddleware
 from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus, schedule_leaderboard_update
 
-from services.google_sheets_service import list_sheet_titles
-
-list_sheet_titles()
-
-
-
 dp = Dispatcher(storage=MemoryStorage())
 
 # === Настройка логирования ===
