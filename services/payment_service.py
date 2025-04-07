@@ -1,123 +1,93 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from services.yookassa_service import generate_payment_link
 from config import USER_SHEET_ID
 from services.sheets import get_sheets_service
+from services.yookassa_service import Payment
+from services.payment_service import log_pending_payment
 from datetime import datetime
+from services.google_sheets_service import append_payment_log
 
 
 router = Router()
 
-async def log_pending_payment(user_id: int, payment_id: str, quantity: int, payment_type: str):
-    # Название листа в Google Sheets, куда будем записывать логи
+async def log_payment_to_sheet(user_id: int, payment_id: str, quantity: int, payment_type: str):
     SHEET_NAME = "PaymentsLog"
-    
-    # Получаем сервис для работы с Google Sheets
     service = get_sheets_service()
-
-    # Текущая дата и время для записи в столбец timestamp
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-    # Заполнение данных для записи в таблицу
     row = [
-        str(user_id),           # Идентификатор пользователя
-        str(quantity),          # Количество (вопросов или дней подписки)
-        str(payment_type),      # Тип платежа (например, "subscription" или "questions")
-        "pending",              # Статус платежа (пока он в ожидании)
-        "payment",              # Место для "события" — например, "создание платежа"
-        payment_id,             # Уникальный идентификатор платежа
-        timestamp               # Время создания записи
+        str(user_id),
+        str(quantity),
+        str(payment_type),
+        "pending",
+        "payment",
+        payment_id,
+        timestamp
     ]
-    
-    # Создаем тело запроса для записи в таблицу
     body = {"values": [row]}
-
-    # Выполняем запрос на добавление строки в таблицу
-    sheet = service.spreadsheets().values()
-    sheet.append(
-        spreadsheetId=USER_SHEET_ID,   # ID таблицы
-        range=f"{SHEET_NAME}!A:G",     # Диапазон, куда записываем данные (все колонки от A до G)
-        valueInputOption="RAW",        # Записываем данные как есть
-        body=body                      # Данные для записи
+    service.spreadsheets().values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{SHEET_NAME}!A:G",
+        valueInputOption="RAW",
+        body=body
     ).execute()
 
-# Обработчик для подписки (Лайт)
+
+async def create_payment_and_send(message: Message, amount: int, description: str, payment_type: str):
+    user_id = message.from_user.id
+    try:
+        payment = Payment.create({
+            "amount": {
+                "value": str(amount),
+                "currency": "RUB"
+            },
+            "confirmation": {
+                "type": "redirect",
+                "return_url": "https://t.me/your_bot_username"
+            },
+            "capture": True,
+            "description": f"{description} ({user_id})",
+            "metadata": {
+                "user_id": str(user_id),
+                "type": payment_type
+            }
+        })
+        payment_url = payment.confirmation.confirmation_url
+        payment_id = payment.id
+
+        await log_pending_payment(user_id, payment_type, amount, payment_id)
+        await message.answer(f"Перейди по ссылке для оплаты: {payment_url}")
+    except Exception as e:
+        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+
+
 @router.message(F.text == "💳 Подписка Лайт (7 дней)")
 async def handle_light_subscription_payment(message: Message):
-    user_id = message.from_user.id
-    amount = 149  # Стоимость подписки Лайт на 7 дней
-    description = "Подписка Лайт на 7 дней"
+    await create_payment_and_send(message, amount=149, description="Подписка Лайт (7 дней)", payment_type="subscription_lite")
 
-    try:
-        payment_link = await generate_payment_link(amount, description, user_id)
-        await message.answer(f"Для оплаты подписки Лайт перейди по ссылке: {payment_link}")
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
 
-# Обработчик для подписки (Про)
 @router.message(F.text == "💳 Подписка Про")
 async def handle_pro_subscription_payment(message: Message):
-    user_id = message.from_user.id
-    amount = 299  # Стоимость подписки Про
-    description = "Подписка Про"
+    await create_payment_and_send(message, amount=299, description="Подписка Про", payment_type="subscription_pro")
 
-    try:
-        payment_link = await generate_payment_link(amount, description, user_id)
-        await message.answer(f"Для оплаты подписки Про перейди по ссылке: {payment_link}")
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
 
-# Обработчик для покупки 1 вопроса
 @router.message(F.text == "💳 Купить 1 вопрос")
 async def handle_single_question_purchase(message: Message):
-    user_id = message.from_user.id
-    amount = 10  # Стоимость 1 вопроса
-    description = "Покупка 1 вопроса"
+    await create_payment_and_send(message, amount=10, description="Покупка 1 вопроса", payment_type="questions_1")
 
-    try:
-        payment_link = await generate_payment_link(amount, description, user_id)
-        await message.answer(f"Для оплаты 1 вопроса перейди по ссылке: {payment_link}")
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
 
-# Обработчик для покупки 10 вопросов
 @router.message(F.text == "💳 Купить 10 вопросов")
 async def handle_ten_questions_purchase(message: Message):
-    user_id = message.from_user.id
-    amount = 90  # Стоимость 10 вопросов
-    description = "Покупка 10 вопросов"
+    await create_payment_and_send(message, amount=90, description="Покупка 10 вопросов", payment_type="questions_10")
 
-    try:
-        payment_link = await generate_payment_link(amount, description, user_id)
-        await message.answer(f"Для оплаты 10 вопросов перейди по ссылке: {payment_link}")
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
 
-# Обработчик для покупки 50 вопросов
 @router.message(F.text == "💳 Купить 50 вопросов")
 async def handle_fifty_questions_purchase(message: Message):
-    user_id = message.from_user.id
-    amount = 450  # Стоимость 50 вопросов
-    description = "Покупка 50 вопросов"
+    await create_payment_and_send(message, amount=450, description="Покупка 50 вопросов", payment_type="questions_50")
 
-    try:
-        payment_link = await generate_payment_link(amount, description, user_id)
-        await message.answer(f"Для оплаты 50 вопросов перейди по ссылке: {payment_link}")
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
 
-# Обработчик для покупки 100 вопросов
 @router.message(F.text == "💳 Купить 100 вопросов")
 async def handle_hundred_questions_purchase(message: Message):
-    user_id = message.from_user.id
-    amount = 900  # Стоимость 100 вопросов
-    description = "Покупка 100 вопросов"
-
-    try:
-        payment_link = await generate_payment_link(amount, description, user_id)
-        await message.answer(f"Для оплаты 100 вопросов перейди по ссылке: {payment_link}")
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки: {str(e)}")
+    await create_payment_and_send(message, amount=900, description="Покупка 100 вопросов", payment_type="questions_100")
 
 async def log_successful_payment(user_id: int, quantity: int, payment_type: str, payment_id: str):
     # Логируем успешный платёж
