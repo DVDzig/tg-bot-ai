@@ -24,8 +24,7 @@ from services.user_service import (
     increase_question_count,
     decrease_question_limit,
     add_xp_and_update_status,
-    get_or_create_user, 
-    update_user_data
+    get_or_create_user
 )
 from keyboards.program import (
     get_level_keyboard,
