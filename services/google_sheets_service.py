@@ -9,6 +9,17 @@ from services.sheets import (
 from datetime import datetime
 from config import PROGRAM_SHEETS_LIST
 
+from googleapiclient.discovery import build
+
+def list_sheet_titles():
+    service = get_sheets_service()
+    spreadsheet = service.spreadsheets().get(spreadsheetId=USER_SHEET_ID).execute()
+    sheets = spreadsheet.get('sheets', [])
+    sheet_titles = [s['properties']['title'] for s in sheets]
+    print(f"[DEBUG] 🧾 Листы в таблице: {sheet_titles}")
+
+
+
 
 async def get_all_users() -> list[UserRow]:
     service = get_sheets_service()
