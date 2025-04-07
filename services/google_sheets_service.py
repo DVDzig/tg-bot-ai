@@ -1,3 +1,4 @@
+import re
 from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS
 from services.sheets import (
     UserRow, 
@@ -93,6 +94,12 @@ async def update_user_xp(user_id: int, xp_add: int):
         "xp": new_xp
     })
 
+def clean_text(text: str) -> str:
+    if not text:
+        return ""
+    return re.sub(r"\s+", " ", text).strip()
+
+
 async def get_modules_by_program(program_name: str) -> list[str]:
     sheet_name = PROGRAM_SHEETS_LIST.get(program_name)
     if not sheet_name:
@@ -104,16 +111,14 @@ async def get_modules_by_program(program_name: str) -> list[str]:
             spreadsheetId=PROGRAM_SHEETS,
             range=f"{sheet_name}!A1:Z1000"
         ).execute()
-
-    except Exception as e:
+    except Exception:
         return []
 
     values = result.get("values", [])
     data_rows = values[1:] if len(values) > 1 else []
-    modules = [row[0] for row in data_rows if row and row[0].strip()]
-    unique_modules = list(sorted(set(modules)))
 
-    return unique_modules
+    modules = {clean_text(row[0]) for row in data_rows if row and clean_text(row[0])}
+    return sorted(modules)
 
 async def get_disciplines_by_module(program: str, module: str) -> list[str]:
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
@@ -136,15 +141,15 @@ async def get_disciplines_by_module(program: str, module: str) -> list[str]:
     if "Модуль" not in header_map or "Дисциплины" not in header_map:
         return []
 
-    disciplines = []
+    disciplines = set()
     for row in values[1:]:
-        mod = row[header_map["Модуль"]] if header_map["Модуль"] < len(row) else ""
-        disc = row[header_map["Дисциплины"]] if header_map["Дисциплины"] < len(row) else ""
+        mod = clean_text(row[header_map["Модуль"]]) if header_map["Модуль"] < len(row) else ""
+        disc = clean_text(row[header_map["Дисциплины"]]) if header_map["Дисциплины"] < len(row) else ""
 
         if mod == module and disc:
-            disciplines.append(disc)
+            disciplines.add(disc)
 
-    return sorted(set(disciplines))
+    return sorted(disciplines)
 
 async def get_keywords_for_discipline(program: str, module: str, discipline: str) -> list[str]:
     sheet_name = PROGRAM_SHEETS_LIST.get(program)

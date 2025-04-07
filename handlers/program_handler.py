@@ -35,7 +35,6 @@ router = Router()
 
 @router.message(F.text == "💬 Выбор программы")
 async def start_program_selection(message: Message, state: FSMContext):
-    await state.clear()
     await message.answer(
         "Выбери уровень образования:",
         reply_markup=get_level_keyboard()
