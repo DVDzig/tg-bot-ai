@@ -9,6 +9,7 @@ USER_SHEET_ID = os.getenv("USER_SHEET_ID")
 USER_SHEET_NAME = os.getenv("USER_SHEET_NAME", "Users")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
 client_email = os.getenv("CLIENT_EMAIL")
+PAYMENT_LOG_SHEET = "PaymentsLog"
 
 # Yookassa
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
@@ -51,4 +52,3 @@ VIDEO_URLS = {
     "lite": 3,
     "pro": 3,
 }
-
