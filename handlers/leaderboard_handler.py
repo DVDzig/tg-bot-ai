@@ -11,6 +11,6 @@ async def show_leaderboard(message: Message):
     user_line = await get_user_position_info(message.from_user.id)
 
     await message.answer(
-        f"<b>🏆 Топ-10 пользователей</b>\n\n{leaderboard}\n\n{user_line}",
+        f"{leaderboard}\n\n{user_line}",
         reply_markup=get_main_menu_keyboard(user_id=message.from_user.id)
     )

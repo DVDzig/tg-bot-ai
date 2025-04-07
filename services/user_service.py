@@ -144,13 +144,15 @@ async def increase_question_count(user_id: int):
     if not row:
         return
 
-    row["question_count"] = int(row.get("question_count", 0)) + 1
-    row["day_count"] = int(row.get("day_count", 0)) + 1
-    row["week_count"] = int(row.get("week_count", 0)) + 1
-    row["total_questions"] = int(row.get("total_questions", 0)) + 1
+    updates = {
+        "question_count": str(int(row.get("question_count", 0)) + 1),
+        "day_count": str(int(row.get("day_count", 0)) + 1),
+        "week_count": str(int(row.get("week_count", 0)) + 1),
+        "total_questions": str(int(row.get("total_questions", 0)) + 1),
+        "last_interaction": datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+    }
 
-    i = await row.get_index()
-    await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
 
 async def decrease_question_limit(user_id: int):
@@ -162,40 +164,44 @@ async def decrease_question_limit(user_id: int):
     paid = int(row.get("paid_questions", 0))
 
     if free > 0:
-        row["free_questions"] = free - 1
+        free -= 1
     elif paid > 0:
-        row["paid_questions"] = paid - 1
+        paid -= 1
 
-    i = await row.get_index()
-    await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+    updates = {
+        "free_questions": str(free),
+        "paid_questions": str(paid)
+    }
+
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+
+def get_status_by_xp(xp: int) -> str:
+    if xp <= 10:
+        return "Новичок"
+    elif xp <= 50:
+        return "Опытный"
+    elif xp <= 100:
+        return "Профи"
+    elif xp <= 200:
+        return "Эксперт"
+    else:
+        return "Наставник"
 
 async def add_xp_and_update_status(user_id: int, delta: int = 1):
     row = await get_user_row_by_id(user_id)
-    if not row:
+    if not row or row.get("plan") in ("lite", "pro"):
         return
 
-    # Не начисляем XP, если активна подписка
-    if row.get("plan") in ("lite", "pro"):
-        return
+    xp = int(row.get("xp", 0))
+    new_xp = xp + delta
+    new_status = get_status_by_xp(new_xp)
 
-    current_xp = int(row.get("xp", 0))
-    new_xp = current_xp + delta
-    row["xp"] = new_xp
+    updates = {
+        "xp": str(new_xp),
+        "status": new_status
+    }
 
-    # Обновляем статус
-    if new_xp <= 10:
-        row["status"] = "Новичок"
-    elif new_xp <= 50:
-        row["status"] = "Опытный"
-    elif new_xp <= 100:
-        row["status"] = "Профи"
-    elif new_xp <= 200:
-        row["status"] = "Эксперт"
-    else:
-        row["status"] = "Наставник"
-
-    i = await row.get_index()
-    await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, i, row)
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
 async def monthly_bonus_for_user(user_row):
     today = datetime.utcnow().strftime("%Y-%m-%d")

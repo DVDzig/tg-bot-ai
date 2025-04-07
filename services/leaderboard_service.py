@@ -68,36 +68,59 @@ async def update_leaderboard_cache():
         for idx, (xp, name, status) in enumerate(top_users[:10], start=1):
             f.write(f"{idx}. {name} — {status}, {xp} XP\n")
 
-async def get_user_position_info(user_id: int) -> str:
-    users = await get_all_users()
+from services.sheets import get_column_index_by_name
 
-    # Собираем (user_id, xp) и сортируем
-    ranked = []
-    for u in users:
+async def get_leaderboard_text(current_user_id: int) -> str:
+    service = get_sheets_service()
+    
+    # Получаем названия нужных колонок
+    col_user_id = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "user_id")
+    col_first_name = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "first_name")
+    col_xp = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "xp")
+
+    if None in (col_user_id, col_first_name, col_xp):
+        return "⚠️ Не удалось получить данные для лидерборда."
+
+    # Определяем буквенные названия колонок
+    def col_letter(index): return chr(ord("A") + index)
+    range_str = f"{USER_SHEET_NAME}!{col_letter(col_user_id)}:{col_letter(col_xp)}"
+
+    result = service.spreadsheets().values().get(
+        spreadsheetId=USER_SHEET_ID,
+        range=range_str
+    ).execute()
+
+    values = result.get("values", [])
+    leaderboard = []
+
+    for row in values[1:]:
         try:
-            xp = int(u.get("xp", 0))
-            uid = int(u.get("user_id"))
-            ranked.append((uid, xp))
+            user_id = int(row[0]) if len(row) > 0 else 0
+            name = row[1] if len(row) > 1 else "—"
+            xp = int(row[2]) if len(row) > 2 else 0
+            leaderboard.append((user_id, name, xp))
         except:
             continue
 
-    ranked.sort(key=lambda x: x[1], reverse=True)
+    leaderboard.sort(key=lambda x: x[2], reverse=True)
 
-    # Позиция пользователя
-    position = next((idx + 1 for idx, (uid, _) in enumerate(ranked) if uid == user_id), None)
+    top_10 = leaderboard[:10]
+    text = "🏆 <b>Топ-10 пользователей по XP:</b>\n\n"
 
-    # Информация о себе
-    user_xp = next((xp for uid, xp in ranked if uid == user_id), 0)
-    user_status = get_status_by_xp(user_xp)
-    next_status, to_next = get_next_status_info(user_xp)
+    for idx, (uid, name, xp) in enumerate(top_10, start=1):
+        you = " (ты)" if uid == current_user_id else ""
+        status = get_status_by_xp(xp)
+        text += f"🥇 {name} — {status}, {xp} XP{you}\n" if idx == 1 else \
+                f"🥈 {name} — {status}, {xp} XP{you}\n" if idx == 2 else \
+                f"🥉 {name} — {status}, {xp} XP{you}\n" if idx == 3 else \
+                f"{idx}. {name} — {status}, {xp} XP{you}\n"
 
-    if position is None:
-        return "Ты пока не в рейтинге."
+    if current_user_id not in [u[0] for u in top_10]:
+        for idx, (uid, name, xp) in enumerate(leaderboard, start=1):
+            if uid == current_user_id:
+                status = get_status_by_xp(xp)
+                text += f"\n👤 Ты сейчас на {idx} месте\n"
+                text += f"📈 Твой статус: {status}, {xp} XP\n"
+                break
 
-    msg = f"👤 Ты сейчас на <b>{position}</b> месте\n"
-    if next_status:
-        msg += f"📈 До уровня «{next_status}» осталось <b>{to_next} XP</b>"
-    else:
-        msg += f"🎉 Ты достиг максимального уровня!"
-
-    return msg
+    return text
