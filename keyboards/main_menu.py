@@ -1,8 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from config import ADMIN_ID
 
-ADMIN_ID = int(ADMIN_ID)
-
 def get_main_menu_keyboard(user_id: int) -> ReplyKeyboardMarkup:
     buttons = [
         [KeyboardButton(text="💬 Выбор программы")],
