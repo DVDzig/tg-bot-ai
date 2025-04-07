@@ -18,7 +18,7 @@ def get_main_menu_keyboard(user_id: int) -> ReplyKeyboardMarkup:
     ]
 
     if user_id == ADMIN_ID:
-        buttons.append([KeyboardButton(text="🔧 Админ")])
+        buttons.append([KeyboardButton(text="🛠 Админ")])
 
     return ReplyKeyboardMarkup(
         keyboard=buttons,

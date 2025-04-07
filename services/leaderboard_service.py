@@ -8,18 +8,20 @@ async def get_leaderboard_text(current_user_id: int) -> str:
     service = get_sheets_service()
     result = service.spreadsheets().values().get(
         spreadsheetId=USER_SHEET_ID,
-        range=f"{USER_SHEET_NAME}!A,C,R"  # A: user_id, C: first_name, R: xp
+        range=f"{USER_SHEET_NAME}!A1:R" # A: user_id, C: first_name, R: xp
     ).execute()
 
     values = result.get("values", [])
     leaderboard = []
 
-    for row in values[1:]:  # пропустить заголовок
-        if len(row) >= 3:
-            user_id = int(row[0])
-            name = row[1]
-            xp = int(row[2])
+    for row in values[1:]:
+        try:
+            user_id = int(row[0]) if len(row) > 0 else 0
+            name = row[2] if len(row) > 2 else "—"
+            xp = int(row[17]) if len(row) > 17 else 0
             leaderboard.append((user_id, name, xp))
+        except:
+            continue
 
     leaderboard.sort(key=lambda x: x[2], reverse=True)
 
