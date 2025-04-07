@@ -1,21 +1,23 @@
 import os
 
-YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
-YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
-
-from dotenv import load_dotenv
-load_dotenv()
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Telegram и OpenAI
 TOKEN = os.getenv("TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Google Sheets
 USER_SHEET_ID = os.getenv("USER_SHEET_ID")
 USER_SHEET_NAME = os.getenv("USER_SHEET_NAME", "Users")
-client_email = os.getenv("CLIENT_EMAIL")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
+client_email = os.getenv("CLIENT_EMAIL")
+
+# Yookassa
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
 YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
-ADMIN_ID = os.getenv("ADMIN_ID")
 
+# YouTube API
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+
+# Названия листов с образовательными программами
 PROGRAM_SHEETS_LIST = {
     'МРК': os.getenv("SHEET_PLAN_MRK", "ПланМРК"),
     'ТПР': os.getenv("SHEET_PLAN_TPR", "ПланТПР"),
@@ -24,9 +26,9 @@ PROGRAM_SHEETS_LIST = {
     'СА': os.getenv("SHEET_PLAN_SA", "ПланСА"),
     'МСС': os.getenv("SHEET_PLAN_MSS", "ПланМСС")
 }
+print(f"[CONFIG] 🧩 PROGRAM_SHEETS_LIST: {PROGRAM_SHEETS_LIST}")
 
-YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
-
+# Поля для пользователей (в Google Таблице)
 USER_FIELDS = [
     "user_id", "username", "first_name", "last_name", "language_code", "is_premium",
     "first_interaction", "last_interaction",
@@ -40,21 +42,4 @@ USER_FIELDS = [
     "missions_streak", "last_mission_day"
 ]
 
-VIDEO_URLS = {
-    "МРК": {
-        "Модуль 1": {
-            "Дисциплина 1": [
-                "https://link_to_video_1.com",
-                "https://link_to_video_2.com",
-                "https://link_to_video_3.com"
-            ],
-            "Дисциплина 2": [
-                "https://link_to_video_4.com"
-            ]
-        }
-    },
-    "ТПР": {
-        # Ссылки на видео для других программ
-    }
-}
-
+ADMIN_ID = os.getenv("ADMIN_ID")

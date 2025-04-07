@@ -97,19 +97,37 @@ async def update_user_xp(user_id: int, xp_add: int):
     })
 
 async def get_modules_by_program(program_name: str) -> list[str]:
+    # Проверка словаря с листами
+    print(f"[get_modules_by_program] 📌 PROGRAM_SHEETS_LIST: {PROGRAM_SHEETS_LIST}")
+
     sheet_name = PROGRAM_SHEETS_LIST.get(program_name)
     if not sheet_name:
+        print(f"[get_modules_by_program] ⚠️ Не найден лист для программы: {program_name}")
         return []
 
-    service = get_sheets_service()
-    result = service.spreadsheets().values().get(
-        spreadsheetId=USER_SHEET_ID,
-        range=f"{sheet_name}!A2:A"
-    ).execute()
+    print(f"[get_modules_by_program] 📋 Получаем модули из листа: {sheet_name}")
+
+    try:
+        service = get_sheets_service()
+        result = service.spreadsheets().values().get(
+            spreadsheetId=USER_SHEET_ID,
+            range=f"{sheet_name}!A:A"  # Безопасный диапазон, чтобы избежать ошибки A2:A
+        ).execute()
+    except Exception as e:
+        print(f"[get_modules_by_program] ❌ Ошибка при получении данных: {e}")
+        return []
 
     values = result.get("values", [])
-    modules = [row[0] for row in values if row and row[0]]
-    return list(sorted(set(modules)))
+    print(f"[get_modules_by_program] 🔢 Получено строк: {len(values)}")
+
+    # Убираем заголовок (первая строка)
+    data_rows = values[1:] if len(values) > 1 else []
+    modules = [row[0] for row in data_rows if row and row[0].strip()]
+    unique_modules = list(sorted(set(modules)))
+
+    print(f"[get_modules_by_program] ✅ Найдено уникальных модулей: {len(unique_modules)}")
+
+    return unique_modules
 
 async def get_disciplines_by_module(program: str, module: str) -> list[str]:
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
