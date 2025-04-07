@@ -145,6 +145,7 @@ async def increase_question_count(user_id: int):
         return
 
     updates = {
+        "question_count": str(int(row.get("question_count", 0)) + 1),
         "day_count": str(int(row.get("day_count", 0)) + 1),
         "week_count": str(int(row.get("week_count", 0)) + 1),
         "total_questions": str(int(row.get("total_questions", 0)) + 1)
@@ -162,7 +163,6 @@ async def decrease_question_limit(user_id: int):
     paid = int(row.get("paid_questions", 0))
 
     updates = {}
-
     if free > 0:
         updates["free_questions"] = str(free - 1)
     elif paid > 0:

@@ -1,6 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from services.yookassa_service import generate_payment_link
+from services.yookassa_service import Payment
+import uuid
 
 router = Router()
 
@@ -102,8 +103,27 @@ async def back_to_shop(message: Message):
 # Общая функция оплаты
 async def send_payment_link(message: Message, amount: int, description: str):
     user_id = message.from_user.id
-    try:
-        payment_link = await generate_payment_link(amount, description, user_id)
-        await message.answer(f"💳 Для оплаты перейди по ссылке:\n{payment_link}")
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки:\n{str(e)}")
+    internal_id = str(uuid.uuid4())
+
+    payment = Payment.create({
+        "amount": {"value": f"{amount:.2f}", "currency": "RUB"},
+        "confirmation": {
+            "type": "redirect",
+            "return_url": "https://t.me/TGTutorBot"  # если нужно — замени на своего бота
+        },
+        "capture": True,
+        "description": f"{description} для user_id {user_id}",
+        "metadata": {
+            "user_id": str(user_id),
+            "payment_type": "questions",
+            "quantity": amount,
+            "internal_id": internal_id
+        }
+    })
+
+    confirm_url = payment.confirmation.confirmation_url
+    await message.answer(
+        f"💳 Перейди по ссылке, чтобы оплатить:\n\n"
+        f"<a href='{confirm_url}'>Оплатить через YooKassa</a>",
+        disable_web_page_preview=True
+    )

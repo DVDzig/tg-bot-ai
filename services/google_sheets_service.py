@@ -9,6 +9,7 @@ from services.sheets import (
 ) 
 from datetime import datetime
 from config import PROGRAM_SHEETS_LIST
+import pytz
 
 async def get_all_users() -> list[UserRow]:
     service = get_sheets_service()

@@ -21,6 +21,8 @@ async def handle_text_back(message: Message, state: FSMContext):
     current_state = await state.get_state()
     data = await state.get_data()
 
+    print(f"[⬅️ Назад] user_id={message.from_user.id}, state={current_state}")
+
     if current_state == ProgramSelection.asking:
         disciplines = await get_disciplines_by_module(data["program"], data["module"])
         await state.set_state(ProgramSelection.discipline)
@@ -41,5 +43,6 @@ async def handle_text_back(message: Message, state: FSMContext):
         await message.answer("Выбери уровень образования:", reply_markup=get_level_keyboard())
 
     else:
+        # Лучше явно сказать, что пользователь уже в главном меню
         await state.clear()
-        await message.answer("🔙 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))
+        await message.answer("Ты уже находишься в главном меню.", reply_markup=get_main_menu_keyboard(message.from_user.id))
