@@ -111,8 +111,9 @@ async def get_modules_by_program(program_name: str) -> list[str]:
         service = get_sheets_service()
         result = service.spreadsheets().values().get(
             spreadsheetId=USER_SHEET_ID,
-            range=f"{sheet_name}!A:A"  # Безопасный диапазон, чтобы избежать ошибки A2:A
+            range=f"{sheet_name}!A1:Z1000"
         ).execute()
+
     except Exception as e:
         print(f"[get_modules_by_program] ❌ Ошибка при получении данных: {e}")
         return []
