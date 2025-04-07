@@ -153,7 +153,7 @@ async def get_keywords_for_discipline(program: str, module: str, discipline: str
 
     service = get_sheets_service()
     result = service.spreadsheets().values().get(
-        preadsheetId=PROGRAM_SHEETS,
+        spreadsheetId=PROGRAM_SHEETS,
         range=f"{sheet_name}"
     ).execute()
 

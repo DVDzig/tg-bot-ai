@@ -1,4 +1,3 @@
-# keyboards/common.py
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def get_back_keyboard(from_state: str = None) -> ReplyKeyboardMarkup:
@@ -11,4 +10,15 @@ def get_back_keyboard(from_state: str = None) -> ReplyKeyboardMarkup:
         keyboard=[[KeyboardButton(text="⬅️ Назад")]],
         resize_keyboard=True,
         input_field_placeholder="Выберите действие ⤵️"
+    )
+
+
+def get_consultant_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🛒 Магазин")],
+            [KeyboardButton(text="⬅️ Назад")]
+        ],
+        resize_keyboard=True,
+        input_field_placeholder="Спроси меня или выбери действие ⤵️"
     )

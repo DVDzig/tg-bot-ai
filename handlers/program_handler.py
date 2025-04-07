@@ -26,7 +26,7 @@ from keyboards.program import (
     get_module_keyboard,
     get_discipline_keyboard,
 )
-from keyboards.common import get_back_keyboard
+from keyboards.common import get_consultant_keyboard
 from services.missions_service import check_and_apply_missions
 from services.gpt_service import search_video_on_youtube
 
@@ -100,7 +100,7 @@ async def start_asking(message: Message, state: FSMContext):
     await message.answer(
         f"✅ Дисциплина <b>{discipline}</b> выбрана.\n\n"
         f"Теперь можешь задавать свои вопросы. Я отвечаю только по теме!",
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=get_consultant_keyboard()
     )
     await state.set_state(ProgramSelection.asking)
 
