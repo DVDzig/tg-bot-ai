@@ -15,7 +15,7 @@ async def get_all_users() -> list[UserRow]:
     service = get_sheets_service()
     sheet = service.spreadsheets().values()
     result = sheet.get(
-        spreadsheetId=PROGRAM_SHEETS,
+        spreadsheetId=USER_SHEET_ID,
         range=USER_SHEET_NAME
     ).execute()
 
@@ -49,11 +49,11 @@ async def update_user_plan(user_id: int, plan_type: str, until_date: str):
 async def append_payment_log(row: list):
     SHEET_NAME = "PaymentsLog"
 
-    service = get_sheets_service()  # предполагается, что эта функция уже есть
+    service = get_sheets_service()
     sheet = service.spreadsheets().values()
     body = {"values": [row]}
     sheet.append(
-        spreadsheetId=PROGRAM_SHEETS,
+        spreadsheetId=USER_SHEET_ID,  # ✅ лог записывается в таблицу пользователей
         range=f"{SHEET_NAME}!A:E",
         valueInputOption="RAW",
         body=body
@@ -67,7 +67,7 @@ async def update_payment_status(internal_id: str, new_status: str):
 
     # Предполагаем, что internal_id находится в колонке B
     result = sheet.values().get(
-        spreadsheetId=PROGRAM_SHEETS,
+        spreadsheetId=USER_SHEET_ID,
         range=f"{SHEET_NAME}!A:E"
     ).execute()
 
@@ -75,7 +75,7 @@ async def update_payment_status(internal_id: str, new_status: str):
     for idx, row in enumerate(values):
         if len(row) >= 2 and row[1] == internal_id:
             sheet.values().update(
-                spreadsheetId=PROGRAM_SHEETS,
+                spreadsheetId=USER_SHEET_ID,
                 range=f"{SHEET_NAME}!E{idx + 1}",
                 valueInputOption="RAW",
                 body={"values": [[new_status]]}
