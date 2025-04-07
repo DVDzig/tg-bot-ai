@@ -16,6 +16,7 @@ router = Router()
 
 @router.message(F.text == "🛠 Админ")
 async def show_admin_menu(message: Message):
+    print(f"[DEBUG] User ID: {message.from_user.id}")  # Выведет в терминал ID
     if message.from_user.id != ADMIN_ID:
         await message.answer("⛔ У тебя нет доступа к админке.")
         return
