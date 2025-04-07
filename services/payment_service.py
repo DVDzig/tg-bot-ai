@@ -3,7 +3,7 @@ from aiogram.types import Message
 from config import USER_SHEET_ID
 from services.sheets import get_sheets_service
 from services.yookassa_service import Payment
-from services.payment_service import log_pending_payment
+from services.log_service import log_pending_payment
 from datetime import datetime
 from services.google_sheets_service import append_payment_log
 

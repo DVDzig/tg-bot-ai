@@ -1,7 +1,7 @@
 from aiogram import Router, F
 from aiogram.types import Message
 from services.yookassa_service import Payment
-from services.payment_service import log_pending_payment
+from services.log_service import log_pending_payment
 from config import YOOKASSA_SHOP_ID, YOOKASSA_SECRET_KEY
 import yookassa
 import uuid
