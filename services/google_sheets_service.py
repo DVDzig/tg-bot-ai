@@ -1,4 +1,4 @@
-from config import USER_SHEET_ID, USER_SHEET_NAME
+from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS
 from services.sheets import (
     UserRow, 
     get_sheets_service, 
@@ -13,7 +13,7 @@ from googleapiclient.discovery import build
 
 def list_sheet_titles():
     service = get_sheets_service()
-    spreadsheet = service.spreadsheets().get(spreadsheetId=USER_SHEET_ID).execute()
+    spreadsheet = service.spreadsheets().get(spreadsheetId=PROGRAM_SHEETS).execute()
     sheets = spreadsheet.get('sheets', [])
     sheet_titles = [s['properties']['title'] for s in sheets]
     print(f"[DEBUG] 🧾 Листы в таблице: {sheet_titles}")
@@ -25,7 +25,7 @@ async def get_all_users() -> list[UserRow]:
     service = get_sheets_service()
     sheet = service.spreadsheets().values()
     result = sheet.get(
-        spreadsheetId=USER_SHEET_ID,
+        preadsheetId=PROGRAM_SHEETS,
         range=USER_SHEET_NAME
     ).execute()
 
@@ -64,7 +64,7 @@ async def append_payment_log(row: list):
     sheet = service.spreadsheets().values()
     body = {"values": [row]}
     sheet.append(
-        spreadsheetId=USER_SHEET_ID,
+        preadsheetId=PROGRAM_SHEETS,
         range=f"{SHEET_NAME}!A:E",
         valueInputOption="RAW",
         body=body
@@ -79,7 +79,7 @@ async def update_payment_status(internal_id: str, new_status: str):
 
     # Предполагаем, что internal_id находится в колонке B
     result = sheet.values().get(
-        spreadsheetId=USER_SHEET_ID,
+        preadsheetId=PROGRAM_SHEETS,
         range=f"{SHEET_NAME}!A:E"
     ).execute()
 
@@ -87,7 +87,7 @@ async def update_payment_status(internal_id: str, new_status: str):
     for idx, row in enumerate(values):
         if len(row) >= 2 and row[1] == internal_id:
             sheet.values().update(
-                spreadsheetId=USER_SHEET_ID,
+                preadsheetId=PROGRAM_SHEETS,
                 range=f"{SHEET_NAME}!E{idx + 1}",
                 valueInputOption="RAW",
                 body={"values": [[new_status]]}
@@ -121,7 +121,7 @@ async def get_modules_by_program(program_name: str) -> list[str]:
     try:
         service = get_sheets_service()
         result = service.spreadsheets().values().get(
-            spreadsheetId=USER_SHEET_ID,
+            preadsheetId=PROGRAM_SHEETS,
             range=f"{sheet_name}!A1:Z1000"
         ).execute()
 
@@ -149,7 +149,7 @@ async def get_disciplines_by_module(program: str, module: str) -> list[str]:
 
     service = get_sheets_service()
     result = service.spreadsheets().values().get(
-        spreadsheetId=USER_SHEET_ID,
+        preadsheetId=PROGRAM_SHEETS,
         range=f"{sheet_name}"
     ).execute()
 
@@ -183,7 +183,7 @@ async def get_keywords_for_discipline(program: str, module: str, discipline: str
 
     service = get_sheets_service()
     result = service.spreadsheets().values().get(
-        spreadsheetId=USER_SHEET_ID,
+        preadsheetId=PROGRAM_SHEETS,
         range=f"{sheet_name}"
     ).execute()
 
@@ -220,7 +220,7 @@ async def log_question_answer(user_id: int, program: str, discipline: str, quest
         answer
     ]]
     service.spreadsheets().values().append(
-        spreadsheetId=USER_SHEET_ID,
+        preadsheetId=PROGRAM_SHEETS,
         range="QA_Log!A1",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
@@ -236,7 +236,7 @@ async def update_keywords_for_discipline(program: str, module: str, discipline: 
     try:
         service = get_sheets_service()
         result = service.spreadsheets().values().get(
-            spreadsheetId=USER_SHEET_ID,
+            preadsheetId=PROGRAM_SHEETS,
             range=f"{sheet_name}"
         ).execute()
         values = result.get("values", [])
@@ -267,7 +267,7 @@ async def update_keywords_for_discipline(program: str, module: str, discipline: 
 
             try:
                 service.spreadsheets().values().update(
-                    spreadsheetId=USER_SHEET_ID,
+                    preadsheetId=PROGRAM_SHEETS,
                     range=range_notation,
                     valueInputOption="RAW",
                     body={"values": [[keywords_cell]]}
