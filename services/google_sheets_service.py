@@ -111,6 +111,92 @@ async def get_modules_by_program(program_name: str) -> list[str]:
     modules = [row[0] for row in values if row and row[0]]
     return list(sorted(set(modules)))
 
+async def get_disciplines_by_module(program: str, module: str) -> list[str]:
+    sheet_name = PROGRAM_SHEETS_LIST.get(program)
+    if not sheet_name:
+        print(f"[get_disciplines_by_module] ❌ Программа '{program}' не найдена.")
+        return []
+
+    service = get_sheets_service()
+    result = service.spreadsheets().values().get(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{sheet_name}"
+    ).execute()
+
+    values = result.get("values", [])
+    if not values or len(values) < 2:
+        print(f"[get_disciplines_by_module] ❌ Нет данных в листе {sheet_name}")
+        return []
+
+    headers = values[0]
+    header_map = {h: i for i, h in enumerate(headers)}
+
+    if "Модуль" not in header_map or "Дисциплины" not in header_map:
+        print(f"[get_disciplines_by_module] ❌ Нет нужных столбцов в листе {sheet_name}")
+        return []
+
+    disciplines = []
+    for row in values[1:]:
+        mod = row[header_map["Модуль"]] if header_map["Модуль"] < len(row) else ""
+        disc = row[header_map["Дисциплины"]] if header_map["Дисциплины"] < len(row) else ""
+
+        if mod == module and disc:
+            disciplines.append(disc)
+
+    return sorted(set(disciplines))
+
+async def get_keywords_for_discipline(program: str, module: str, discipline: str) -> list[str]:
+    sheet_name = PROGRAM_SHEETS_LIST.get(program)
+    if not sheet_name:
+        print(f"[get_keywords_for_discipline] ❌ Программа '{program}' не найдена.")
+        return []
+
+    service = get_sheets_service()
+    result = service.spreadsheets().values().get(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{sheet_name}"
+    ).execute()
+
+    values = result.get("values", [])
+    if not values or len(values) < 2:
+        print(f"[get_keywords_for_discipline] ❌ Нет данных в листе {sheet_name}")
+        return []
+
+    headers = values[0]
+    header_map = {h: i for i, h in enumerate(headers)}
+
+    if not all(h in header_map for h in ("Модуль", "Дисциплины", "Ключевые слова")):
+        print(f"[get_keywords_for_discipline] ❌ Нет нужных столбцов в листе {sheet_name}")
+        return []
+
+    for row in values[1:]:
+        mod = row[header_map["Модуль"]] if header_map["Модуль"] < len(row) else ""
+        disc = row[header_map["Дисциплины"]] if header_map["Дисциплины"] < len(row) else ""
+        keywords = row[header_map["Ключевые слова"]] if header_map["Ключевые слова"] < len(row) else ""
+
+        if mod == module and disc == discipline:
+            return [k.strip().lower() for k in keywords.split(",") if k.strip()]
+
+    return []
+
+async def log_question_answer(user_id: int, program: str, discipline: str, question: str, answer: str):
+    service = get_sheets_service()
+    values = [[
+        str(user_id),
+        datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S"),
+        program,
+        discipline,
+        question,
+        answer
+    ]]
+    service.spreadsheets().values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range="QA_Log!A1",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": values}
+    ).execute()
+
 async def update_keywords_for_discipline(program: str, module: str, discipline: str, keywords: list[str]) -> bool:
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
     if not sheet_name:
