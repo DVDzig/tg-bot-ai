@@ -61,9 +61,6 @@ async def get_or_create_user(user) -> None:
         body=body
     ).execute()
 
-    # Выводим информацию о создании нового пользователя
-    print(f"Создан новый пользователь: {user.id} - {user.first_name}")
-
 async def activate_subscription(user_id: int, duration_days: int, internal_id: str):
     # "lite" или "pro" читаем из логов по internal_id (добавим позже или передадим как аргумент)
     plan_type = "lite" if "lite" in internal_id else "pro"

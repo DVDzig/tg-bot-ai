@@ -9,18 +9,6 @@ from services.sheets import (
 from datetime import datetime
 from config import PROGRAM_SHEETS_LIST
 
-from googleapiclient.discovery import build
-
-def list_sheet_titles():
-    service = get_sheets_service()
-    spreadsheet = service.spreadsheets().get(spreadsheetId=PROGRAM_SHEETS).execute()
-    sheets = spreadsheet.get('sheets', [])
-    sheet_titles = [s['properties']['title'] for s in sheets]
-    print(f"[DEBUG] 🧾 Листы в таблице: {sheet_titles}")
-
-
-
-
 async def get_all_users() -> list[UserRow]:
     service = get_sheets_service()
     sheet = service.spreadsheets().values()
@@ -57,7 +45,6 @@ async def update_user_plan(user_id: int, plan_type: str, until_date: str):
     await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, index, updates)
 
 async def append_payment_log(row: list):
-    from config import USER_SHEET_ID
     SHEET_NAME = "PaymentsLog"
 
     service = get_sheets_service()  # предполагается, что эта функция уже есть
@@ -71,7 +58,6 @@ async def append_payment_log(row: list):
     ).execute()
 
 async def update_payment_status(internal_id: str, new_status: str):
-    from config import USER_SHEET_ID
     SHEET_NAME = "PaymentsLog"
 
     service = get_sheets_service()
@@ -108,15 +94,9 @@ async def update_user_xp(user_id: int, xp_add: int):
     })
 
 async def get_modules_by_program(program_name: str) -> list[str]:
-    # Проверка словаря с листами
-    print(f"[get_modules_by_program] 📌 PROGRAM_SHEETS_LIST: {PROGRAM_SHEETS_LIST}")
-
     sheet_name = PROGRAM_SHEETS_LIST.get(program_name)
     if not sheet_name:
-        print(f"[get_modules_by_program] ⚠️ Не найден лист для программы: {program_name}")
         return []
-
-    print(f"[get_modules_by_program] 📋 Получаем модули из листа: {sheet_name}")
 
     try:
         service = get_sheets_service()
@@ -126,25 +106,18 @@ async def get_modules_by_program(program_name: str) -> list[str]:
         ).execute()
 
     except Exception as e:
-        print(f"[get_modules_by_program] ❌ Ошибка при получении данных: {e}")
         return []
 
     values = result.get("values", [])
-    print(f"[get_modules_by_program] 🔢 Получено строк: {len(values)}")
-
-    # Убираем заголовок (первая строка)
     data_rows = values[1:] if len(values) > 1 else []
     modules = [row[0] for row in data_rows if row and row[0].strip()]
     unique_modules = list(sorted(set(modules)))
-
-    print(f"[get_modules_by_program] ✅ Найдено уникальных модулей: {len(unique_modules)}")
 
     return unique_modules
 
 async def get_disciplines_by_module(program: str, module: str) -> list[str]:
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
     if not sheet_name:
-        print(f"[get_disciplines_by_module] ❌ Программа '{program}' не найдена.")
         return []
 
     service = get_sheets_service()
@@ -155,14 +128,12 @@ async def get_disciplines_by_module(program: str, module: str) -> list[str]:
 
     values = result.get("values", [])
     if not values or len(values) < 2:
-        print(f"[get_disciplines_by_module] ❌ Нет данных в листе {sheet_name}")
         return []
 
     headers = values[0]
     header_map = {h: i for i, h in enumerate(headers)}
 
     if "Модуль" not in header_map or "Дисциплины" not in header_map:
-        print(f"[get_disciplines_by_module] ❌ Нет нужных столбцов в листе {sheet_name}")
         return []
 
     disciplines = []
@@ -178,25 +149,22 @@ async def get_disciplines_by_module(program: str, module: str) -> list[str]:
 async def get_keywords_for_discipline(program: str, module: str, discipline: str) -> list[str]:
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
     if not sheet_name:
-        print(f"[get_keywords_for_discipline] ❌ Программа '{program}' не найдена.")
         return []
 
     service = get_sheets_service()
     result = service.spreadsheets().values().get(
-        spreadsheetId=PROGRAM_SHEETS,
+        preadsheetId=PROGRAM_SHEETS,
         range=f"{sheet_name}"
     ).execute()
 
     values = result.get("values", [])
     if not values or len(values) < 2:
-        print(f"[get_keywords_for_discipline] ❌ Нет данных в листе {sheet_name}")
         return []
 
     headers = values[0]
     header_map = {h: i for i, h in enumerate(headers)}
 
     if not all(h in header_map for h in ("Модуль", "Дисциплины", "Ключевые слова")):
-        print(f"[get_keywords_for_discipline] ❌ Нет нужных столбцов в листе {sheet_name}")
         return []
 
     for row in values[1:]:
@@ -230,7 +198,6 @@ async def log_question_answer(user_id: int, program: str, discipline: str, quest
 async def update_keywords_for_discipline(program: str, module: str, discipline: str, keywords: list[str]) -> bool:
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
     if not sheet_name:
-        print(f"[update_keywords_for_discipline] ❌ Программа '{program}' не найдена в PROGRAM_SHEETS_LIST.")
         return False
 
     try:
@@ -241,11 +208,9 @@ async def update_keywords_for_discipline(program: str, module: str, discipline: 
         ).execute()
         values = result.get("values", [])
     except Exception as e:
-        print(f"[update_keywords_for_discipline] ❌ Ошибка при получении данных из листа: {e}")
         return False
 
     if not values or len(values) < 2:
-        print(f"[update_keywords_for_discipline] ❌ Недостаточно данных в листе {sheet_name}")
         return False
 
     headers = values[0]
@@ -253,7 +218,6 @@ async def update_keywords_for_discipline(program: str, module: str, discipline: 
 
     required_columns = ("Модуль", "Дисциплины", "Ключевые слова")
     if not all(h in header_map for h in required_columns):
-        print(f"[update_keywords_for_discipline] ❌ Не найдены нужные столбцы: {required_columns}")
         return False
 
     # Ищем строку с нужным модулем и дисциплиной
@@ -272,14 +236,10 @@ async def update_keywords_for_discipline(program: str, module: str, discipline: 
                     valueInputOption="RAW",
                     body={"values": [[keywords_cell]]}
                 ).execute()
-                print(f"[update_keywords_for_discipline] ✅ Обновлены ключевые слова для {program} → {module} → {discipline}")
                 return True
             except Exception as e:
-                print(f"[update_keywords_for_discipline] ❌ Ошибка при обновлении: {e}")
                 return False
 
-    print(f"[update_keywords_for_discipline] ⚠️ Строка не найдена: {program} → {module} → {discipline}")
-   
 # Функция для поиска или добавления граф в таблице
 async def get_column_index(sheet_id: str, sheet_name: str, column_name: str) -> int:
     service = get_sheets_service()  # Получаем сервис для работы с Google Sheets

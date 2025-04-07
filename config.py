@@ -26,8 +26,6 @@ PROGRAM_SHEETS_LIST = {
     'СА': os.getenv("SHEET_PLAN_SA", "ПланСА"),
     'МСС': os.getenv("SHEET_PLAN_MSS", "ПланМСС")
 }
-print(f"[CONFIG] 🧩 PROGRAM_SHEETS_LIST: {PROGRAM_SHEETS_LIST}")
-
 # Поля для пользователей (в Google Таблице)
 USER_FIELDS = [
     "user_id", "username", "first_name", "last_name", "language_code", "is_premium",

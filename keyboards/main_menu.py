@@ -18,8 +18,6 @@ def get_main_menu_keyboard(user_id: int) -> ReplyKeyboardMarkup:
     if user_id == ADMIN_ID:
         buttons.append([KeyboardButton(text="🔧 Админ")])
 
-    print(f"🤞 Формируется клавиатура для user_id={user_id}: {buttons}")
-
     return ReplyKeyboardMarkup(
         keyboard=buttons,
         resize_keyboard=True,

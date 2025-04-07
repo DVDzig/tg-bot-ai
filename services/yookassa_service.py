@@ -58,5 +58,4 @@ def create_payment(amount_rub: int, description: str, user_id: int, questions: i
         payment_url = payment.generate_payment_link()  # Используем метод класса Payment
         return payment_url
     except Exception as e:
-        print(f"❌ Ошибка при создании платежа: {str(e)}")
         return None

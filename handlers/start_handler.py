@@ -15,11 +15,8 @@ router = Router()
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    print("🔥 Хендлер /start работает, link_preview не используется!")
     user_id = message.from_user.id
-    print(f"📋 /start от user_id={user_id}")
     keyboard = get_main_menu_keyboard(user_id)
-    print(f"🗺 Клавиатура: {keyboard}")
     await message.answer(
         "Привет 👋\n\n"
         "Я — твой Образовательный консультант. Помогаю разобраться в учебных дисциплинах, "
