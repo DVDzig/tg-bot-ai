@@ -91,7 +91,8 @@ async def activate_subscription(user_id: int, duration_days: int, internal_id: s
     # "lite" или "pro" читаем из логов по internal_id (добавим позже или передадим как аргумент)
     plan_type = "lite" if "lite" in internal_id else "pro"
 
-    until_date = (datetime.utcnow() + timedelta(days=duration_days)).strftime("%Y-%m-%d")
+    until_date = (datetime.utcnow() + timedelta(days=int(duration_days))).strftime("%Y-%m-%d")
+
     await update_user_plan(user_id, plan_type, until_date)
 
 async def get_user_profile_text(user) -> str:
