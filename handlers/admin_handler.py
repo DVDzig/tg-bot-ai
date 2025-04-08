@@ -9,13 +9,13 @@ from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription, get_status_by_xp
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramForbiddenError
+from utils.context_stack import push_step
 
 router = Router()
 
 
 @router.message(F.text == "🛠 Админ")
 async def show_admin_menu(message: Message):
-    print(f"[DEBUG] User ID: {message.from_user.id}")  # Выведет в терминал ID
     if message.from_user.id != ADMIN_ID:
         await message.answer("⛔ У тебя нет доступа к админке.")
         return
@@ -75,6 +75,7 @@ async def admin_top_xp(message: Message):
 
 @router.message(F.text == "🔑 Выдать Лайт")
 async def grant_lite(message: Message, state: FSMContext):
+    await push_step(state, "admin")
     if message.from_user.id != ADMIN_ID:
         return
     await state.set_state(GrantSubscription.waiting_for_user_id)
@@ -84,6 +85,7 @@ async def grant_lite(message: Message, state: FSMContext):
 
 @router.message(F.text == "🔒 Выдать Про")
 async def grant_pro(message: Message, state: FSMContext):
+    await push_step(state, "admin")
     if message.from_user.id != ADMIN_ID:
         return
     await state.set_state(GrantSubscription.waiting_for_user_id)
@@ -161,8 +163,3 @@ async def admin_update_keywords_callback(message: Message):
             msg += f"• {f}\n"
 
     await message.answer(msg)
-
-
-@router.message(F.text == "⬅️ Назад")
-async def back_to_main_menu(message: Message):
-    await message.answer("🔙 Возвращаемся в главное меню...", reply_markup=get_main_menu_keyboard(message.from_user.id))

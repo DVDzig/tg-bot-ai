@@ -3,10 +3,11 @@ from aiogram.types import Message
 from services.payment_service import log_pending_payment
 from services.yookassa_service import create_yookassa_payment
 from keyboards.shop import (
-    get_shop_keyboard,
     get_question_packages_keyboard,
     get_subscription_packages_keyboard
 )
+from aiogram.fsm.context import FSMContext
+from utils.context_stack import push_step
 
 router = Router()
 
@@ -38,7 +39,8 @@ async def send_payment_link(message: Message, amount: int, description: str, pay
 
 # Обработка кнопки "🧾 Купить вопросы"
 @router.message(F.text == "🧾 Купить вопросы")
-async def show_question_packages(message: Message):
+async def show_question_packages(message: Message, state: FSMContext):
+    await push_step(state, "shop")
     await message.answer(
         "📦 <b>Выберите пакет вопросов:</b>",
         reply_markup=get_question_packages_keyboard()
@@ -46,7 +48,8 @@ async def show_question_packages(message: Message):
 
 # Обработка кнопки "🔓 Купить подписку"
 @router.message(F.text == "🔓 Купить подписку")
-async def show_subscription_packages(message: Message):
+async def show_subscription_packages(message: Message, state: FSMContext):
+    await push_step(state, "shop")
     await message.answer(
         "🔓 <b>Лайт — 149₽</b>\n"
         "• Безлимит на 7 дней\n"
@@ -61,14 +64,6 @@ async def show_subscription_packages(message: Message):
         "• Максимальный приоритет\n\n"
         "💼 <b>Выберите подписку:</b>",
         reply_markup=get_subscription_packages_keyboard()
-    )
-
-# Обработка кнопки "⬅️ Назад" — возврат в магазин
-@router.message(F.text == "⬅️ Назад")
-async def back_to_shop(message: Message):
-    await message.answer(
-        "🔙 Возврат в главное меню магазина:",
-        reply_markup=get_shop_keyboard()
     )
 
 # Обработчики кнопок в магазине

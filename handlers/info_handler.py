@@ -5,12 +5,15 @@ from keyboards.info_keyboard import get_info_menu_keyboard
 from texts.help_text import HELP_TEXT
 from texts.statuses_text import STATUS_TEXT
 from texts.subscriptions_text import SUBSCRIPTIONS_TEXT
+from aiogram.fsm.context import FSMContext
+from utils.context_stack import push_step
 
 router = Router()
 
 # Главное меню Info
 @router.message(F.text == "ℹ️ Info")
-async def show_info_menu(message: Message):
+async def show_info_menu(message: Message, state: FSMContext):
+    await push_step(state, "admin")
     await message.answer(
         "ℹ️ Выбери, что тебе интересно:",
         reply_markup=get_info_menu_keyboard()

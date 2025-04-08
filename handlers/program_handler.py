@@ -32,6 +32,9 @@ from services.gpt_service import search_video_on_youtube
 from datetime import datetime
 import pytz
 
+from utils.context_stack import push_step
+
+
 router = Router()
 
 
@@ -49,12 +52,9 @@ async def select_program(message: Message, state: FSMContext):
     level = message.text
     await state.update_data(level=level)
 
-    await message.answer(
-        "Выбери программу:",
-        reply_markup=get_program_keyboard(level)
-    )
+    await push_step(state, "level")  # текущий шаг перед переходом
     await state.set_state(ProgramSelection.program)
-
+    await message.answer("Выбери программу:", reply_markup=get_program_keyboard(...))
 
 @router.message(ProgramSelection.program)
 async def select_module(message: Message, state: FSMContext):
@@ -66,11 +66,9 @@ async def select_module(message: Message, state: FSMContext):
         await message.answer("Не удалось найти модули для этой программы.")
         return
 
-    await message.answer(
-        "Выбери модуль:",
-        reply_markup=get_module_keyboard(modules)
-    )
-    await state.set_state(ProgramSelection.module)
+    await push_step(state, "program")  # текущий шаг перед переходом
+    await state.set_state(ProgramSelection.program)
+    await message.answer("Выбери модуль:", reply_markup=get_program_keyboard(...))
 
 
 @router.message(ProgramSelection.module)
@@ -86,11 +84,9 @@ async def select_discipline(message: Message, state: FSMContext):
         await message.answer("Не удалось найти дисциплины для этого модуля.")
         return
 
-    await message.answer(
-        "Выбери дисциплину:",
-        reply_markup=get_discipline_keyboard(disciplines)
-    )
-    await state.set_state(ProgramSelection.discipline)
+    await push_step(state, "module")  # текущий шаг перед переходом
+    await state.set_state(ProgramSelection.program)
+    await message.answer("Выбери дисциплину:", reply_markup=get_program_keyboard(...))
 
 
 @router.message(ProgramSelection.discipline)
@@ -98,12 +94,13 @@ async def start_asking(message: Message, state: FSMContext):
     discipline = message.text
     await state.update_data(discipline=discipline)
 
+    await push_step(state, "discipline")  # текущий шаг перед переходом
+    await state.set_state(ProgramSelection.program)
     await message.answer(
         f"✅ Дисциплина <b>{discipline}</b> выбрана.\n\n"
         f"Теперь можешь задавать свои вопросы. Я отвечаю только по теме!",
         reply_markup=get_consultant_keyboard()
     )
-    await state.set_state(ProgramSelection.asking)
 
 @router.message(ProgramSelection.asking)
 async def handle_user_question(message: Message, state: FSMContext):
