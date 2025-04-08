@@ -6,7 +6,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Google Sheets
 USER_SHEET_ID = os.getenv("USER_SHEET_ID")
-USER_SHEET_NAME = os.getenv("Users")
+USER_SHEET_NAME = os.getenv("USER_SHEET_NAME","Users")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
 client_email = os.getenv("CLIENT_EMAIL")
 PAYMENT_LOG_SHEET = "PaymentsLog"
