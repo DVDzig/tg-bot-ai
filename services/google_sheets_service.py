@@ -212,6 +212,9 @@ async def get_disciplines_by_module(program: str, module: str) -> list[str]:
     return sorted(disciplines)
 
 async def get_keywords_for_discipline(program: str, module: str, discipline: str) -> list[str]:
+    def clean(text: str) -> str:
+        return text.replace('\xa0', ' ').replace('\u200b', '').strip().lower()
+
     sheet_name = PROGRAM_SHEETS_LIST.get(program)
     if not sheet_name:
         return []
@@ -237,7 +240,7 @@ async def get_keywords_for_discipline(program: str, module: str, discipline: str
         disc = row[header_map["Дисциплины"]] if header_map["Дисциплины"] < len(row) else ""
         keywords = row[header_map["Ключевые слова"]] if header_map["Ключевые слова"] < len(row) else ""
 
-        if mod == module and disc == discipline:
+        if clean(mod) == clean(module) and clean(disc) == clean(discipline):
             return [k.strip().lower() for k in keywords.split(",") if k.strip()]
 
     return []

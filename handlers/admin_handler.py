@@ -142,7 +142,7 @@ async def process_broadcast(message: Message, state: FSMContext):
     await state.clear()
 
 
-@router.message(F.text == "🔄 Обновить ключевые слова")
+@router.message(F.text == "🔁 Обновить ключевые слова")
 async def admin_update_keywords_callback(message: Message):
     if message.from_user.id != ADMIN_ID:
         return
