@@ -41,7 +41,7 @@ USER_FIELDS = [
     "missions_streak", "last_mission_day"
 ]
 
-ADMIN_ID = os.getenv("ADMIN_ID")
+ADMIN_ID = os.getenv("ADMIN_ID", "150532949")
 
 VIDEO_URLS = {
     "Профи": 1,
