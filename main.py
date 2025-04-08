@@ -5,7 +5,6 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Update
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
 
 from config import TOKEN
@@ -15,10 +14,7 @@ from handlers import (
     info_handler,
     missions_handler,
     profile_handler,
-    payment_handler,
-    shop_handler,
-    shop_questions_handler,
-    shop_subscription_handler,
+    shop_handler,             # ✅ только один обработчик магазина
     leaderboard_handler,
     program_handler,
     common_navigation
@@ -40,16 +36,11 @@ dp.include_router(admin_handler.router)
 dp.include_router(info_handler.router)
 dp.include_router(missions_handler.router)
 dp.include_router(profile_handler.router)
-dp.include_router(payment_handler.router)
-dp.include_router(shop_handler.router)
-dp.include_router(shop_questions_handler.router)
-dp.include_router(shop_subscription_handler.router)
+dp.include_router(shop_handler.router)            # ✅ только один shop_handler
 dp.include_router(leaderboard_handler.router)
 dp.include_router(program_handler.router)
 dp.include_router(start_handler.router)
 dp.include_router(common_navigation.router)
-
-
 
 # === Telegram Bot & Dispatcher ===
 bot = Bot(

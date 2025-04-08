@@ -1,129 +1,93 @@
 from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from services.yookassa_service import Payment
-import uuid
+from aiogram.types import Message
+from services.payment_service import log_pending_payment
+from services.yookassa_service import create_yookassa_payment
 
 router = Router()
 
-def get_shop_keyboard():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🧾 Вопросы"), KeyboardButton(text="💳 Подписка")],
-            [KeyboardButton(text="⬅️ Назад")]
-        ],
-        resize_keyboard=True,
-        input_field_placeholder="Выберите действие ⤵️"
-    )
+# Обработчики кнопок в магазине
 
-def get_questions_keyboard():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="💳 Купить 1 вопрос - 10₽")],
-            [KeyboardButton(text="💳 Купить 10 вопросов - 90₽")],
-            [KeyboardButton(text="💳 Купить 50 вопросов - 450₽")],
-            [KeyboardButton(text="💳 Купить 100 вопросов - 900₽")],
-            [KeyboardButton(text="⬅️ Назад в магазин")]
-        ],
-        resize_keyboard=True,
-        input_field_placeholder="Выберите пакет ⤵️"
-    )
-
-def get_subscription_keyboard():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="💳 Подписка Лайт (7 дней) - 149₽")],
-            [KeyboardButton(text="💳 Подписка Про - 299₽")],
-            [KeyboardButton(text="⬅️ Назад в магазин")]
-        ],
-        resize_keyboard=True,
-        input_field_placeholder="Выберите подписку ⤵️"
-    )
-
-@router.message(F.text == "🛒 Магазин")
-async def open_shop(message: Message):
-    await message.answer(
-        "🛍 <b>Добро пожаловать в Магазин</b>\n\n"
-        "Здесь ты можешь:\n"
-        "• Купить дополнительные вопросы\n"
-        "• Оформить подписку с бонусами и безлимитом\n\n"
-        "Выбери, что хочешь приобрести 👇",
-        reply_markup=get_shop_keyboard()
-    )
-
-# Раздел Вопросов
-@router.message(F.text == "🧾 Вопросы")
-async def show_questions(message: Message):
-    await message.answer(
-        "🧾 <b>Выбор пакета вопросов</b>\n\n"
-        "Выбери нужное количество вопросов 👇",
-        reply_markup=get_questions_keyboard()
-    )
-
-@router.message(F.text == "💳 Купить 1 вопрос - 10₽")
-async def buy_1_question(message: Message):
-    await send_payment_link(message, 10, "Покупка 1 вопроса")
-
-@router.message(F.text == "💳 Купить 10 вопросов - 90₽")
-async def buy_10_questions(message: Message):
-    await send_payment_link(message, 90, "Покупка 10 вопросов")
-
-@router.message(F.text == "💳 Купить 50 вопросов - 450₽")
-async def buy_50_questions(message: Message):
-    await send_payment_link(message, 450, "Покупка 50 вопросов")
-
-@router.message(F.text == "💳 Купить 100 вопросов - 900₽")
-async def buy_100_questions(message: Message):
-    await send_payment_link(message, 900, "Покупка 100 вопросов")
-
-# Раздел Подписок
-@router.message(F.text == "💳 Подписка")
-async def show_subscription_options(message: Message):
-    await message.answer(
-        "💳 <b>Выбор подписки</b>\n\n"
-        "Выбери подписку, чтобы оформить:\n"
-        "• Лайт на 7 дней\n"
-        "• Про на неограниченный срок\n\n"
-        "Выбери, что хочешь приобрести 👇",
-        reply_markup=get_subscription_keyboard()
-    )
-
-@router.message(F.text == "💳 Подписка Лайт (7 дней) - 149₽")
+@router.message(F.text == "💳 Подписка Лайт (7 дней)")
 async def buy_light_subscription(message: Message):
-    await send_payment_link(message, 149, "Подписка Лайт на 7 дней")
-
-@router.message(F.text == "💳 Подписка Про - 299₽")
-async def buy_pro_subscription(message: Message):
-    await send_payment_link(message, 299, "Подписка Про на 30 дней")
-
-# Возврат назад
-@router.message(F.text.in_(["⬅️ Назад в магазин", "⬅️ Назад"]))
-async def back_to_shop(message: Message):
-    await open_shop(message)
-
-# Общая функция оплаты
-async def send_payment_link(message: Message, amount: int, description: str):
-    user_id = message.from_user.id
-    internal_id = str(uuid.uuid4())
-
-    payment = Payment.create({
-        "amount": {"value": f"{amount:.2f}", "currency": "RUB"},
-        "confirmation": {
-            "type": "redirect",
-            "return_url": "https://t.me/TGTutorBot"  # если нужно — замени на своего бота
-        },
-        "capture": True,
-        "description": f"{description} для user_id {user_id}",
-        "metadata": {
-            "user_id": str(user_id),
-            "payment_type": "questions",
-            "quantity": amount,
-            "internal_id": internal_id
-        }
-    })
-
-    confirm_url = payment.confirmation.confirmation_url
-    await message.answer(
-        f"💳 Перейди по ссылке, чтобы оплатить:\n\n"
-        f"<a href='{confirm_url}'>Оплатить через YooKassa</a>",
-        disable_web_page_preview=True
+    await send_payment_link(
+        message,
+        amount=149,
+        description="Подписка Лайт на 7 дней",
+        payment_type="subscription",
+        quantity=7
     )
+
+@router.message(F.text == "💳 Подписка Про")
+async def buy_pro_subscription(message: Message):
+    await send_payment_link(
+        message,
+        amount=299,
+        description="Подписка Про на 30 дней",
+        payment_type="subscription",
+        quantity=30
+    )
+
+@router.message(F.text == "💳 Купить 1 вопрос")
+async def buy_1_question(message: Message):
+    await send_payment_link(
+        message,
+        amount=10,
+        description="Покупка 1 вопроса",
+        payment_type="questions",
+        quantity=1
+    )
+
+@router.message(F.text == "💳 Купить 10 вопросов")
+async def buy_10_questions(message: Message):
+    await send_payment_link(
+        message,
+        amount=90,
+        description="Покупка 10 вопросов",
+        payment_type="questions",
+        quantity=10
+    )
+
+@router.message(F.text == "💳 Купить 50 вопросов")
+async def buy_50_questions(message: Message):
+    await send_payment_link(
+        message,
+        amount=450,
+        description="Покупка 50 вопросов",
+        payment_type="questions",
+        quantity=50
+    )
+
+@router.message(F.text == "💳 Купить 100 вопросов")
+async def buy_100_questions(message: Message):
+    await send_payment_link(
+        message,
+        amount=900,
+        description="Покупка 100 вопросов",
+        payment_type="questions",
+        quantity=100
+    )
+
+# Универсальная функция отправки ссылки на оплату
+async def send_payment_link(message: Message, amount: int, description: str, payment_type: str, quantity: int):
+    user_id = message.from_user.id
+
+    try:
+        payment_link, internal_id = await create_yookassa_payment(
+            user_id=user_id,
+            amount=amount,
+            description=description,
+            payment_type=payment_type,
+            quantity=quantity
+        )
+
+        await log_pending_payment(user_id, internal_id, quantity, payment_type)
+
+        await message.answer(
+            f"🧾 <b>Оплата</b>\n\n"
+            f"{description} за {amount}₽.\n"
+            f"Перейди по ссылке, чтобы оплатить:\n\n"
+            f"<a href='{payment_link}'>💳 Оплатить через YooKassa</a>",
+            disable_web_page_preview=True
+        )
+    except Exception as e:
+        await message.answer(f"Ошибка при создании платёжной ссылки:\n<code>{str(e)}</code>")
