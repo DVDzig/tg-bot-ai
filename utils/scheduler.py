@@ -3,7 +3,7 @@ from apscheduler.triggers.cron import CronTrigger
 from tasks.reset_missions import reset_daily_missions
 from services.user_service import apply_monthly_bonus_to_all_users
 from datetime import datetime
-from services.leaderboard_service import update_leaderboard_cache
+
 
 def schedule_all_jobs(bot):
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
@@ -21,16 +21,5 @@ def schedule_monthly_bonus(scheduler: AsyncIOScheduler):
         hour=7,
         minute=0,
         id="monthly_bonus",
-        timezone="Europe/Moscow"
-    )
-    
-    
-def schedule_leaderboard_update(scheduler: AsyncIOScheduler):
-    scheduler.add_job(
-        update_leaderboard_cache,
-        trigger="cron",
-        hour=7,
-        minute=0,
-        id="daily_leaderboard_update",
         timezone="Europe/Moscow"
     )
