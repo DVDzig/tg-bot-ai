@@ -9,7 +9,7 @@ from keyboards.admin import get_admin_menu_keyboard
 from keyboards.info_keyboard import get_info_menu_keyboard
 from keyboards.program import (
     get_level_keyboard, get_program_keyboard,
-    get_module_keyboard, get_programs_by_level
+    get_module_keyboard, get_program_keyboard
 )
 from services.google_sheets_service import (
     get_modules_by_program,
@@ -29,7 +29,7 @@ async def universal_back_handler(message: Message, state: FSMContext):
         await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
 
     elif previous == "module":
-        programs = await get_programs_by_level(data["level"])
+        programs = await get_program_keyboard(data["level"])
         await state.set_state(ProgramSelection.program)
         await message.answer("Выбери программу:", reply_markup=get_program_keyboard(data["level"], programs))
 
