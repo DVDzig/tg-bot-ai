@@ -1,4 +1,3 @@
-from utils.xp_logic import get_status_by_xp, get_next_status
 from services.google_sheets_service import (
     update_user_plan, 
     get_all_users,
@@ -60,6 +59,33 @@ async def get_or_create_user(user) -> None:
         valueInputOption="RAW",
         body=body
     ).execute()
+
+def get_status_by_xp(xp: int) -> str:
+    if xp >= 5000:
+        return "👑 Создатель"
+    elif xp >= 1000:
+        return "🔥 Легенда"
+    elif xp >= 300:
+        return "🧠 Наставник"
+    elif xp >= 150:
+        return "👑 Эксперт"
+    elif xp >= 50:
+        return "🚀 Профи"
+    elif xp >= 10:
+        return "🔸 Опытный"
+    else:
+        return "🟢 Новичок"
+
+def get_next_status(xp: int) -> tuple[str, int]:
+    levels = [
+        (5000, "👑 Создатель"),
+        (1000, "🔥 Легенда"),
+        (300, "🧠 Наставник"),
+        (150, "👑 Эксперт"),
+        (50, "🚀 Профи"),
+        (10, "🔸 Опытный"),
+        (0, "🟢 Новичок"),
+    ]
 
 async def activate_subscription(user_id: int, duration_days: int, internal_id: str):
     # "lite" или "pro" читаем из логов по internal_id (добавим позже или передадим как аргумент)
@@ -186,21 +212,6 @@ async def decrease_question_limit(user_id: int):
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
-def get_status_by_xp(xp: int) -> str:
-    if xp >= 5000:
-        return "👑 Создатель"
-    elif xp >= 1000:
-        return "🔥 Легенда"
-    elif xp >= 300:
-        return "🧠 Наставник"
-    elif xp >= 150:
-        return "👑 Эксперт"
-    elif xp >= 50:
-        return "🚀 Профи"
-    elif xp >= 10:
-        return "🔸 Опытный"
-    else:
-        return "🟢 Новичок"
 
 async def add_xp_and_update_status(user_id: int, delta: int = 1):
     row = await get_user_row_by_id(user_id)
