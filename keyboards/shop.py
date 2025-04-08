@@ -1,5 +1,16 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+def get_shop_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🧾 Купить вопросы")],
+            [KeyboardButton(text="🔓 Купить подписку")],
+            [KeyboardButton(text="⬅️ Назад")],
+        ],
+        resize_keyboard=True,
+        input_field_placeholder="Выберите раздел ⤵️"
+    )
+
 def get_question_packages_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
