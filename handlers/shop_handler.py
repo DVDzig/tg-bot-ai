@@ -48,6 +48,17 @@ async def show_question_packages(message: Message):
 @router.message(F.text == "🔓 Купить подписку")
 async def show_subscription_packages(message: Message):
     await message.answer(
+        "🔓 <b>Лайт — 149₽</b>\n"
+        "• Безлимит на 7 дней\n"
+        "• XP не начисляется\n"
+        "• Участие в челленджах\n"
+        "• Приоритет в ответах\n\n"
+        "🔐 <b>Про — 499₽</b>\n"
+        "• Всё из Лайт\n"
+        "• +100 вопросов\n"
+        "• До 3 видео по теме\n"
+        "• Генерация изображений\n"
+        "• Максимальный приоритет\n\n"
         "💼 <b>Выберите подписку:</b>",
         reply_markup=get_subscription_packages_keyboard()
     )
@@ -62,7 +73,7 @@ async def back_to_shop(message: Message):
 
 # Обработчики кнопок в магазине
 
-@router.message(F.text == "💳 Подписка Лайт (7 дней)")
+@router.message(F.text == "🔓 Лайт / 7 дней")
 async def buy_light_subscription(message: Message):
     await send_payment_link(
         message,
@@ -72,7 +83,7 @@ async def buy_light_subscription(message: Message):
         quantity=7
     )
 
-@router.message(F.text == "💳 Подписка Про")
+@router.message(F.text == "🔓 Про / 30 дней")
 async def buy_pro_subscription(message: Message):
     await send_payment_link(
         message,
@@ -82,7 +93,7 @@ async def buy_pro_subscription(message: Message):
         quantity=30
     )
 
-@router.message(F.text == "💳 Купить 1 вопрос")
+@router.message(F.text == "🧾 1 вопрос — 10₽")
 async def buy_1_question(message: Message):
     await send_payment_link(
         message,
@@ -92,7 +103,7 @@ async def buy_1_question(message: Message):
         quantity=1
     )
 
-@router.message(F.text == "💳 Купить 10 вопросов")
+@router.message(F.text == "🧾 10 вопросов — 90₽")
 async def buy_10_questions(message: Message):
     await send_payment_link(
         message,
@@ -102,7 +113,7 @@ async def buy_10_questions(message: Message):
         quantity=10
     )
 
-@router.message(F.text == "💳 Купить 50 вопросов")
+@router.message(F.text == "🧾 50 вопросов — 450₽")
 async def buy_50_questions(message: Message):
     await send_payment_link(
         message,
@@ -112,7 +123,7 @@ async def buy_50_questions(message: Message):
         quantity=50
     )
 
-@router.message(F.text == "💳 Купить 100 вопросов")
+@router.message(F.text == "🧾 100 вопросов — 900₽")
 async def buy_100_questions(message: Message):
     await send_payment_link(
         message,

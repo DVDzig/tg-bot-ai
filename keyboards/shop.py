@@ -34,8 +34,8 @@ def get_subscription_packages_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="🔓 Лайт — 149₽ / 7 дней"), 
-                KeyboardButton(text="🔓 Про — 499₽ / 30 дней")
+                KeyboardButton(text="🔓 Лайт / 7 дней"), 
+                KeyboardButton(text="🔓 Про / 30 дней")
             ],
             [KeyboardButton(text="⬅️ Назад")],
         ],
