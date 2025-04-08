@@ -24,7 +24,7 @@ from handlers import (
     common_navigation
 )
 from middlewares.ensure_user import EnsureUserMiddleware
-from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus, schedule_leaderboard_update
+from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus
 
 dp = Dispatcher(storage=MemoryStorage())
 
