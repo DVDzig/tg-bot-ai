@@ -54,7 +54,7 @@ async def select_program(message: Message, state: FSMContext):
 
     await push_step(state, "level")  # текущий шаг перед переходом
     await state.set_state(ProgramSelection.program)
-    await message.answer("Выбери программу:", reply_markup=get_program_keyboard(...))
+    await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
 
 @router.message(ProgramSelection.program)
 async def select_module(message: Message, state: FSMContext):
@@ -68,7 +68,7 @@ async def select_module(message: Message, state: FSMContext):
 
     await push_step(state, "program")  # текущий шаг перед переходом
     await state.set_state(ProgramSelection.program)
-    await message.answer("Выбери модуль:", reply_markup=get_program_keyboard(...))
+    await message.answer("Выбери модуль:", reply_markup=get_program_keyboard(program))
 
 
 @router.message(ProgramSelection.module)
@@ -86,7 +86,7 @@ async def select_discipline(message: Message, state: FSMContext):
 
     await push_step(state, "module")  # текущий шаг перед переходом
     await state.set_state(ProgramSelection.program)
-    await message.answer("Выбери дисциплину:", reply_markup=get_program_keyboard(...))
+    await message.answer("Выбери дисциплину:", reply_markup=get_program_keyboard(module))
 
 
 @router.message(ProgramSelection.discipline)
