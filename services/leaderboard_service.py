@@ -3,6 +3,8 @@ from config import USER_SHEET_ID, USER_SHEET_NAME
 from services.sheets import get_sheets_service
 from utils.xp_logic import get_status_by_xp
 from services.google_sheets_service import get_all_users
+from services.sheets import get_column_index_by_name  # теперь используем
+
 
 logger = logging.getLogger(__name__)
 
@@ -93,14 +95,15 @@ async def get_user_position_info(user_id: int) -> str:
     headers = values[0]
     header_map = {h: i for i, h in enumerate(headers)}
 
-    xp_col = header_map.get("xp")
-    id_col = header_map.get("user_id")
-    name_col = header_map.get("first_name")
-    status_col = header_map.get("status")
+
+    xp_col = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "xp")
+    id_col = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "user_id")
+    name_col = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "first_name")
+    status_col = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "status")
 
     if None in (xp_col, id_col, name_col, status_col):
-        logger.error("Не найдены все нужные колонки в таблице.")
         return "Не удалось найти нужные колонки в таблице."
+
 
     leaderboard = []
     for row in values[1:]:
