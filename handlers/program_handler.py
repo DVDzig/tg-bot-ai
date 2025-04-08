@@ -66,9 +66,9 @@ async def select_module(message: Message, state: FSMContext):
         await message.answer("Не удалось найти модули для этой программы.")
         return
 
-    await push_step(state, "program")  # текущий шаг перед переходом
-    await state.set_state(ProgramSelection.program)
-    await message.answer("Выбери модуль:", reply_markup=get_program_keyboard(program))
+    await push_step(state, "program")
+    await state.set_state(ProgramSelection.module)
+    await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
 
 
 @router.message(ProgramSelection.module)
@@ -84,9 +84,9 @@ async def select_discipline(message: Message, state: FSMContext):
         await message.answer("Не удалось найти дисциплины для этого модуля.")
         return
 
-    await push_step(state, "module")  # текущий шаг перед переходом
-    await state.set_state(ProgramSelection.program)
-    await message.answer("Выбери дисциплину:", reply_markup=get_program_keyboard(module))
+    await push_step(state, "module")
+    await state.set_state(ProgramSelection.discipline)
+    await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
 
 
 @router.message(ProgramSelection.discipline)
