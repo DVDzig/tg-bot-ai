@@ -10,6 +10,10 @@ from utils.scheduler import schedule_all_jobs
 import os
 from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
+from services.google_sheets_service import auto_update_expired_subscriptions
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +40,11 @@ async def on_startup(bot: Bot) -> None:
     await bot.set_webhook(webhook_url, secret_token=WEBHOOK_SECRET)
     logging.info(f"Webhook set to {webhook_url}")
 
+def schedule_tasks():
+    scheduler = AsyncIOScheduler(timezone=pytz.timezone("Europe/Moscow"))
+    scheduler.add_job(auto_update_expired_subscriptions, CronTrigger(hour=6, minute=0))  # каждый день в 06:00
+    scheduler.start()
+
 async def main():
 
     
@@ -51,6 +60,9 @@ async def main():
 
     # Не запускаем polling, так как используем только вебхук
     logger.info("Бот работает через вебхук.")
+    
+    # Автообновление подписки каждый день
+    schedule_tasks()
 
 if __name__ == "__main__":
     asyncio.run(main())

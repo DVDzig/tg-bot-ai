@@ -1,5 +1,6 @@
 import re
-from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS
+from aiogram import Bot
+from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN
 from services.sheets import (
     UserRow, 
     get_sheets_service, 
@@ -7,9 +8,16 @@ from services.sheets import (
     get_user_row_by_id, 
     update_sheet_row
 ) 
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import PROGRAM_SHEETS_LIST
 import pytz
+
+bot = Bot(token=TOKEN)
+
+PLAN_PRIORITY = {
+    "lite": 1,
+    "pro": 2
+}
 
 async def get_all_users() -> list[UserRow]:
     service = get_sheets_service()
@@ -33,19 +41,70 @@ async def get_all_users() -> list[UserRow]:
 
     return user_rows
 
-async def update_user_plan(user_id: int, plan_type: str, until_date: str):
-    index = await find_user_row_index(str(user_id))  # строка в таблице
+async def update_user_plan(user_id: int, new_plan: str, duration_days: int):
+    index = await find_user_row_index(str(user_id))
     if index is None:
         return
 
-    updates = {
-        "plan": plan_type,
-        "premium_status": plan_type,
-        "premium_until": until_date
-    }
+    row = await get_user_row_by_id(str(user_id))  # возвращает словарь
+
+    current_plan = row.get("plan", "").strip()
+    current_until_str = row.get("premium_until", "").strip()
+
+    today = datetime.utcnow()
+    new_until = today + timedelta(days=duration_days)
+
+    updates = {}
+
+    # Преобразуем дату окончания текущей подписки
+    try:
+        current_until = datetime.strptime(current_until_str, "%Y-%m-%d")
+    except Exception:
+        current_until = today
+
+    # Активная подписка ещё действует?
+    if current_until > today:
+        # Сравниваем приоритеты
+        current_priority = PLAN_PRIORITY.get(current_plan, 0)
+        new_priority = PLAN_PRIORITY.get(new_plan, 0)
+
+        if new_plan == current_plan:
+            # Просто продлеваем срок
+            extended_until = current_until + timedelta(days=duration_days)
+            updates = {
+                "plan": new_plan,
+                "premium_status": new_plan,
+                "premium_until": extended_until.strftime("%Y-%m-%d")
+            }
+
+        elif new_priority > current_priority:
+            # Новый план круче — активируем немедленно
+            updates = {
+                "plan": new_plan,
+                "premium_status": new_plan,
+                "premium_until": new_until.strftime("%Y-%m-%d"),
+                "next_plan": "",
+                "next_until": ""
+            }
+
+        else:
+            # Новый план слабее — откладываем
+            updates = {
+                "next_plan": new_plan,
+                "next_until": (current_until + timedelta(days=duration_days)).strftime("%Y-%m-%d")
+            }
+
+    else:
+        # Подписки нет — активируем сразу
+        updates = {
+            "plan": new_plan,
+            "premium_status": new_plan,
+            "premium_until": new_until.strftime("%Y-%m-%d"),
+            "next_plan": "",
+            "next_until": ""
+        }
 
     await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, index, updates)
-
 async def append_payment_log(row: list):
     SHEET_NAME = "PaymentsLog"
 
@@ -281,3 +340,134 @@ async def get_column_value_by_name(sheet_id: str, sheet_name: str, row_index: in
         range=f"{sheet_name}!{column_name}{row_index}"
     ).execute()
     return result.get("values", [])[0][0] if result.get("values") else ""
+
+async def auto_update_expired_subscriptions():
+    users = await get_all_users()
+    today = datetime.utcnow().date()
+
+    for user in users:
+        user_id = user.get("user_id")
+        current_until = user.get("premium_until", "")
+        next_plan = user.get("next_plan", "").strip()
+        next_until = user.get("next_until", "").strip()
+
+        if not (user_id and next_plan and next_until):
+            continue
+
+        try:
+            until_date = datetime.strptime(current_until, "%Y-%m-%d").date()
+            next_date = datetime.strptime(next_until, "%Y-%m-%d").date()
+        except:
+            continue
+
+        if until_date < today:
+            updates = {
+                "plan": next_plan,
+                "premium_status": next_plan,
+                "premium_until": next_until,
+                "next_plan": "",
+                "next_until": ""
+            }
+            index = await find_user_row_index(str(user_id))
+            if index is not None:
+                await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, index, updates)
+
+                # Уведомление пользователю
+                try:
+                    await bot.send_message(
+                        chat_id=int(user_id),
+                        text=f"🔄 Ваша подписка <b>{next_plan.capitalize()}</b> активирована!\n"
+                             f"Она будет действовать до <b>{next_until}</b>.",
+                        parse_mode="HTML"
+                    )
+                except Exception as e:
+                    print(f"[ERROR] Не удалось отправить сообщение пользователю {user_id}: {e}")
+
+
+async def log_subscription_change(data: dict):
+    SHEET_NAME = "SubscriptionLog"
+    service = get_sheets_service()
+    sheet = service.spreadsheets()
+
+    # Получаем заголовки
+    result = sheet.values().get(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{SHEET_NAME}!1:1"
+    ).execute()
+
+    headers = result.get("values", [[]])[0]
+    header_map = {name: idx for idx, name in enumerate(headers)}
+
+    # Собираем строку
+    row = [""] * len(headers)
+    for key, value in data.items():
+        idx = header_map.get(key)
+        if idx is not None:
+            row[idx] = value
+
+    # Добавляем строку в лог
+    body = {"values": [row]}
+    sheet.values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{SHEET_NAME}!A1",
+        valueInputOption="RAW",
+        insertDataOption="INSERT_ROWS",
+        body=body
+    ).execute()
+
+
+async def auto_update_expired_subscriptions():
+    users = await get_all_users()
+    today = datetime.utcnow().date()
+
+    for user in users:
+        user_id = user.get("user_id")
+        current_until = user.get("premium_until", "").strip()
+        next_plan = user.get("next_plan", "").strip()
+        next_until = user.get("next_until", "").strip()
+
+        if not (user_id and next_plan and next_until):
+            continue
+
+        try:
+            until_date = datetime.strptime(current_until, "%Y-%m-%d").date()
+            next_date = datetime.strptime(next_until, "%Y-%m-%d").date()
+        except Exception:
+            continue
+
+        if until_date < today:
+            index = await find_user_row_index(str(user_id))
+            if index is None:
+                continue
+
+            # Логика обновления подписки
+            updates = {
+                "plan": next_plan,
+                "premium_status": next_plan,
+                "premium_until": next_until,
+                "next_plan": "",
+                "next_until": ""
+            }
+
+            await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, index, updates)
+
+            # Лог в лист SubscriptionLog
+            await log_subscription_change({
+                "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "user_id": str(user_id),
+                "activated_plan": next_plan,
+                "expires_on": next_until,
+                "was_delayed": "Да",
+                "previous_plan": user.get("plan", "")
+            })
+
+            # Уведомление в Telegram
+            try:
+                await bot.send_message(
+                    chat_id=int(user_id),
+                    text=f"🔄 Ваша подписка <b>{next_plan.capitalize()}</b> активирована!\n"
+                         f"Она будет действовать до <b>{next_until}</b>.",
+                    parse_mode="HTML"
+                )
+            except Exception as e:
+                print(f"[ERROR] Не удалось отправить сообщение пользователю {user_id}: {e}")

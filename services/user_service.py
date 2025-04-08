@@ -42,7 +42,7 @@ async def get_or_create_user(user) -> None:
         "daily_mission_done": "0",
         "weekly_mission_done": "0",
         "streak_mission_done": "0",
-        "subscription_plan": "none"  # Начальная подписка "none"
+        "premium_status": "none"  # Начальная подписка "none"
     }
 
     # Добавляем нового пользователя в таблицу
@@ -218,7 +218,7 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1):
     if not row:
         return
 
-    plan = row.get("subscription_plan", "").lower()
+    plan = row.get("premium_status", "").lower()
     if plan in ("lite", "pro"):
         return  # XP не начисляется, если активна подписка
 
@@ -292,8 +292,8 @@ async def create_mission(sheet_id: str, mission_name: str, user_id: int):
 async def update_user_subscription(user_id: int, plan: str):
     row = await get_user_row_by_id(user_id)
     if row:
-        # Получаем индекс колонки "subscription_plan"
-        subscription_column = await get_column_index(row.sheet_id, "Users", "subscription_plan")
+        # Получаем индекс колонки "premium_status"
+        subscription_column = await get_column_index(row.sheet_id, "Users", "premium_status")
         
         # Обновляем статус подписки
         service = get_sheets_service()
