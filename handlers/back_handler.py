@@ -9,12 +9,10 @@ from keyboards.admin import get_admin_menu_keyboard
 from keyboards.info_keyboard import get_info_menu_keyboard
 from keyboards.program import (
     get_level_keyboard, get_program_keyboard,
-    get_module_keyboard
+    get_module_keyboard, get_programs_by_level
 )
 from services.google_sheets_service import (
-    get_programs_by_level,
     get_modules_by_program,
-    get_disciplines_by_module
 )
 from states.program_states import ProgramSelection
 
