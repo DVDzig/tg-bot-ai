@@ -93,6 +93,7 @@ async def activate_subscription(user_id: int, duration_days: int, internal_id: s
 
     until_date = (datetime.utcnow() + timedelta(days=int(duration_days))).strftime("%Y-%m-%d")
 
+
     await update_user_plan(user_id, plan_type, until_date)
 
 async def get_user_profile_text(user) -> str:
