@@ -130,15 +130,30 @@ async def handle_user_question(message: Message, state: FSMContext):
         await state.clear()
         return
 
-    keywords = await get_keywords_for_discipline(program=program, module=module, discipline=discipline)
+    try:
+        keywords = await get_keywords_for_discipline(program=program, module=module, discipline=discipline)
+    except Exception as e:
+        print(f"[KEYWORDS ERROR] {e}")
+        await message.answer("⚠️ Не удалось загрузить ключевые слова. Попробуй выбрать дисциплину заново.")
+        await state.clear()
+        return
 
-    if not any(kw.lower() in text.lower() for kw in keywords):
+    if not keywords or not any(kw.lower() in text.lower() for kw in keywords):
         await message.answer("❗ Пожалуйста, задай вопрос по теме. В нём не обнаружено ключевых слов из выбранной дисциплины.")
         return
 
     await message.answer("⌛ Генерирую ответ...")
 
-    answer = await generate_answer(program=program, module=module, discipline=discipline, user_question=text)
+    try:
+        answer = await generate_answer(program=program, module=module, discipline=discipline, user_question=text)
+    except Exception as e:
+        print(f"[GPT ERROR] {e}")
+        await message.answer("⚠️ Ошибка генерации ответа. Попробуй переформулировать вопрос позже.")
+        return
+
+    if not answer:
+        await message.answer("⚠️ ИИ не смог сгенерировать ответ. Попробуй задать вопрос по-другому.")
+        return
 
     # Отправка видео по статусу
     status = row.get("status", "Новичок")
@@ -151,9 +166,12 @@ async def handle_user_question(message: Message, state: FSMContext):
         videos_to_send = 3
 
     if videos_to_send > 0:
-        video_urls = await search_video_on_youtube(f"{discipline} {text}", max_results=videos_to_send)
-        for video_url in video_urls:
-            await message.answer_video(video_url)
+        try:
+            video_urls = await search_video_on_youtube(f"{discipline} {text}", max_results=videos_to_send)
+            for video_url in video_urls:
+                await message.answer_video(video_url)
+        except Exception as e:
+            print(f"[VIDEO ERROR] {e}")
 
     # Формируем и отправляем форматированный ответ
     header = f"📚 *Ответ по дисциплине {discipline}*:\n\n"
@@ -161,7 +179,11 @@ async def handle_user_question(message: Message, state: FSMContext):
         f"🧠 Твой XP: {row.get('xp')} | Статус: {status}\n"
         f"🎫 Осталось бесплатных вопросов: {row.get('free_questions', 0)}\n"
     )
-    await message.answer(f"{header}{answer}\n\n{stats}", parse_mode="Markdown")
+    try:
+        await message.answer(f"{header}{answer}\n\n{stats}", parse_mode="Markdown")
+    except Exception as e:
+        print(f"[MESSAGE ERROR] {e}")
+        await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
 
     # Сохраняем лог вопроса и ответа
     await log_question_answer(user.id, program, discipline, text, answer)
