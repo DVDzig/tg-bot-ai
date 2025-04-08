@@ -10,6 +10,32 @@ from keyboards.shop import (
 
 router = Router()
 
+# Универсальная функция отправки ссылки на оплату
+async def send_payment_link(message: Message, amount: int, description: str, payment_type: str, quantity: int):
+    user_id = message.from_user.id
+
+    try:
+        payment_link, internal_id = await create_yookassa_payment(
+            user_id=user_id,
+            amount=amount,
+            description=description,
+            payment_type=payment_type,
+            quantity=quantity
+        )
+
+        await log_pending_payment(user_id, internal_id, quantity, payment_type)
+
+        await message.answer(
+            f"🧾 <b>Оплата</b>\n\n"
+            f"{description} за {amount}₽.\n"
+            f"Перейди по ссылке, чтобы оплатить:\n\n"
+            f"<a href='{payment_link}'>💳 Оплатить через YooKassa</a>",
+            disable_web_page_preview=True
+        )
+    except Exception as e:
+        await message.answer(f"Ошибка при создании платёжной ссылки:\n<code>{str(e)}</code>")
+
+
 # Обработка кнопки "🧾 Купить вопросы"
 @router.message(F.text == "🧾 Купить вопросы")
 async def show_question_packages(message: Message):
@@ -96,27 +122,3 @@ async def buy_100_questions(message: Message):
         quantity=100
     )
 
-# Универсальная функция отправки ссылки на оплату
-async def send_payment_link(message: Message, amount: int, description: str, payment_type: str, quantity: int):
-    user_id = message.from_user.id
-
-    try:
-        payment_link, internal_id = await create_yookassa_payment(
-            user_id=user_id,
-            amount=amount,
-            description=description,
-            payment_type=payment_type,
-            quantity=quantity
-        )
-
-        await log_pending_payment(user_id, internal_id, quantity, payment_type)
-
-        await message.answer(
-            f"🧾 <b>Оплата</b>\n\n"
-            f"{description} за {amount}₽.\n"
-            f"Перейди по ссылке, чтобы оплатить:\n\n"
-            f"<a href='{payment_link}'>💳 Оплатить через YooKassa</a>",
-            disable_web_page_preview=True
-        )
-    except Exception as e:
-        await message.answer(f"Ошибка при создании платёжной ссылки:\n<code>{str(e)}</code>")
