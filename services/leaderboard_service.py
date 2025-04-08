@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 async def get_leaderboard_text(current_user_id: int) -> str:
     service = get_sheets_service()
+
     try:
         result = service.spreadsheets().values().get(
             spreadsheetId=USER_SHEET_ID,
@@ -21,13 +22,26 @@ async def get_leaderboard_text(current_user_id: int) -> str:
         return "⚠️ Не удалось загрузить таблицу с пользователями."
 
     values = result.get("values", [])
-    leaderboard = []
+    if not values or len(values) < 2:
+        return "⚠️ Нет данных в таблице пользователей."
 
+    headers = values[0]
+    header_map = {h: i for i, h in enumerate(headers)}
+
+    xp_col = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "xp")
+    id_col = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "user_id")
+    name_col = await get_column_index_by_name(USER_SHEET_ID, USER_SHEET_NAME, "first_name")
+
+    if None in (xp_col, id_col, name_col):
+        return "⚠️ Не удалось найти нужные столбцы в таблице."
+
+    leaderboard = []
     for row in values[1:]:
         try:
-            user_id = int(row[0]) if len(row) > 0 else 0
-            name = row[2] if len(row) > 2 else "—"
-            xp = int(row[17]) if len(row) > 17 else 0
+            user_id = int(row[id_col]) if id_col < len(row) else 0
+            name = row[name_col] if name_col < len(row) else "—"
+            xp_raw = row[xp_col] if xp_col < len(row) else "0"
+            xp = int(xp_raw) if xp_raw.isdigit() else 0
             leaderboard.append((user_id, name, xp))
         except Exception as e:
             logger.warning(f"Ошибка при обработке строки: {row} — {e}")
@@ -35,7 +49,6 @@ async def get_leaderboard_text(current_user_id: int) -> str:
 
     leaderboard.sort(key=lambda x: x[2], reverse=True)
     top_10 = leaderboard[:10]
-
     logger.info(f"Лидерборд сформирован. Всего пользователей: {len(leaderboard)}")
 
     text = "🏆 <b>Топ-10 пользователей по XP:</b>\n\n"
@@ -50,7 +63,6 @@ async def get_leaderboard_text(current_user_id: int) -> str:
     if current_user_id not in [u[0] for u in top_10]:
         for idx, (uid, name, xp) in enumerate(leaderboard, start=1):
             if uid == current_user_id:
-                logger.info(f"Пользователь {uid} находится на {idx} месте")
                 status = get_status_by_xp(xp)
                 text += f"\n👤 Ты сейчас на {idx} месте\n"
                 text += f"📈 Твой статус: {status}, {xp} XP\n"
