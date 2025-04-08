@@ -3,8 +3,6 @@ from googleapiclient.discovery import build
 import json
 import os
 from google.oauth2.service_account import Credentials
-from services.sheets import get_sheets_service
-from services.sheets import UserRow
 
 _column_cache = {}  # чтобы не запрашивать каждый раз
 
