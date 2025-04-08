@@ -7,7 +7,7 @@ from keyboards.main_menu import get_main_menu_keyboard
 from handlers.profile_handler import show_profile
 from handlers.leaderboard_handler import show_leaderboard
 from handlers.missions_handler import show_missions
-from handlers.shop_handler import open_shop
+from handlers.shop_navigation import open_shop
 from handlers.program_handler import start_program_selection
 from handlers.info_handler import show_info_menu
 
