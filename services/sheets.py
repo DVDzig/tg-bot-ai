@@ -3,6 +3,8 @@ from googleapiclient.discovery import build
 import json
 import os
 from google.oauth2.service_account import Credentials
+from services.sheets import get_sheets_service
+from services.sheets import UserRow
 
 _column_cache = {}  # чтобы не запрашивать каждый раз
 
@@ -84,21 +86,34 @@ class UserRow:
 # Получение строки пользователя по ID
 async def get_user_row_by_id(user_id: int) -> UserRow | None:
     service = get_sheets_service()
-    sheet = service.spreadsheets().values()
-    result = sheet.get(
-        spreadsheetId=USER_SHEET_ID,
-        range=f"{USER_SHEET_NAME}"
-    ).execute()
 
-    values = result.get("values", [])
-    if not values:
+    if not USER_SHEET_NAME:
+        print("[ERROR] USER_SHEET_NAME is None!")
         return None
 
-    headers = values[0]
-    header_map = {name: i for i, name in enumerate(headers)}
+    try:
+        sheet = service.spreadsheets().values()
+        result = sheet.get(
+            spreadsheetId=USER_SHEET_ID,
+            range=f"{USER_SHEET_NAME}"
+        ).execute()
 
-    for idx, row in enumerate(values[1:], start=2):
-        if row and row[0] == str(user_id):
-            return UserRow(row, header_map, idx)
+        values = result.get("values", [])
+        if not values or len(values) < 2:
+            return None
+
+        headers = values[0]
+        header_map = {name: i for i, name in enumerate(headers)}
+
+        for idx, row in enumerate(values[1:], start=2):
+            try:
+                if str(user_id) == str(row[0]):
+                    return UserRow(row, header_map, idx)
+            except IndexError:
+                continue
+
+    except Exception as e:
+        print(f"[ERROR] get_user_row_by_id(): {e}")
+        return None
 
     return None
