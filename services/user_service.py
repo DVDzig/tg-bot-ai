@@ -1,15 +1,15 @@
 from utils.xp_logic import get_status_by_xp, get_next_status
 from services.google_sheets_service import (
-    get_user_row_by_id, 
     update_user_plan, 
     get_all_users,
     get_column_index, 
     get_sheets_service,
     get_column_value_by_name,
-    update_sheet_row  # Импорт функции чтения из таблицы
 )
 from datetime import datetime, timedelta
 from config import USER_SHEET_ID, USER_SHEET_NAME
+import pytz
+from services.sheets import update_sheet_row, get_user_row_by_id
 
 async def get_or_create_user(user) -> None:
     """
@@ -144,16 +144,24 @@ async def increase_question_count(user_id: int):
     if not row:
         return
 
+    # Текущее время
+    now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+
+    # Обновляем счётчики
+    question_count = int(row.get("question_count", 0)) + 1
+    day_count = int(row.get("day_count", 0)) + 1
+    xp_week = int(row.get("xp_week", 0)) + 1
+    streak_days = int(row.get("streak_days", 0)) + 1
+
     updates = {
-        "question_count": str(int(row.get("question_count", 0)) + 1),
-        "day_count": str(int(row.get("day_count", 0)) + 1),
-        "week_count": str(int(row.get("week_count", 0)) + 1),
-        "total_questions": str(int(row.get("total_questions", 0)) + 1),
-        "last_interaction": datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+        "question_count": question_count,
+        "day_count": day_count,
+        "xp_week": xp_week,
+        "streak_days": streak_days,
+        "last_interaction": now
     }
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
-
 
 async def decrease_question_limit(user_id: int):
     row = await get_user_row_by_id(user_id)
@@ -163,46 +171,60 @@ async def decrease_question_limit(user_id: int):
     free = int(row.get("free_questions", 0))
     paid = int(row.get("paid_questions", 0))
 
+    if free <= 0 and paid <= 0:
+        return  # Нечего списывать
+
     if free > 0:
         free -= 1
-    elif paid > 0:
+    else:
         paid -= 1
 
     updates = {
-        "free_questions": str(free),
-        "paid_questions": str(paid)
+        "free_questions": free,
+        "paid_questions": paid,
     }
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
 def get_status_by_xp(xp: int) -> str:
-    if xp <= 10:
-        return "Новичок"
-    elif xp <= 50:
-        return "Опытный"
-    elif xp <= 100:
-        return "Профи"
-    elif xp <= 200:
-        return "Эксперт"
+    if xp >= 5000:
+        return "👑 Создатель"
+    elif xp >= 1000:
+        return "🔥 Легенда"
+    elif xp >= 300:
+        return "🧠 Наставник"
+    elif xp >= 150:
+        return "👑 Эксперт"
+    elif xp >= 50:
+        return "🚀 Профи"
+    elif xp >= 10:
+        return "🔸 Опытный"
     else:
-        return "Наставник"
+        return "🟢 Новичок"
 
 async def add_xp_and_update_status(user_id: int, delta: int = 1):
     row = await get_user_row_by_id(user_id)
-    if not row or row.get("plan") in ("lite", "pro"):
+    if not row:
         return
 
-    xp = int(row.get("xp", 0))
-    new_xp = xp + delta
+    plan = row.get("subscription_plan", "").lower()
+    if plan in ("lite", "pro"):
+        return  # XP не начисляется, если активна подписка
+
+    current_xp = int(row.get("xp", 0))
+    new_xp = current_xp + delta
     new_status = get_status_by_xp(new_xp)
 
+    now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+
     updates = {
-        "xp": str(new_xp),
-        "status": new_status
+        "xp": new_xp,
+        "status": new_status,
+        "last_interaction": now
     }
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
-
+    
 async def monthly_bonus_for_user(user_row):
     today = datetime.utcnow().strftime("%Y-%m-%d")
     last_bonus = user_row.get("last_bonus_date")
@@ -290,3 +312,8 @@ async def add_paid_questions(user_id: int, quantity: int):
             valueInputOption="RAW",
             body={"values": [[updated_paid_questions]]}
         ).execute()
+
+async def update_user_after_answer(user_id: int):
+    await increase_question_count(user_id)
+    await decrease_question_limit(user_id)
+    await add_xp_and_update_status(user_id)

@@ -1,11 +1,8 @@
 from aiogram import Router, F
 from aiogram.types import (
-    Message,
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    ReplyKeyboardRemove
+    Message
 )
-from config import USER_SHEET_NAME
+
 from aiogram.fsm.context import FSMContext
 from states.program_states import ProgramSelection
 from services.google_sheets_service import (
@@ -21,10 +18,7 @@ from services.sheets import (
 from services.gpt_service import generate_answer
 from services.user_service import (
     get_user_row_by_id,
-    increase_question_count,
-    decrease_question_limit,
-    add_xp_and_update_status,
-    get_or_create_user
+    update_user_after_answer
 )
 from keyboards.program import (
     get_level_keyboard,
@@ -171,10 +165,7 @@ async def handle_user_question(message: Message, state: FSMContext):
     await log_question_answer(user.id, program, discipline, text, answer)
 
     # Обновляем статистику пользователя
-    await increase_question_count(user.id)
-    if plan not in ("lite", "pro"):
-        await decrease_question_limit(user.id)
-    await add_xp_and_update_status(user.id)
+    await update_user_after_answer(user.id)
 
     # Обновляем последнее взаимодействие
     updates = {
