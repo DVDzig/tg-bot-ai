@@ -95,7 +95,7 @@ async def start_asking(message: Message, state: FSMContext):
     await state.update_data(discipline=discipline)
 
     await push_step(state, "discipline")  # текущий шаг перед переходом
-    await state.set_state(ProgramSelection.program)
+    await state.set_state(ProgramSelection.asking)  # ✅ фикс
     await message.answer(
         f"✅ Дисциплина <b>{discipline}</b> выбрана.\n\n"
         f"Теперь можешь задавать свои вопросы. Я отвечаю только по теме!",
@@ -124,6 +124,11 @@ async def handle_user_question(message: Message, state: FSMContext):
     program = data.get("program")
     module = data.get("module")
     discipline = data.get("discipline")
+
+    if not all([program, module, discipline]):
+        await message.answer("⚠️ Ошибка: данные дисциплины не найдены. Пожалуйста, выбери программу заново.")
+        await state.clear()
+        return
 
     keywords = await get_keywords_for_discipline(program=program, module=module, discipline=discipline)
 
