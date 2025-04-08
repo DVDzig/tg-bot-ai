@@ -95,5 +95,4 @@ async def on_startup():
     scheduler = AsyncIOScheduler()
     schedule_all_jobs(bot)
     schedule_monthly_bonus(scheduler)
-    schedule_leaderboard_update(scheduler)
     scheduler.start()
