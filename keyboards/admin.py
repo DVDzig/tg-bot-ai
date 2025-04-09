@@ -9,7 +9,7 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
         [KeyboardButton(text="♻️ Сброс лимитов")],
         [KeyboardButton(text="📣 Рассылка")],
         [KeyboardButton(text="🔁 Обновить ключевые слова")],
-        [KeyboardButton(text="⬅️ Назад в главное меню")]
+        [KeyboardButton(text="⬅️ Назад в меню")]
     ]
     return ReplyKeyboardMarkup(
         keyboard=buttons,
