@@ -5,7 +5,7 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
         [KeyboardButton(text="👥 Статистика пользователей")],
         [
             KeyboardButton(text="🏆 Топ по XP"), 
-            KeyboardButton("🎫 Выдать подписку")
+            KeyboardButton(text="🎫 Выдать подписку")
         ],
         [
             KeyboardButton(text="♻️ Сброс лимитов"), 
@@ -22,8 +22,8 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
 def get_subscription_choice_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton("🔑 Лайт"), KeyboardButton("🔒 Про")],
-            [KeyboardButton("⬅️ Назад")]
+            [KeyboardButton(text="🔑 Лайт"), KeyboardButton(text="🔒 Про")],
+            [KeyboardButton(text="⬅️ Назад")]
         ],
         resize_keyboard=True
     )
