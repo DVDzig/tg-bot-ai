@@ -52,9 +52,9 @@ async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updat
         if col_idx is None:
             continue
 
-        col_letter = get_column_letter(col_idx + 1)  # 1-based для openpyxl
+        col_letter = get_column_letter(col_idx + 1)  # openpyxl — 1-based
         body["data"].append({
-            "range": f"{sheet_name}!{col_letter}{row_index + 2}",  # учитываем заголовки
+            "range": f"{sheet_name}!{col_letter}{row_index + 1}",  # только +1!
             "values": [[value]]
         })
 
@@ -62,8 +62,8 @@ async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updat
         service.spreadsheets().values().batchUpdate(
             spreadsheetId=sheet_id,
             body=body
-        ).execute()
-        
+        ).execute()  
+              
 # Класс строки пользователя
 class UserRow:
     def __init__(self, row: list, header_map: dict, row_index: int):
