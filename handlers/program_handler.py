@@ -44,6 +44,7 @@ async def select_program(message: Message, state: FSMContext):
 @router.message(ProgramSelection.program)
 async def select_module(message: Message, state: FSMContext):
     if message.text.startswith("⬅️"):
+        print("❗ select_module — перехватил кнопку назад:", message.text)
         return
     program = message.text.strip("📘📗📙📕📓📔 ").strip()
     await state.update_data(program=program)
@@ -201,3 +202,9 @@ async def back_to_main_menu(message: Message, state: FSMContext):
     print("⬅️ Назад в главное меню →", await state.get_state())
     await state.clear()
     await message.answer("🔝 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))
+
+@router.message()
+async def fallback(message: Message, state: FSMContext):
+    print("🛑 [FALLBACK] — никто не обработал сообщение")
+    print("→ text:", message.text)
+    print("→ state:", await state.get_state())
