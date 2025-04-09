@@ -130,3 +130,9 @@ from keyboards.main_menu import get_main_menu_keyboard
 @router.message(F.text == "⬅️ Назад в главное меню")
 async def back_from_shop(message: Message):
     await message.answer("🔝 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))
+
+from keyboards.shop import get_shop_keyboard
+
+@router.message(F.text == "⬅️ Назад в магазин")
+async def back_to_shop(message: Message):
+    await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
