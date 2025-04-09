@@ -15,3 +15,4 @@ uvicorn>=0.22.0  # Или последнюю стабильную версию
 yookassa
 apscheduler
 nest_asyncio
+openpyxl

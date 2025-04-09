@@ -7,6 +7,7 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🏆 Топ по XP"), 
             KeyboardButton(text="🎫 Выдать подписку")
         ],
+        [KeyboardButton(text="🔁 Обновить ключевые слова")],
         [
             KeyboardButton(text="♻️ Сброс лимитов"), 
             KeyboardButton(text="📣 Рассылка")

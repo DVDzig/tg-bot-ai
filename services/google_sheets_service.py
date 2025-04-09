@@ -44,6 +44,7 @@ async def get_all_users() -> list[UserRow]:
 async def update_user_plan(user_id: int, new_plan: str, duration_days: int):
     index = await find_user_row_index(str(user_id))
     if index is None:
+        print(f"[ERROR] Не найден пользователь с ID {user_id} — update_user_plan отменён")
         return
 
     row = await get_user_row_by_id(str(user_id))  # возвращает словарь
@@ -105,6 +106,7 @@ async def update_user_plan(user_id: int, new_plan: str, duration_days: int):
         }
 
     await update_sheet_row(USER_SHEET_ID, USER_SHEET_NAME, index, updates)
+
 async def append_payment_log(row: list):
     SHEET_NAME = "PaymentsLog"
 

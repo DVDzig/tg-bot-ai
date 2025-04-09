@@ -3,6 +3,7 @@ from googleapiclient.discovery import build
 import json
 import os
 from google.oauth2.service_account import Credentials
+from openpyxl.utils import get_column_letter
 
 _column_cache = {}  # чтобы не запрашивать каждый раз
 
@@ -51,7 +52,7 @@ async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updat
         if col_idx is None:
             continue
 
-        col_letter = chr(ord("A") + col_idx)
+        ol_letter = get_column_letter(col_idx + 1)
         body["data"].append({
             "range": f"{sheet_name}!{col_letter}{row_index}",
             "values": [[value]]
