@@ -1,16 +1,9 @@
 from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.filters import CommandStart
-from texts.help_text import HELP_TEXT
 from keyboards.main_menu import get_main_menu_keyboard
-
-from handlers.profile_handler import show_profile
-from handlers.leaderboard_handler import show_leaderboard
-from handlers.missions_handler import show_missions
-from handlers.shop_navigation import open_shop
-from handlers.program_handler import start_program_selection
-from handlers.info_handler import show_info_menu
 from aiogram.fsm.context import FSMContext
+
 
 router = Router()
 
@@ -33,35 +26,3 @@ async def cmd_start(message: Message, state: FSMContext):
         disable_web_page_preview=True
     )
 
-@router.message(F.text == "❓ Помощь")
-@router.message(F.text == "/help")
-async def show_help(message: Message):
-    await message.answer(HELP_TEXT, disable_web_page_preview=True)
-
-@router.message(F.text == "👤 Мой профиль")
-async def handle_profile(message: Message):
-    await show_profile(message)
-
-@router.message(F.text == "📊 ТОП-10")
-async def handle_leaderboard(message: Message):
-    await show_leaderboard(message)
-
-@router.message(F.text == "🎯 Миссии")
-async def handle_missions(message: Message):
-    await show_missions(message)
-
-@router.message(F.text == "🛒 Магазин")
-async def handle_shop(message: Message):
-    await open_shop(message)
-
-@router.message(F.text == "💬 Выбор программы")
-async def handle_program_selection(message: Message):
-    await start_program_selection(message)
-
-@router.message(F.text == "ℹ️ Info")
-async def handle_info(message: Message):
-    await show_info_menu(message)
-
-#@router.message()
-#async def fallback(message: Message):
-#    await message.answer("Команда не распознана. Напиши /start.")
