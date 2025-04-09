@@ -6,14 +6,13 @@ from texts.help_text import HELP_TEXT
 from texts.statuses_text import STATUS_TEXT
 from texts.subscriptions_text import SUBSCRIPTIONS_TEXT
 from aiogram.fsm.context import FSMContext
-from utils.context_stack import push_step
+
 
 router = Router()
 
 # Главное меню Info
 @router.message(F.text == "ℹ️ Info")
 async def show_info_menu(message: Message, state: FSMContext):
-    await push_step(state, "admin")
     await message.answer(
         "ℹ️ Выбери, что тебе интересно:",
         reply_markup=get_info_menu_keyboard()
@@ -33,3 +32,9 @@ async def show_subscriptions(message: Message):
 @router.message(F.text == "❓ Помощь")
 async def show_help(message: Message):
     await message.answer(HELP_TEXT)
+
+from keyboards.main_menu import get_main_menu_keyboard
+
+@router.message(F.text == "⬅️ Назад")
+async def back_from_info(message: Message):
+    await message.answer("🔙 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))

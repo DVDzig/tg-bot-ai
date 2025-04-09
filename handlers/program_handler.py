@@ -32,7 +32,6 @@ from services.gpt_service import search_video_on_youtube
 from datetime import datetime
 import pytz
 
-from utils.context_stack import push_step
 from keyboards.shop import get_shop_keyboard
 
 
@@ -52,8 +51,6 @@ async def start_program_selection(message: Message, state: FSMContext):
 async def select_program(message: Message, state: FSMContext):
     level = message.text
     await state.update_data(level=level)
-
-    await push_step(state, "level")  # текущий шаг перед переходом
     await state.set_state(ProgramSelection.program)
     await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
 
@@ -67,7 +64,6 @@ async def select_module(message: Message, state: FSMContext):
         await message.answer("Не удалось найти модули для этой программы.")
         return
 
-    await push_step(state, "program")
     await state.set_state(ProgramSelection.module)
     await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
 
@@ -85,7 +81,6 @@ async def select_discipline(message: Message, state: FSMContext):
         await message.answer("Не удалось найти дисциплины для этого модуля.")
         return
 
-    await push_step(state, "module")
     await state.set_state(ProgramSelection.discipline)
     await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
 
@@ -95,7 +90,6 @@ async def start_asking(message: Message, state: FSMContext):
     discipline = message.text
     await state.update_data(discipline=discipline)
 
-    await push_step(state, "discipline")  # текущий шаг перед переходом
     await state.set_state(ProgramSelection.asking)  # ✅ фикс
     await message.answer(
         f"✅ Дисциплина <b>{discipline}</b> выбрана.\n\n"
@@ -206,6 +200,30 @@ async def handle_user_question(message: Message, state: FSMContext):
 @router.message(F.text == "🛒 Магазин")
 async def from_consultant_to_shop(message: Message, state: FSMContext):
 
-    await push_step(state, "consultant")
     await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
 
+@router.message(F.text == "⬅️ Назад", ProgramSelection.discipline)
+async def back_to_module(message: Message, state: FSMContext):
+    data = await state.get_data()
+    program = data.get("program")
+    modules = await get_modules_by_program(program)
+    await state.set_state(ProgramSelection.module)
+    await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
+
+@router.message(F.text == "⬅️ Назад", ProgramSelection.module)
+async def back_to_program(message: Message, state: FSMContext):
+    data = await state.get_data()
+    level = data.get("level")
+    await state.set_state(ProgramSelection.program)
+    await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
+
+@router.message(F.text == "⬅️ Назад", ProgramSelection.program)
+async def back_to_level(message: Message, state: FSMContext):
+    await state.set_state(ProgramSelection.level)
+    await message.answer("Выбери уровень образования:", reply_markup=get_level_keyboard())
+
+@router.message(F.text == "⬅️ Назад", ProgramSelection.level)
+async def back_to_main(message: Message, state: FSMContext):
+    await state.clear()
+    from keyboards.main_menu import get_main_menu_keyboard
+    await message.answer("🔝 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))

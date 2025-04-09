@@ -7,7 +7,6 @@ from keyboards.shop import (
     get_subscription_packages_keyboard
 )
 from aiogram.fsm.context import FSMContext
-from utils.context_stack import push_step
 
 router = Router()
 
@@ -40,7 +39,6 @@ async def send_payment_link(message: Message, amount: int, description: str, pay
 # Обработка кнопки "🧾 Купить вопросы"
 @router.message(F.text == "🧾 Купить вопросы")
 async def show_question_packages(message: Message, state: FSMContext):
-    await push_step(state, "shop")
     await message.answer(
         "📦 <b>Выберите пакет вопросов:</b>",
         reply_markup=get_question_packages_keyboard()
@@ -49,7 +47,6 @@ async def show_question_packages(message: Message, state: FSMContext):
 # Обработка кнопки "🔓 Купить подписку"
 @router.message(F.text == "🔓 Купить подписку")
 async def show_subscription_packages(message: Message, state: FSMContext):
-    await push_step(state, "shop")
     await message.answer(
         "🔓 <b>Лайт — 149₽</b>\n"
         "• Безлимит на 7 дней\n"
@@ -127,4 +124,10 @@ async def buy_100_questions(message: Message):
         payment_type="questions",
         quantity=100
     )
+
+from keyboards.shop import get_shop_keyboard
+
+@router.message(F.text == "⬅️ Назад")
+async def back_to_shop_main(message: Message):
+    await message.answer("⬅️ Возврат в главное меню магазина:", reply_markup=get_shop_keyboard())
 

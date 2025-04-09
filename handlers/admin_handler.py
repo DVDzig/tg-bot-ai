@@ -9,7 +9,6 @@ from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription, get_status_by_xp
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramForbiddenError
-from utils.context_stack import push_step
 
 router = Router()
 
@@ -27,7 +26,6 @@ async def show_admin_menu(message: Message):
 
 @router.message(F.text == "👥 Статистика пользователей")
 async def admin_user_stats(message: Message, state: FSMContext):
-    await push_step(state, "admin")
     if message.from_user.id != ADMIN_ID:
         return
 
@@ -49,7 +47,6 @@ async def admin_user_stats(message: Message, state: FSMContext):
 
 @router.message(F.text == "🏆 Топ по XP")
 async def admin_top_xp(message: Message, state: FSMContext):
-    await push_step(state, "admin")
 
     if message.from_user.id != ADMIN_ID:
         return
@@ -78,7 +75,6 @@ async def admin_top_xp(message: Message, state: FSMContext):
 
 @router.message(F.text == "🔑 Выдать Лайт")
 async def grant_lite(message: Message, state: FSMContext):
-    await push_step(state, "admin")
     if message.from_user.id != ADMIN_ID:
         return
     await state.set_state(GrantSubscription.waiting_for_user_id)
@@ -88,7 +84,6 @@ async def grant_lite(message: Message, state: FSMContext):
 
 @router.message(F.text == "🔒 Выдать Про")
 async def grant_pro(message: Message, state: FSMContext):
-    await push_step(state, "admin")
     if message.from_user.id != ADMIN_ID:
         return
     await state.set_state(GrantSubscription.waiting_for_user_id)
@@ -117,8 +112,6 @@ async def process_user_id(message: Message, state: FSMContext):
 
 @router.message(F.text == "📢 Рассылка")
 async def start_broadcast(message: Message, state: FSMContext):
-    await push_step(state, "admin")
-
     if message.from_user.id != ADMIN_ID:
         return
     await state.set_state(Broadcast.waiting_for_message)
@@ -151,7 +144,6 @@ async def process_broadcast(message: Message, state: FSMContext):
 
 @router.message(F.text == "🔁 Обновить ключевые слова")
 async def admin_update_keywords_callback(message: Message, state: FSMContext):
-    await push_step(state, "admin")
 
     if message.from_user.id != ADMIN_ID:
         return
@@ -171,3 +163,8 @@ async def admin_update_keywords_callback(message: Message, state: FSMContext):
 
     await message.answer(msg)
 
+@router.message(F.text == "⬅️ Назад")
+async def back_to_admin_menu(message: Message):
+    from keyboards.admin import get_admin_menu_keyboard
+    if message.from_user.id == ADMIN_ID:
+        await message.answer("🔙 Админ-панель", reply_markup=get_admin_menu_keyboard())
