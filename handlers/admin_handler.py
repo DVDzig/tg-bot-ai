@@ -78,19 +78,19 @@ async def admin_top_xp(message: Message, state: FSMContext):
 async def choose_subscription_type(message: Message, state: FSMContext):
     if message.from_user.id != ADMIN_ID:
         return
-    await state.set_state(GrantSubscription.choosing_plan)
+    await state.set_state(GrantSubscription.plan_type)
     await message.answer(
         "Выберите тип подписки для выдачи:",
         reply_markup=get_subscription_choice_keyboard()
     )
 
-@router.message(F.text == "🔑 Лайт", GrantSubscription.choosing_plan)
+@router.message(F.text == "🔑 Лайт", GrantSubscription.plan_type)
 async def grant_lite(message: Message, state: FSMContext):
     await state.set_state(GrantSubscription.waiting_for_user_id)
     await state.update_data(plan="lite")
     await message.answer("🔢 Введи user_id, кому выдать подписку Лайт:\n\n⬅️ Назад для отмены")
 
-@router.message(F.text == "🔒 Про", GrantSubscription.choosing_plan)
+@router.message(F.text == "🔒 Про", GrantSubscription.plan_type)
 async def grant_pro(message: Message, state: FSMContext):
     await state.set_state(GrantSubscription.waiting_for_user_id)
     await state.update_data(plan="pro")
