@@ -290,19 +290,15 @@ async def create_mission(sheet_id: str, mission_name: str, user_id: int):
     
 async def update_user_subscription(user_id: int, plan: str):
     row = await get_user_row_by_id(user_id)
-    if row:
-        # Получаем индекс колонки "premium_status"
-        subscription_column = await get_column_index(row.sheet_id, "Users", "premium_status")
-        
-        # Обновляем статус подписки
-        service = get_sheets_service()
-        service.spreadsheets().values().update(
-            spreadsheetId=row.sheet_id,
-            range=f"Users!{chr(65 + subscription_column)}{row.index + 2}",
-            valueInputOption="RAW",
-            body={"values": [[plan]]}
-        ).execute()
+    if not row:
+        return
 
+    updates = {
+        "premium_status": plan
+    }
+
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+    
 async def add_paid_questions(user_id: int, quantity: int):
     row = await get_user_row_by_id(user_id)
     if row:

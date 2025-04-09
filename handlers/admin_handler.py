@@ -9,7 +9,7 @@ from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription, get_status_by_xp
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramForbiddenError
-
+from aiogram.fsm.state import StateFilter
 
 
 router = Router()
@@ -120,7 +120,7 @@ async def process_user_id(message: Message, state: FSMContext):
 
     await state.clear()
 
-@router.message(F.text == "⬅️ Назад", GrantSubscription)
+@router.message(StateFilter(GrantSubscription), F.text == "⬅️ Назад")
 async def cancel_subscription_flow(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("❌ Выдача подписки отменена.", reply_markup=get_admin_menu_keyboard())
