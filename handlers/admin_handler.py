@@ -2,13 +2,15 @@ from aiogram import Router, F
 from aiogram.types import Message
 from config import ADMIN_ID
 from services.google_sheets_service import get_all_users
-from keyboards.admin import get_admin_menu_keyboard
+from keyboards.admin import get_admin_menu_keyboard, get_subscription_choice_keyboard
 from keyboards.main_menu import get_main_menu_keyboard
 from aiogram.fsm.context import FSMContext
 from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription, get_status_by_xp
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramForbiddenError
+
+
 
 router = Router()
 
@@ -72,23 +74,27 @@ async def admin_top_xp(message: Message, state: FSMContext):
 
     await message.answer(text)
 
-
-@router.message(F.text == "🔑 Выдать Лайт")
-async def grant_lite(message: Message, state: FSMContext):
+@router.message(F.text == "🎫 Выдать подписку")
+async def choose_subscription_type(message: Message, state: FSMContext):
     if message.from_user.id != ADMIN_ID:
         return
+    await state.set_state(GrantSubscription.choosing_plan)
+    await message.answer(
+        "Выберите тип подписки для выдачи:",
+        reply_markup=get_subscription_choice_keyboard()
+    )
+
+@router.message(F.text == "🔑 Лайт", GrantSubscription.choosing_plan)
+async def grant_lite(message: Message, state: FSMContext):
     await state.set_state(GrantSubscription.waiting_for_user_id)
     await state.update_data(plan="lite")
-    await message.answer("🔢 Введи user_id, кому выдать подписку Лайт:")
+    await message.answer("🔢 Введи user_id, кому выдать подписку Лайт:\n\n⬅️ Назад для отмены")
 
-
-@router.message(F.text == "🔒 Выдать Про")
+@router.message(F.text == "🔒 Про", GrantSubscription.choosing_plan)
 async def grant_pro(message: Message, state: FSMContext):
-    if message.from_user.id != ADMIN_ID:
-        return
     await state.set_state(GrantSubscription.waiting_for_user_id)
     await state.update_data(plan="pro")
-    await message.answer("🔢 Введи user_id, кому выдать подписку Про:")
+    await message.answer("🔢 Введи user_id, кому выдать подписку Про:\n\n⬅️ Назад для отмены")
 
 
 @router.message(GrantSubscription.waiting_for_user_id)
@@ -104,10 +110,15 @@ async def process_user_id(message: Message, state: FSMContext):
     duration = 7 if plan == "lite" else 30
     until = (datetime.utcnow() + timedelta(days=duration)).strftime("%Y-%m-%d")
 
-    await activate_subscription(user_id=target_id, duration_days=duration, internal_id=f"admin_{plan}")
+    await activate_subscription(user_id=target_id, duration_days=int(duration), internal_id=f"admin_{plan}")
     await message.answer(f"✅ Подписка <b>{plan.upper()}</b> активирована для пользователя <code>{target_id}</code> до {until}")
 
     await state.clear()
+
+@router.message(F.text == "⬅️ Назад", GrantSubscription)
+async def cancel_subscription_flow(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("❌ Выдача подписки отменена.", reply_markup=get_admin_menu_keyboard())
 
 
 @router.message(F.text == "📢 Рассылка")
@@ -164,7 +175,6 @@ async def admin_update_keywords_callback(message: Message, state: FSMContext):
     await message.answer(msg)
 
 @router.message(F.text == "⬅️ Назад в главное меню")
-async def back_to_main_menu(message: Message):
-    from keyboards.main_menu import get_main_menu_keyboard
-
+async def back_to_main_menu(message: Message, state: FSMContext):
+    await state.clear()
     await message.answer("🔝 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))

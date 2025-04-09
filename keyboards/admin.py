@@ -17,3 +17,12 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         input_field_placeholder="Выберите действие ⤵️"
     )
+
+def get_subscription_choice_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton("🔑 Лайт"), KeyboardButton("🔒 Про")],
+            [KeyboardButton("⬅️ Назад")]
+        ],
+        resize_keyboard=True
+    )
