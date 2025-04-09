@@ -49,11 +49,11 @@ async def update_keywords_from_logs():
     failed = []
 
     for (program, module, discipline), text_blocks in grouped.items():
-        combined_text = "\n".join(text_blocks)[:5000]  # ограничим GPT вход
+        combined_text = "\n".join(text_blocks)[:4000]  # ограничим GPT вход
 
         prompt = (
             f"Проанализируй текст (вопросы и ответы по дисциплине «{discipline}»). "
-            f"Выдели 100–120 ключевых слов или фраз (по теме), разделённых запятыми.\n\n"
+            f"Выдели 250-300 ключевых слов или фраз (по теме), разделённых запятыми.\n\n"
             f"{combined_text}"
         )
 
@@ -65,7 +65,7 @@ async def update_keywords_from_logs():
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.4,
-                max_tokens=1000
+                max_tokens=500
             )
 
             new_keywords_raw = response.choices[0].message.content.strip()
@@ -85,3 +85,9 @@ async def update_keywords_from_logs():
             failed.append(f"{program} / {module} / {discipline} ❌ ({str(e)[:60]}...)")
 
     return updated, failed
+
+MAX_MESSAGE_LENGTH = 4096
+
+async def send_long_message(text: str, message):
+    for i in range(0, len(text), MAX_MESSAGE_LENGTH):
+        await message.answer(text[i:i+MAX_MESSAGE_LENGTH])

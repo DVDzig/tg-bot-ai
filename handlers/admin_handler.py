@@ -9,6 +9,7 @@ from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription, get_status_by_xp
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramForbiddenError
+from services.keyword_updater import update_keywords_from_logs, send_long_message
 
 
 
@@ -159,28 +160,31 @@ async def process_broadcast(message: Message, state: FSMContext):
     await state.clear()
 
 
+
+
 @router.message(F.text == "🔁 Обновить ключевые слова")
 async def admin_update_keywords_callback(message: Message, state: FSMContext):
-
     if message.from_user.id != ADMIN_ID:
         return
+
     await message.answer("⏳ Начинаю обновление ключевых слов...")
 
-    from services.keyword_updater import update_keywords_from_logs
     updated, failed = await update_keywords_from_logs()
 
     msg = f"✅ Обновление завершено!\n\n"
     msg += f"🔄 Обновлено: <b>{len(updated)}</b>\n"
-    msg += f"⚠️ Не удалось обновить: <b>{len(failed)}</b>"
+    msg += f"⚠️ Не удалось обновить: <b>{len(failed)}</b>\n\n"
+
+    if updated:
+        msg += "✅ Обновлено:\n"
+        msg += "\n".join(updated[:30])
+        if len(updated) > 30:
+            msg += f"\n...и ещё {len(updated) - 30} строк."
 
     if failed:
-        msg += "\n\n❌ Неудачные дисциплины:\n"
-        for f in failed:
-            msg += f"• {f}\n"
+        msg += "\n\n❌ Ошибки:\n"
+        msg += "\n".join(failed[:30])
+        if len(failed) > 30:
+            msg += f"\n...и ещё {len(failed) - 30} строк."
 
-    await message.answer(msg)
-
-@router.message(F.text == "⬅️ Назад в главное меню")
-async def back_to_main_menu(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer("🔝 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))
+    await send_long_message(msg, message)
