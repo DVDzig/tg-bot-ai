@@ -3,13 +3,14 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
     buttons = [
         [KeyboardButton(text="👥 Статистика пользователей")],
-        [KeyboardButton(text="🏆 Топ по XP")],
         [
-            KeyboardButton(text="🔑 Выдать Лайт"), 
-            KeyboardButton(text="🔒 Выдать Про")
+            KeyboardButton(text="🏆 Топ по XP"), 
+            KeyboardButton("🎫 Выдать подписку")
         ],
-        [KeyboardButton(text="♻️ Сброс лимитов")],
-        [KeyboardButton(text="📣 Рассылка")],
+        [
+            KeyboardButton(text="♻️ Сброс лимитов"), 
+            KeyboardButton(text="📣 Рассылка")
+        ],
         [KeyboardButton(text="⬅️ Назад в главное меню")],
     ]
     return ReplyKeyboardMarkup(
