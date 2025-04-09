@@ -99,6 +99,11 @@ async def grant_pro(message: Message, state: FSMContext):
 
 @router.message(GrantSubscription.waiting_for_user_id)
 async def process_user_id(message: Message, state: FSMContext):
+    if message.text == "⬅️ Назад":
+        await state.clear()
+        await message.answer("🔙 Назад в админ-панель", reply_markup=get_admin_menu_keyboard())
+        return
+
     data = await state.get_data()
     plan = data.get("plan")
     try:
@@ -110,7 +115,7 @@ async def process_user_id(message: Message, state: FSMContext):
     duration = 7 if plan == "lite" else 30
     until = (datetime.utcnow() + timedelta(days=duration)).strftime("%Y-%m-%d")
 
-    await activate_subscription(user_id=target_id, duration_days=int(duration), internal_id=f"admin_{plan}")
+    await activate_subscription(user_id=target_id, duration_days=duration, internal_id=f"admin_{plan}")
     await message.answer(f"✅ Подписка <b>{plan.upper()}</b> активирована для пользователя <code>{target_id}</code> до {until}")
 
     await state.clear()
