@@ -4,7 +4,7 @@ from services.google_sheets_service import (
     get_keywords_for_discipline,
     update_keywords_for_discipline
 )
-from config import USER_SHEET_ID, OPENAI_API_KEY
+from config import PROGRAM_SHEETS, OPENAI_API_KEY
 from services.sheets import get_sheets_service
 
 openai.api_key = OPENAI_API_KEY
@@ -13,7 +13,7 @@ openai.api_key = OPENAI_API_KEY
 async def update_keywords_from_logs():
     service = get_sheets_service()
     qa_data = service.spreadsheets().values().get(
-        spreadsheetId=USER_SHEET_ID,
+        spreadsheetId=PROGRAM_SHEETS,
         range="QA_Log!A1:Z1000"
     ).execute()
 
