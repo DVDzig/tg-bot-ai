@@ -2,16 +2,6 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from states.program_states import ProgramSelection
-from services.google_sheets_service import (
-    get_modules_by_program,
-    get_disciplines_by_module,
-    get_keywords_for_discipline,
-    log_question_answer,
-)
-from services.sheets import get_user_row_by_id, update_sheet_row
-from services.gpt_service import generate_answer, search_video_on_youtube
-from services.user_service import get_user_row_by_id, update_user_after_answer
-from services.missions_service import check_and_apply_missions
 from keyboards.program import (
     get_level_keyboard,
     get_program_keyboard,
@@ -19,14 +9,21 @@ from keyboards.program import (
     get_discipline_keyboard,
 )
 from keyboards.common import get_consultant_keyboard
-from keyboards.shop import get_shop_keyboard
-from keyboards.main_menu import get_main_menu_keyboard
+from services.google_sheets_service import (
+    get_modules_by_program,
+    get_disciplines_by_module,
+    get_keywords_for_discipline,
+    log_question_answer,
+)
+from services.user_service import get_user_row_by_id, update_user_after_answer
+from services.gpt_service import generate_answer, search_video_on_youtube
+from services.missions_service import check_and_apply_missions
+from services.sheets import update_sheet_row
 from datetime import datetime
 import pytz
 
 router = Router()
 
-# Старт
 @router.message(F.text == "💬 Выбор программы")
 async def start_program_selection(message: Message, state: FSMContext):
     await state.clear()
@@ -35,7 +32,6 @@ async def start_program_selection(message: Message, state: FSMContext):
 
 @router.message(ProgramSelection.level)
 async def select_program(message: Message, state: FSMContext):
-    print("➡️ Выбран уровень:", message.text)
     if message.text not in ["🎓 Бакалавриат", "🎓 Магистратура"]:
         return
     level = message.text
@@ -45,13 +41,14 @@ async def select_program(message: Message, state: FSMContext):
 
 @router.message(ProgramSelection.program)
 async def select_module(message: Message, state: FSMContext):
-    if message.text.startswith("⬅️"):
-        print("❗ select_module — перехватил кнопку назад:", message.text)
+    if message.text == "⬅️ Назад в уровень образования":
+        await state.clear()
+        await state.set_state(ProgramSelection.level)
+        await message.answer("Выбери уровень образования:", reply_markup=get_level_keyboard())
         return
 
     known_programs = ["📘 МРК", "📗 ТПР", "📙 БХ", "📕 МСС", "📓 СА", "📔 ФВМ"]
     if message.text not in known_programs:
-        print("❌ Неизвестная программа:", message.text)
         return
 
     program = message.text.strip("📘📗📙📕📓📔 ").strip()
@@ -65,8 +62,13 @@ async def select_module(message: Message, state: FSMContext):
 
 @router.message(ProgramSelection.module)
 async def select_discipline(message: Message, state: FSMContext):
-    if message.text.startswith("⬅️"):
+    if message.text == "⬅️ Назад в программы":
+        data = await state.get_data()
+        level = data.get("level")
+        await state.set_state(ProgramSelection.program)
+        await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
         return
+
     module = message.text
     await state.update_data(module=module)
     data = await state.get_data()
@@ -79,9 +81,15 @@ async def select_discipline(message: Message, state: FSMContext):
     await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
 
 @router.message(ProgramSelection.discipline)
-async def start_asking(message: Message, state: FSMContext):
-    if message.text.startswith("⬅️"):
+async def select_asking(message: Message, state: FSMContext):
+    if message.text == "⬅️ Назад в модули":
+        data = await state.get_data()
+        program = data.get("program")
+        modules = await get_modules_by_program(program)
+        await state.set_state(ProgramSelection.module)
+        await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
         return
+
     discipline = message.text
     await state.update_data(discipline=discipline)
     await state.set_state(ProgramSelection.asking)
@@ -91,11 +99,21 @@ async def start_asking(message: Message, state: FSMContext):
     )
 
 @router.message(ProgramSelection.asking)
-async def handle_user_question(message: Message, state: FSMContext):
+async def handle_question(message: Message, state: FSMContext):
+    if message.text == "⬅️ Назад в дисциплины":
+        data = await state.get_data()
+        program = data.get("program")
+        module = data.get("module")
+        disciplines = await get_disciplines_by_module(program, module)
+        await state.set_state(ProgramSelection.discipline)
+        await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
+        return
+
     user = message.from_user
     text = message.text.strip()
     data = await state.get_data()
     row = await get_user_row_by_id(user.id)
+
     if not row:
         await message.answer("Ошибка: не удалось получить данные пользователя.")
         return
@@ -154,8 +172,8 @@ async def handle_user_question(message: Message, state: FSMContext):
     if videos_to_send > 0:
         try:
             video_urls = await search_video_on_youtube(f"{discipline} {text}", max_results=videos_to_send)
-            for video_url in video_urls:
-                await message.answer_video(video_url)
+            for url in video_urls:
+                await message.answer_video(url)
         except Exception as e:
             print(f"[VIDEO ERROR] {e}")
 
@@ -173,6 +191,7 @@ async def handle_user_question(message: Message, state: FSMContext):
 
     await log_question_answer(user.id, program, discipline, text, answer)
     await update_user_after_answer(user.id)
+
     updates = {
         "last_interaction": datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
     }
@@ -181,44 +200,3 @@ async def handle_user_question(message: Message, state: FSMContext):
     rewards = await check_and_apply_missions(user.id)
     for r in rewards:
         await message.answer(r)
-
-# 🔙 Назад — отладочные хендлеры
-@router.message(F.text == "⬅️ Назад в дисциплины")
-async def back_to_discipline(message: Message, state: FSMContext):
-    print("⬅️ Назад в дисциплины →", await state.get_state())
-    data = await state.get_data()
-    await state.update_data(discipline=None)
-    disciplines = await get_disciplines_by_module(data.get("program"), data.get("module"))
-    await state.set_state(ProgramSelection.discipline)
-    await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
-
-@router.message(F.text == "⬅️ Назад в модули")
-async def back_to_module(message: Message, state: FSMContext):
-    print("⬅️ Назад в модули →", await state.get_state())
-    data = await state.get_data()
-    await state.update_data(module=None, discipline=None)
-    modules = await get_modules_by_program(data.get("program"))
-    await state.set_state(ProgramSelection.module)
-    await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
-
-@router.message(F.text == "⬅️ Назад в программы")
-async def back_to_program(message: Message, state: FSMContext):
-    print("⬅️ Назад в программы →", await state.get_state())
-    data = await state.get_data()
-    await state.update_data(program=None, module=None)
-    level = data.get("level")
-    await state.set_state(ProgramSelection.program)
-    await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
-
-@router.message(F.text == "⬅️ Назад в уровень образования")
-async def back_to_level(message: Message, state: FSMContext):
-    print("⬅️ Назад в уровень образования →", await state.get_state())
-    await state.clear()
-    await state.set_state(ProgramSelection.level)
-    await message.answer("Выбери уровень образования:", reply_markup=get_level_keyboard())
-
-@router.message(F.text == "⬅️ Назад в главное меню")
-async def back_to_main_menu(message: Message, state: FSMContext):
-    print("⬅️ Назад в главное меню →", await state.get_state())
-    await state.clear()
-    await message.answer("🔝 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))
