@@ -2,7 +2,6 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from utils.context_stack import pop_step
 from keyboards.main_menu import get_main_menu_keyboard
 from keyboards.shop import get_shop_keyboard
 from keyboards.admin import get_admin_menu_keyboard
