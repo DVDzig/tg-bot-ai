@@ -26,3 +26,10 @@ async def cmd_start(message: Message, state: FSMContext):
         disable_web_page_preview=True
     )
 
+@router.message()
+async def fallback(message: Message, state: FSMContext):
+    print("🛑 [FALLBACK] Сработал fallback-хендлер")
+    print("→ text =", message.text)
+    print("→ state =", await state.get_state())
+
+    await message.answer("⚠️ Команда не распознана. Напиши /start.")
