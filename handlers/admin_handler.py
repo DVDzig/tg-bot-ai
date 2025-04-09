@@ -9,7 +9,8 @@ from states.admin_states import GrantSubscription, Broadcast
 from services.user_service import activate_subscription, get_status_by_xp
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramForbiddenError
-from aiogram.fsm.state import StateFilter
+from aiogram.fsm.filter import StateFilter 
+
 
 
 router = Router()
