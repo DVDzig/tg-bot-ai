@@ -87,6 +87,8 @@ async def select_discipline(message: Message, state: FSMContext):
 
 @router.message(ProgramSelection.discipline)
 async def start_asking(message: Message, state: FSMContext):
+    if message.text.startswith("⬅️"):
+        return
     discipline = message.text
     await state.update_data(discipline=discipline)
 
@@ -202,6 +204,16 @@ async def from_consultant_to_shop(message: Message, state: FSMContext):
 
     await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
 
+# Назад из ИИ → дисциплина
+@router.message(F.text == "⬅️ Назад в дисциплины", ProgramSelection.asking)
+async def back_to_discipline(message: Message, state: FSMContext):
+    data = await state.get_data()
+    disciplines = await get_disciplines_by_module(data["program"], data["module"])
+    await state.set_state(ProgramSelection.discipline)
+    await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
+
+
+# Назад из дисциплины → модуль
 @router.message(F.text == "⬅️ Назад в модули", ProgramSelection.discipline)
 async def back_to_module(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -210,18 +222,24 @@ async def back_to_module(message: Message, state: FSMContext):
     await state.set_state(ProgramSelection.module)
     await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
 
-@router.message(F.text == "⬅️ в программы", ProgramSelection.module)
+
+# Назад из модуля → программа
+@router.message(F.text == "⬅️ Назад в программы", ProgramSelection.module)
 async def back_to_program(message: Message, state: FSMContext):
     data = await state.get_data()
     level = data.get("level")
     await state.set_state(ProgramSelection.program)
     await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
 
+
+# Назад из программы → уровень образования
 @router.message(F.text == "⬅️ Назад в уровень образования", ProgramSelection.program)
 async def back_to_level(message: Message, state: FSMContext):
     await state.set_state(ProgramSelection.level)
     await message.answer("Выбери уровень образования:", reply_markup=get_level_keyboard())
 
+
+# Назад из уровня образования → главное меню
 @router.message(F.text == "⬅️ Назад в главное меню", ProgramSelection.level)
 async def back_to_main(message: Message, state: FSMContext):
     await state.clear()

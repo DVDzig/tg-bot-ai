@@ -16,8 +16,7 @@ from handlers import (
     profile_handler,
     shop_handler,             # ✅ только один обработчик магазина
     leaderboard_handler,
-    program_handler,
-    common_navigation,
+    program_handler,    
     shop_navigation
 )
 from middlewares.ensure_user import EnsureUserMiddleware
@@ -41,7 +40,6 @@ dp.include_router(shop_handler.router)            # ✅ только один sh
 dp.include_router(leaderboard_handler.router)
 dp.include_router(program_handler.router)
 dp.include_router(start_handler.router)
-dp.include_router(common_navigation.router)
 dp.include_router(shop_navigation.router)
 
 # === Telegram Bot & Dispatcher ===

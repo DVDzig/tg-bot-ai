@@ -7,8 +7,7 @@ from handlers import (
     shop_handler,
     leaderboard_handler,
     missions_handler,
-    admin_handler,
-    common_navigation
+    admin_handler    
 )
 
 def register_all_routers(dp: Dispatcher) -> None:
@@ -19,4 +18,3 @@ def register_all_routers(dp: Dispatcher) -> None:
     dp.include_router(leaderboard_handler.router)
     dp.include_router(missions_handler.router)
     dp.include_router(admin_handler.router)
-    dp.include_router(common_navigation.router)
