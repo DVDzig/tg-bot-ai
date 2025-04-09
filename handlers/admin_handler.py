@@ -100,7 +100,7 @@ async def grant_pro(message: Message, state: FSMContext):
 
 @router.message(GrantSubscription.waiting_for_user_id)
 async def process_user_id(message: Message, state: FSMContext):
-    if message.text == "⬅️ Назад":
+    if message.text == "🔙 Назад в админ-панель":
         await state.clear()
         await message.answer("🔙 Назад в админ-панель", reply_markup=get_admin_menu_keyboard())
         return
@@ -121,7 +121,7 @@ async def process_user_id(message: Message, state: FSMContext):
 
     await state.clear()
 
-@router.message(StateFilter(GrantSubscription), F.text == "⬅️ Назад")
+@router.message(StateFilter(GrantSubscription), F.text == "🔙 Назад в админ-панель")
 async def cancel_subscription_flow(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("❌ Выдача подписки отменена.", reply_markup=get_admin_menu_keyboard())

@@ -23,7 +23,7 @@ def get_subscription_choice_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🔑 Лайт"), KeyboardButton(text="🔒 Про")],
-            [KeyboardButton(text="⬅️ Назад")]
+            [KeyboardButton(text="🔙 Назад в админ-панель")]
         ],
         resize_keyboard=True
     )
