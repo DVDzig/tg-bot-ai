@@ -11,7 +11,6 @@ def get_level_keyboard():
         resize_keyboard=True
     )
 
-
 def get_program_keyboard(level: str):
     if "Бакалавриат" in level:
         programs = ["📘 МРК", "📗 ТПР", "📙 БХ"]
@@ -25,13 +24,11 @@ def get_program_keyboard(level: str):
         resize_keyboard=True
     )
 
-
 def get_module_keyboard(modules: list[str]):
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text=m)] for m in modules] + [[KeyboardButton(text="⬅️ Назад в программы")]],
         resize_keyboard=True
     )
-
 
 def get_discipline_keyboard(disciplines: list[str]):
     return ReplyKeyboardMarkup(
