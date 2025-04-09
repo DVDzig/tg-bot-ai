@@ -1,7 +1,6 @@
 from services.google_sheets_service import (
     update_user_plan, 
-    get_all_users,
-    get_column_index, 
+    get_all_users, 
     get_sheets_service,
     get_column_value_by_name,
 )
@@ -268,6 +267,8 @@ async def apply_monthly_bonus_to_all_users():
     for user in users:
         await monthly_bonus_for_user(user)
         
+
+
 async def create_mission(sheet_id: str, mission_name: str, user_id: int):
     """
     Функция для добавления новой миссии в таблицу пользователя.
@@ -275,19 +276,10 @@ async def create_mission(sheet_id: str, mission_name: str, user_id: int):
     :param mission_name: Название миссии
     :param user_id: ID пользователя
     """
-
-    # Получаем индекс колонки для миссии
-    mission_column = await get_column_index(sheet_id, "Users", mission_name)
-
-    # Создаём или обновляем статус миссии для пользователя
-    service = get_sheets_service()
-    service.spreadsheets().values().update(
-        spreadsheetId=sheet_id,
-        range=f"Users!{chr(65 + mission_column)}{user_id + 2}",  # Строки с 2 (первый пользователь)
-        valueInputOption="RAW",
-        body={"values": [["В процессе"]]}  # Статус миссии по умолчанию
-    ).execute()
-    
+    await update_sheet_row(sheet_id, "Users", user_id, {
+        mission_name: "В процессе"
+    })
+  
 async def update_user_subscription(user_id: int, plan: str):
     row = await get_user_row_by_id(user_id)
     if not row:
@@ -302,23 +294,16 @@ async def update_user_subscription(user_id: int, plan: str):
 async def add_paid_questions(user_id: int, quantity: int):
     row = await get_user_row_by_id(user_id)
     if row:
-        # Получаем индекс колонки "paid_questions"
-        paid_questions_column = await get_column_index(row.sheet_id, "Users", "paid_questions")
-        
-        # Получаем текущее количество оплаченных вопросов
-        current_paid_questions = int(await get_column_value_by_name(row.sheet_id, "Users", row.index, "paid_questions"))
-        
-        # Обновляем количество оплаченных вопросов
+        current_paid_questions = int(await get_column_value_by_name(
+            row.sheet_id, "Users", row.index, "paid_questions"
+        ))
+
         updated_paid_questions = current_paid_questions + quantity
 
-        service = get_sheets_service()
-        service.spreadsheets().values().update(
-            spreadsheetId=row.sheet_id,
-            range=f"Users!{chr(65 + paid_questions_column)}{row.index + 2}",
-            valueInputOption="RAW",
-            body={"values": [[updated_paid_questions]]}
-        ).execute()
-
+        await update_sheet_row(row.sheet_id, row.sheet_name, row.index, {
+            "paid_questions": updated_paid_questions
+        })
+        
 async def update_user_after_answer(user_id: int):
     await increase_question_count(user_id)
     await decrease_question_limit(user_id)
