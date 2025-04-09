@@ -21,6 +21,7 @@ from services.missions_service import check_and_apply_missions
 from services.sheets import update_sheet_row
 from datetime import datetime
 import pytz
+from keyboards.shop import get_shop_keyboard
 
 router = Router()
 
@@ -108,7 +109,11 @@ async def handle_question(message: Message, state: FSMContext):
         await state.set_state(ProgramSelection.discipline)
         await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
         return
-
+    
+    if message.text == "🛒 Магазин":
+        await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
+        return
+    
     user = message.from_user
     text = message.text.strip()
     data = await state.get_data()
