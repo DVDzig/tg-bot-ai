@@ -26,7 +26,8 @@ async def show_admin_menu(message: Message):
 
 
 @router.message(F.text == "👥 Статистика пользователей")
-async def admin_user_stats(message: Message):
+async def admin_user_stats(message: Message, state: FSMContext):
+    await push_step(state, "admin")
     if message.from_user.id != ADMIN_ID:
         return
 
@@ -47,7 +48,9 @@ async def admin_user_stats(message: Message):
 
 
 @router.message(F.text == "🏆 Топ по XP")
-async def admin_top_xp(message: Message):
+async def admin_top_xp(message: Message, state: FSMContext):
+    await push_step(state, "admin")
+
     if message.from_user.id != ADMIN_ID:
         return
 
@@ -114,6 +117,8 @@ async def process_user_id(message: Message, state: FSMContext):
 
 @router.message(F.text == "📢 Рассылка")
 async def start_broadcast(message: Message, state: FSMContext):
+    await push_step(state, "admin")
+
     if message.from_user.id != ADMIN_ID:
         return
     await state.set_state(Broadcast.waiting_for_message)
@@ -145,7 +150,9 @@ async def process_broadcast(message: Message, state: FSMContext):
 
 
 @router.message(F.text == "🔁 Обновить ключевые слова")
-async def admin_update_keywords_callback(message: Message):
+async def admin_update_keywords_callback(message: Message, state: FSMContext):
+    await push_step(state, "admin")
+
     if message.from_user.id != ADMIN_ID:
         return
     await message.answer("⏳ Начинаю обновление ключевых слов...")
@@ -163,3 +170,4 @@ async def admin_update_keywords_callback(message: Message):
             msg += f"• {f}\n"
 
     await message.answer(msg)
+

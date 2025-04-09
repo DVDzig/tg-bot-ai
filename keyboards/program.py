@@ -38,3 +38,10 @@ def get_discipline_keyboard(disciplines: list[str]):
         keyboard=[[KeyboardButton(text=d)] for d in disciplines] + [[KeyboardButton(text="⬅️ Назад")]],
         resize_keyboard=True
     )
+    
+def get_programs_by_level(level: str) -> list[str]:
+    if "Бакалавриат" in level:
+        return ["📘 МРК", "📗 ТПР", "📙 БХ"]
+    elif "Магистратура" in level:
+        return ["📕 МСС", "📓 СА", "📔 ФВМ"]
+    return []

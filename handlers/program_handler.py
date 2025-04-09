@@ -201,3 +201,4 @@ async def handle_user_question(message: Message, state: FSMContext):
     rewards = await check_and_apply_missions(user.id)
     for r in rewards:
         await message.answer(r)
+
