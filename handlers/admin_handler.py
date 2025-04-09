@@ -163,7 +163,7 @@ async def admin_update_keywords_callback(message: Message, state: FSMContext):
 
     await message.answer(msg)
 
-@router.message(F.text == "⬅️ Назад в меню")
+@router.message(F.text == "⬅️ Назад в главное меню")
 async def back_to_admin_menu(message: Message):
     from keyboards.admin import get_admin_menu_keyboard
     from keyboards.main_menu import get_main_menu_keyboard

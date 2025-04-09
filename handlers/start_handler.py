@@ -10,11 +10,13 @@ from handlers.missions_handler import show_missions
 from handlers.shop_navigation import open_shop
 from handlers.program_handler import start_program_selection
 from handlers.info_handler import show_info_menu
+from aiogram.fsm.context import FSMContext
 
 router = Router()
 
 @router.message(CommandStart())
-async def cmd_start(message: Message):
+async def cmd_start(message: Message, state: FSMContext):
+    await state.clear()
     user_id = message.from_user.id
     keyboard = get_main_menu_keyboard(user_id)
     await message.answer(
