@@ -52,9 +52,9 @@ async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updat
         if col_idx is None:
             continue
 
-        ol_letter = get_column_letter(col_idx + 1)
+        col_letter = get_column_letter(col_idx + 1)  # 1-based для openpyxl
         body["data"].append({
-            "range": f"{sheet_name}!{col_letter}{row_index}",
+            "range": f"{sheet_name}!{col_letter}{row_index + 2}",  # учитываем заголовки
             "values": [[value]]
         })
 
@@ -63,7 +63,7 @@ async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updat
             spreadsheetId=sheet_id,
             body=body
         ).execute()
-
+        
 # Класс строки пользователя
 class UserRow:
     def __init__(self, row: list, header_map: dict, row_index: int):
