@@ -33,6 +33,7 @@ from datetime import datetime
 import pytz
 
 from utils.context_stack import push_step
+from keyboards.shop import get_shop_keyboard
 
 
 router = Router()
@@ -201,4 +202,10 @@ async def handle_user_question(message: Message, state: FSMContext):
     rewards = await check_and_apply_missions(user.id)
     for r in rewards:
         await message.answer(r)
+
+@router.message(F.text == "🛒 Магазин")
+async def from_consultant_to_shop(message: Message, state: FSMContext):
+
+    await push_step(state, "consultant")
+    await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
 
