@@ -7,7 +7,7 @@ def get_shop_keyboard():
                 KeyboardButton(text="🧾 Купить вопросы"),
                 KeyboardButton(text="🔓 Купить подписку")
             ],
-            [KeyboardButton(text="⬅️ Назад")],
+            [KeyboardButton(text="⬅️ Назад в главное меню")],
         ],
         resize_keyboard=True,
         input_field_placeholder="Выберите раздел ⤵️"
@@ -24,7 +24,7 @@ def get_question_packages_keyboard():
                 KeyboardButton(text="🧾 50 вопросов — 450₽"), 
                 KeyboardButton(text="🧾 100 вопросов — 900₽")
             ],
-            [KeyboardButton(text="⬅️ Назад")],
+            [KeyboardButton(text="⬅️ Назад в магазин")],
         ],
         resize_keyboard=True,
         input_field_placeholder="Выберите пакет ⤵️"
@@ -37,7 +37,7 @@ def get_subscription_packages_keyboard():
                 KeyboardButton(text="🔓 Лайт / 7 дней"), 
                 KeyboardButton(text="🔓 Про / 30 дней")
             ],
-            [KeyboardButton(text="⬅️ Назад")],
+            [KeyboardButton(text="⬅️ Назад в магазин")],
         ],
         resize_keyboard=True,
         input_field_placeholder="Выберите подписку ⤵️"

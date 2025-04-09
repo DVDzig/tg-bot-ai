@@ -18,8 +18,7 @@ from handlers import (
     leaderboard_handler,
     program_handler,
     common_navigation,
-    shop_navigation,
-    back_handler
+    shop_navigation
 )
 from middlewares.ensure_user import EnsureUserMiddleware
 from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus
@@ -44,7 +43,6 @@ dp.include_router(program_handler.router)
 dp.include_router(start_handler.router)
 dp.include_router(common_navigation.router)
 dp.include_router(shop_navigation.router)
-dp.include_router(back_handler.router)
 
 # === Telegram Bot & Dispatcher ===
 bot = Bot(

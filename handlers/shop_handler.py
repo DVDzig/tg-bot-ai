@@ -127,6 +127,6 @@ async def buy_100_questions(message: Message):
 
 from keyboards.main_menu import get_main_menu_keyboard
 
-@router.message(F.text == "⬅️ Назад")
+@router.message(F.text == "⬅️ Назад в главное меню")
 async def back_from_shop(message: Message):
     await message.answer("🔝 Главное меню", reply_markup=get_main_menu_keyboard(message.from_user.id))

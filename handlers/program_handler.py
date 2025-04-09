@@ -202,7 +202,7 @@ async def from_consultant_to_shop(message: Message, state: FSMContext):
 
     await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
 
-@router.message(F.text == "⬅️ Назад", ProgramSelection.discipline)
+@router.message(F.text == "⬅️ Назад в модули", ProgramSelection.discipline)
 async def back_to_module(message: Message, state: FSMContext):
     data = await state.get_data()
     program = data.get("program")
@@ -210,19 +210,19 @@ async def back_to_module(message: Message, state: FSMContext):
     await state.set_state(ProgramSelection.module)
     await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
 
-@router.message(F.text == "⬅️ Назад", ProgramSelection.module)
+@router.message(F.text == "⬅️ в программы", ProgramSelection.module)
 async def back_to_program(message: Message, state: FSMContext):
     data = await state.get_data()
     level = data.get("level")
     await state.set_state(ProgramSelection.program)
     await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
 
-@router.message(F.text == "⬅️ Назад", ProgramSelection.program)
+@router.message(F.text == "⬅️ Назад в уровень образования", ProgramSelection.program)
 async def back_to_level(message: Message, state: FSMContext):
     await state.set_state(ProgramSelection.level)
     await message.answer("Выбери уровень образования:", reply_markup=get_level_keyboard())
 
-@router.message(F.text == "⬅️ Назад", ProgramSelection.level)
+@router.message(F.text == "⬅️ Назад в главное меню", ProgramSelection.level)
 async def back_to_main(message: Message, state: FSMContext):
     await state.clear()
     from keyboards.main_menu import get_main_menu_keyboard

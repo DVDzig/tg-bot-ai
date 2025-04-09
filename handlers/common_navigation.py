@@ -16,12 +16,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 router = Router()
 
-@router.message(F.text == "⬅️ Назад")
+@router.message(F.text == "⬅️ Назад в главное меню")
 async def handle_text_back(message: Message, state: FSMContext):
     current_state = await state.get_state()
     data = await state.get_data()
 
-    print(f"[⬅️ Назад] user_id={message.from_user.id}, state={current_state}")
+    print(f"[⬅️ Назад в главное меню] user_id={message.from_user.id}, state={current_state}")
 
     if current_state == ProgramSelection.asking:
         disciplines = await get_disciplines_by_module(data["program"], data["module"])

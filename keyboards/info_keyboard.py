@@ -5,7 +5,7 @@ def get_info_menu_keyboard() -> ReplyKeyboardMarkup:
         [KeyboardButton(text="🎖️ Статусы")],
         [KeyboardButton(text="💳 Подписки")],
         [KeyboardButton(text="❓ Помощь")],
-        [KeyboardButton(text="⬅️ Назад")]
+        [KeyboardButton(text="⬅️ Назад в главное меню")]
     ]
     return ReplyKeyboardMarkup(
         keyboard=keyboard,
