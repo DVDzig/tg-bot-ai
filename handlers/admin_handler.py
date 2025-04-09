@@ -121,8 +121,8 @@ async def process_user_id(message: Message, state: FSMContext):
 
     await state.clear()
 
-@router.message(StateFilter(GrantSubscription), F.text == "🔙 Назад в админ-панель")
-async def cancel_subscription_flow(message: Message, state: FSMContext):
+@router.message(F.text == "🔙 Назад в админ-панель")
+async def cancel_subscription(message: Message, state: FSMContext):    
     await state.clear()
     await message.answer("❌ Выдача подписки отменена.", reply_markup=get_admin_menu_keyboard())
 
