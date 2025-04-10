@@ -57,7 +57,9 @@ async def update_keywords_from_logs():
             f"Выдели 250-300 ключевых слов или фраз (по теме), разделённых запятыми.\n\n"
             f"{combined_text}"
         )
-
+        
+        print(f"⚙️  Using OpenAI with key: {OPENAI_API_KEY[:8]}... (len: {len(OPENAI_API_KEY)})")
+        print(f"✅ Client: {client}")
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
