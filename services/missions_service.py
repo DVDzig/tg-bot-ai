@@ -62,7 +62,8 @@ async def get_user_missions_text(user_id: int) -> str:
 
     day_count = int(row.get("day_count", 0))
     xp_week = int(row.get("xp_week", 0))
-    streak_days = int(row.get("streak_days", 0))
+    streak_days = int(row.get("streak_days") or 0)
+
 
     missions = []
 
