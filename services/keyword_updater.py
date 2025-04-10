@@ -8,6 +8,7 @@ from config import PROGRAM_SHEETS, OPENAI_API_KEY
 from services.sheets import get_sheets_service
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+print(f"🔐 OPENAI_API_KEY: {repr(OPENAI_API_KEY)}")
 
 
 async def update_keywords_from_logs():
