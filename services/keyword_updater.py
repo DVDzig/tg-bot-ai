@@ -1,6 +1,5 @@
-import openai
-print(f"OpenAI version: {openai.__version__}")
 from collections import defaultdict
+from openai import OpenAI
 from services.google_sheets_service import (
     get_keywords_for_discipline,
     update_keywords_for_discipline
@@ -8,7 +7,7 @@ from services.google_sheets_service import (
 from config import PROGRAM_SHEETS, OPENAI_API_KEY
 from services.sheets import get_sheets_service
 
-openai.api_key = OPENAI_API_KEY
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 async def update_keywords_from_logs():
@@ -59,7 +58,7 @@ async def update_keywords_from_logs():
         )
 
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": "Ты — помощник по анализу учебных данных."},
@@ -87,6 +86,8 @@ async def update_keywords_from_logs():
 
     return updated, failed
 
+
+# Функция для безопасной отправки длинных сообщений
 MAX_MESSAGE_LENGTH = 4096
 
 async def send_long_message(text: str, message):
