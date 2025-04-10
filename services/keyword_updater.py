@@ -1,4 +1,5 @@
 import openai
+print(f"OpenAI version: {openai.__version__}")
 from collections import defaultdict
 from services.google_sheets_service import (
     get_keywords_for_discipline,
