@@ -27,12 +27,10 @@ async def update_keywords_from_logs():
 
     grouped = defaultdict(list)
 
-    # Проверка наличия нужных столбцов
     required = ["program", "module", "discipline", "question", "answer"]
     if not all(col in header_map for col in required):
         return [], ["Отсутствуют нужные столбцы в QA_Log"]
 
-    # Группируем вопросы+ответы по (программа, модуль, дисциплина)
     for row in values[1:]:
         try:
             program = row[header_map["program"]]
@@ -49,17 +47,17 @@ async def update_keywords_from_logs():
     updated = []
     failed = []
 
-    for (program, module, discipline), text_blocks in grouped.items():
-        combined_text = "\n".join(text_blocks)[:4000]  # ограничим GPT вход
+    # 🔥 Только первые 3 дисциплины для теста
+    for (program, module, discipline), text_blocks in list(grouped.items())[:3]:
+        print(f"🧩 Обработка: {program} / {module} / {discipline}")
+        combined_text = "\n".join(text_blocks)[:4000]
 
         prompt = (
             f"Проанализируй текст (вопросы и ответы по дисциплине «{discipline}»). "
             f"Выдели 250-300 ключевых слов или фраз (по теме), разделённых запятыми.\n\n"
             f"{combined_text}"
         )
-        
-        print(f"⚙️  Using OpenAI with key: {OPENAI_API_KEY[:8]}... (len: {len(OPENAI_API_KEY)})")
-        print(f"✅ Client: {client}")
+
         try:
             response = client.chat.completions.create(
                 model="gpt-4",
@@ -76,6 +74,7 @@ async def update_keywords_from_logs():
 
             if not new_keywords:
                 failed.append(f"{program} / {module} / {discipline} (GPT вернул пусто)")
+                print(f"❌ GPT вернул пусто для: {discipline}")
                 continue
 
             existing = await get_keywords_for_discipline(program, module, discipline)
@@ -83,9 +82,11 @@ async def update_keywords_from_logs():
 
             await update_keywords_for_discipline(program, module, discipline, combined)
             updated.append(f"{program} / {module} / {discipline}")
+            print(f"✅ Обновлено: {discipline}")
 
         except Exception as e:
             failed.append(f"{program} / {module} / {discipline} ❌ ({str(e)[:60]}...)")
+            print(f"❌ Ошибка для {discipline}: {str(e)[:60]}...")
 
     return updated, failed
 
