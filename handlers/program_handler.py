@@ -70,7 +70,7 @@ async def select_discipline(message: Message, state: FSMContext):
         await message.answer("Выбери программу:", reply_markup=get_program_keyboard(level))
         return
 
-    module = message.text
+    module = message.text.replace("🧩", "").strip()  # ✅ очистка иконки
     await state.update_data(module=module)
     data = await state.get_data()
     program = data.get("program")
@@ -91,7 +91,7 @@ async def select_asking(message: Message, state: FSMContext):
         await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
         return
 
-    discipline = message.text
+    discipline = message.text.replace("🧠", "").strip()
     await state.update_data(discipline=discipline)
     await state.set_state(ProgramSelection.asking)
     await message.answer(
