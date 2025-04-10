@@ -1,9 +1,8 @@
 import logging
 from config import USER_SHEET_ID, USER_SHEET_NAME
-from services.sheets import get_sheets_service
+from services.sheets import get_sheets_service, get_column_index_by_name
 from services.user_service import get_status_by_xp
 from services.google_sheets_service import get_all_users
-from services.sheets import get_column_index_by_name  # теперь используем
 
 
 logger = logging.getLogger(__name__)
