@@ -130,3 +130,9 @@ async def update_keywords_from_logs():
             failed.append(f"{program} / {module} / {discipline} ❌ ({str(e)[:60]}...)")
 
     return updated, failed
+
+MAX_MESSAGE_LENGTH = 4096
+
+async def send_long_message(text: str, message):
+    for i in range(0, len(text), MAX_MESSAGE_LENGTH):
+        await message.answer(text[i:i+MAX_MESSAGE_LENGTH])
