@@ -26,13 +26,13 @@ def get_program_keyboard(level: str):
 
 def get_module_keyboard(modules: list[str]):
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=m)] for m in modules] + [[KeyboardButton(text="⬅️ Назад в программы")]],
+        keyboard=[[KeyboardButton(text="🧩 {m}")] for m in modules] + [[KeyboardButton(text="⬅️ Назад в программы")]],
         resize_keyboard=True
     )
 
 def get_discipline_keyboard(disciplines: list[str]):
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text=d)] for d in disciplines] + [[KeyboardButton(text="⬅️ Назад в модули")]],
+        keyboard=[[KeyboardButton(text="🧠 {d}")] for d in disciplines] + [[KeyboardButton(text="⬅️ Назад в модули")]],
         resize_keyboard=True
     )
     

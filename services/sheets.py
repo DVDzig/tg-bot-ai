@@ -52,7 +52,7 @@ async def update_sheet_row(sheet_id: str, sheet_name: str, row_index: int, updat
         if col_idx is None:
             continue
 
-        col_letter = get_column_letter(col_idx)  # openpyxl — 1-based
+        col_letter = get_column_letter(col_idx + 1)  # openpyxl — 1-based
         body["data"].append({
             "range": f"{sheet_name}!{col_letter}{row_index}",  # только +1!
             "values": [[value]]
