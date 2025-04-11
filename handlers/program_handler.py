@@ -183,7 +183,7 @@ async def handle_question(message: Message, state: FSMContext):
             for url in video_urls:
                 if url.strip():
                     try:
-                        await message.answer_video(url)
+                        await message.answer(f"🎬 Видео по теме:\n{url}")
                         await asyncio.sleep(1.5)  # ⏳ если отправляется несколько
                     except Exception as e:
                         print(f"[VIDEO ERROR] {e}")
