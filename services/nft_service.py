@@ -3,6 +3,7 @@ import datetime
 import openai
 import requests
 
+from openai import AsyncOpenAI
 from config import OPENAI_API_KEY, USER_SHEET_NAME, NFT_STATUSES, NFT_FOLDER_ID
 from services.google_drive_service import upload_image_to_drive
 from services.sheets import update_sheet_row, get_user_row_by_id
@@ -32,13 +33,16 @@ async def generate_nft_card_if_needed(user_id: int):
 
     # 🎨 Генерация через DALL·E
     prompt = f"Vector cartoon illustration of a raccoon with glasses, academic cap and book on a pastel background. Title: 'NFT-карточка достижений'. Name: {name}, Status: {status}, XP: {xp}, Date: {date_str}. Flat design."
-    response = openai.Image.create(
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
+    response = await client.images.generate(
+        model="dall-e-3",
         prompt=prompt,
         n=1,
-        size="1024x1024",
+        size="768x1024",
         response_format="url"
     )
-    image_url = response['data'][0]['url']
+    image_url = response.data[0].urlmage_url = response['data'][0]['url']
 
     # 📥 Скачиваем изображение
     image_bytes = requests.get(image_url).content
