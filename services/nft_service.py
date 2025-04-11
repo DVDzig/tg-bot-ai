@@ -14,9 +14,11 @@ async def generate_nft_card_if_needed(user_id: int):
     if not user_row:
         return None
 
-    status = user_row.get("status")
-    if status not in NFT_STATUSES:
+    status_full = user_row.get("status", "")
+    status_clean = status_full.split()[-1]  # достаём слово после эмодзи
+    if status_clean not in NFT_STATUSES:
         return None
+    status = status_clean
 
     nft_statuses_str = user_row.get("nft_statuses", "")
     nft_statuses = [s.strip() for s in nft_statuses_str.split(",") if s.strip()]
