@@ -16,3 +16,4 @@ yookassa
 apscheduler
 nest_asyncio
 openpyxl
+pillow
