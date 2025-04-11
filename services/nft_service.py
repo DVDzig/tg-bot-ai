@@ -31,9 +31,9 @@ async def generate_nft_card_if_needed(user_id: int):
 
     # 1️⃣ Генерация изображения через DALL·E
     prompt = (
-        "A vector cartoon illustration of a cute raccoon with glasses, academic cap and book, "
-        "positioned on the RIGHT SIDE of the image. The LEFT SIDE should be mostly empty with a pastel background. "
-        "Flat design, NFT card style, no text."
+        "A single cute raccoon with glasses, academic cap and book, "
+        "positioned clearly on the RIGHT SIDE of the image. The LEFT SIDE must be empty with a pastel background. "
+        "Flat design, vector cartoon, no duplicates, no frame, no crop."
     )
 
     client = AsyncOpenAI(api_key=OPENAI_API_KEY)
@@ -55,11 +55,10 @@ async def generate_nft_card_if_needed(user_id: int):
     font_bold = ImageFont.truetype("fonts/Nunito-Bold.ttf", size=38)
     font_bold_italic = ImageFont.truetype("fonts/Nunito-BoldItalic.ttf", size=36)
 
-    # 4️⃣ Создаем текстовую зону
-    text_layer = Image.new("RGBA", (300, base_image.height), (255, 255, 255, 0))
+    # 4️⃣ Создаем текстовую зону шириной 400px
+    text_layer = Image.new("RGBA", (400, base_image.height), (255, 255, 255, 0))
     draw = ImageDraw.Draw(text_layer)
 
-    # Подготовка текста
     lines = [
         ("Статус:", font_bold), (status_full, font_regular),
         ("Имя:", font_bold), (name, font_regular),
@@ -71,11 +70,13 @@ async def generate_nft_card_if_needed(user_id: int):
     y = 50
     for text, font in lines:
         draw.text((10, y), text, font=font, fill="#3a3a3a")
-        y += 55
+        y += 65
 
-    # 5️⃣ Поворачиваем текстовую зону и накладываем
+    # 5️⃣ Поворачиваем текстовую зону и вставляем точно влево
     rotated_text = text_layer.rotate(90, expand=True)
-    final_image = Image.alpha_composite(base_image, rotated_text.crop((0, 0, base_image.width, base_image.height)))
+    final_image = Image.new("RGBA", base_image.size, (255, 255, 255, 0))
+    final_image.paste(base_image, (0, 0))
+    final_image.paste(rotated_text, (0, 0), rotated_text)
 
     # 6️⃣ Сохраняем результат
     buffer = io.BytesIO()
