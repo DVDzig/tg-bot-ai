@@ -54,10 +54,16 @@ async def get_leaderboard_text(current_user_id: int) -> str:
     for idx, (uid, name, xp) in enumerate(top_10, start=1):
         you = " (ты)" if uid == current_user_id else ""
         status = get_status_by_xp(xp)
-        text += f"🥇 {name} — {status}, {xp} XP{you}\n" if idx == 1 else \
-                f"🥈 {name} — {status}, {xp} XP{you}\n" if idx == 2 else \
-                f"🥉 {name} — {status}, {xp} XP{you}\n" if idx == 3 else \
-                f"{idx}. {name} — {status}, {xp} XP{you}\n"
+        icon = "🏅 " if status in ("Легенда", "Создатель") else ""
+    
+        if idx == 1:
+            text += f"🥇 {icon}{name} — {status}, {xp} XP{you}\n"
+        elif idx == 2:
+            text += f"🥈 {icon}{name} — {status}, {xp} XP{you}\n"
+        elif idx == 3:
+            text += f"🥉 {icon}{name} — {status}, {xp} XP{you}\n"
+        else:
+            text += f"{idx}. {icon}{name} — {status}, {xp} XP{you}\n"
 
     if current_user_id not in [u[0] for u in top_10]:
         for idx, (uid, name, xp) in enumerate(leaderboard, start=1):
@@ -66,6 +72,7 @@ async def get_leaderboard_text(current_user_id: int) -> str:
                 text += f"\n👤 Ты сейчас на {idx} месте\n"
                 text += f"📈 Твой статус: {status}, {xp} XP\n"
                 break
+
 
     return text
 
