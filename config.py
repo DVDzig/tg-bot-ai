@@ -11,6 +11,15 @@ PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
 client_email = os.getenv("CLIENT_EMAIL")
 PAYMENT_LOG_SHEET = "PaymentsLog"
 
+GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
+
+# Статусы, для которых генерируются NFT
+NFT_STATUSES = ["Наставник", "Легенда", "Создатель"]
+
+# Папка на Google Диске
+NFT_FOLDER_ID = os.getenv("NFT_FOLDER_ID")
+
+
 # Yookassa
 YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
 YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
@@ -29,17 +38,18 @@ PROGRAM_SHEETS_LIST = {
 }
 # Поля для пользователей (в Google Таблице)
 USER_FIELDS = [
-    "user_id", "username", "first_name", "last_name", "language_code", "is_premium",
+    "user_id", "username", "first_name", "last_name", 
+    "language_code", "is_premium",
     "first_interaction", "last_interaction",
-    "question_count", "day_count", "status", "plan",
-    "discipline", "module", "xp", "xp_today", "xp_week",
-    "paid_questions", "last_free_reset", "free_questions", "last_bonus_date",
-    "premium_status", "premium_until", "last_daily_challenge", "last_thematic_challenge",
-    "last_daily_3", "last_multi_disc",
-    "last_weekly_10", "last_weekly_50xp", "last_weekly_5disc", "last_streak3", "xp_start_of_week", 
-    "streak_days", "last_streak_date", "last_xp_bonus",
-    "missions_streak", "last_mission_day"
+    "question_count", "day_count", "status", "xp", "xp_week", 
+    "paid_questions", "last_free_reset", "free_questions", "streak_days",
+    "daily_mission_done", "weekly_mission_done", "streak_mission_done",
+    "premium_status", "Ежедневная миссия", "Недельная миссия", 
+    "Стрик-миссия", "plan", "premium_status", "premium_until", 
+    "next_plan", "next_until", "nft_statuses", "nft_url_Наставник", 
+    "nft_url_Легенда", "nft_url_Создатель"
 ]
+
 
 ADMIN_ID = int(os.getenv("ADMIN_ID", "150532949"))
 

@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from config import USER_SHEET_ID, USER_SHEET_NAME
 import pytz
 from services.sheets import update_sheet_row, get_user_row_by_id
+from services.nft_service import generate_nft_card_if_needed
+
 
 async def get_or_create_user(user) -> None:
     """
@@ -212,6 +214,7 @@ async def decrease_question_limit(user_id: int):
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
 
+
 async def add_xp_and_update_status(user_id: int, delta: int = 1):
     row = await get_user_row_by_id(user_id)
     if not row:
@@ -234,7 +237,10 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1):
     }
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
-    
+
+    # 💥 Генерация NFT, если достигнут нужный статус
+    await generate_nft_card_if_needed(user_id)
+   
 async def monthly_bonus_for_user(user_row):
     today = datetime.utcnow().strftime("%Y-%m-%d")
     last_bonus = user_row.get("last_bonus_date")
