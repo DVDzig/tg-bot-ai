@@ -165,13 +165,13 @@ async def handle_question(message: Message, state: FSMContext):
         await message.answer("⚠️ ИИ не смог сгенерировать ответ. Попробуй задать вопрос по-другому.")
         return
 
-    status = row.get("status", "Новичок")
+    status = row.get("status", "🟢 Новичок")
     videos_to_send = 0
-    if status == "Профи":
+    if status == "🚀 Профи":
         videos_to_send = 1
-    elif status == "Эксперт":
+    elif status == "👑 Эксперт":
         videos_to_send = 2
-    elif status in ("Наставник", "Легенда", "Создатель") or plan in ("lite", "pro"):
+    elif status in ("🧠 Наставник", "🔥 Легенда", "👑 Создатель") or plan in ("lite", "pro"):
         videos_to_send = 3
 
     if videos_to_send > 0:
