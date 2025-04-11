@@ -206,7 +206,7 @@ async def handle_question(message: Message, state: FSMContext):
         await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
 
     await log_question_answer(user.id, program, discipline, text, answer)
-    await update_user_after_answer(user.id)
+    await update_user_after_answer(message.from_user.id, bot=message.bot)
 
     updates = {
         "last_interaction": datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")

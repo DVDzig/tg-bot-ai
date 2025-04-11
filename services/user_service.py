@@ -9,6 +9,7 @@ from config import USER_SHEET_ID, USER_SHEET_NAME
 import pytz
 from services.sheets import update_sheet_row, get_user_row_by_id
 from services.nft_service import generate_nft_card_if_needed
+from aiogram import Bot
 
 
 async def get_or_create_user(user) -> None:
@@ -95,22 +96,6 @@ async def activate_subscription(user_id: int, duration_days: int, internal_id: s
     await update_user_plan(user_id, plan_type, int(duration_days))
 
 async def get_user_profile_text(user) -> str:
-    if user.id == 150532949:
-        return (
-            f"👤 Имя: {user.first_name}\n"
-            f"👑 Статус: Создатель — 🟩🟩🟩🟩🟩 100%\n"
-            f"⭐ Твой XP: 9999 XP\n"
-            f"📅 Последний вход: —\n\n"
-            f"🎁 Доступные вопросы:\n"
-            f"• Бесплатные: 999\n"
-            f"• Платные: 999\n\n"
-            f"📈 Активность:\n"
-            f"• Сегодня: ∞\n"
-            f"• За неделю: ∞\n"
-            f"• Всего: ∞\n\n"
-            f"🔥 У тебя безлимит — ты Создатель.\n\n"
-            f"🔓 Подписка: Полный доступ (админ)\n"
-        )
 
     # Стандартный путь
     row = await get_user_row_by_id(user.id)
@@ -138,6 +123,12 @@ async def get_user_profile_text(user) -> str:
         plan_text = "🔓 Подписка: Лайт (безлимит)"
     elif plan == "pro":
         plan_text = "🔓 Подписка: Про (приоритет, 100 вопросов, видео)"
+        
+    # NFT-карточка (если доступна по статусу и есть ссылка)
+    status_clean = status.split()[-1]
+    nft_url = row.get(f"nft_url_{status_clean}")
+    nft_text = f"\n🎼 NFT-карточка: [Скачать]({nft_url})" if nft_url and status_clean in ["Наставник", "Легенда", "Создатель"] else ""
+
 
     # Прогресс-бар из 5 кубиков
     filled_blocks = min(xp * 5 // max(to_next + xp, 1), 5)
@@ -215,7 +206,7 @@ async def decrease_question_limit(user_id: int):
 
 
 
-async def add_xp_and_update_status(user_id: int, delta: int = 1):
+async def add_xp_and_update_status(user_id: int, delta: int = 1, bot: Bot = None):
     row = await get_user_row_by_id(user_id)
     if not row:
         return
@@ -226,6 +217,8 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1):
 
     current_xp = int(row.get("xp", 0))
     new_xp = current_xp + delta
+
+    old_status = row.get("status", "")
     new_status = get_status_by_xp(new_xp)
 
     now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
@@ -238,9 +231,54 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1):
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
-    # 💥 Генерация NFT, если достигнут нужный статус
-    await generate_nft_card_if_needed(user_id)
-   
+    # 💥 Если статус изменился — генерируем NFT и отправляем поздравление
+    if new_status != old_status and bot:
+        status_clean = new_status.split()[-1]
+        nft_link = None
+
+        if status_clean in ["Наставник", "Легенда", "Создатель"]:
+            nft_link = await generate_nft_card_if_needed(user_id)
+
+        messages = {
+            "Опытный": (
+                "🔸 Отлично! Теперь ты — <b>Опытный</b>!\n"
+                "📗 Уверенные шаги к вершинам знаний. Продолжай!"
+            ),
+            "Профи": (
+                "🚀 Ты теперь <b>Профи</b>!\n"
+                "🔓 Твой путь только начинается — впереди ещё больше крутых достижений!"
+            ),
+            "Эксперт": (
+                "👑 Вау! Ты стал <b>Экспертом</b>!\n"
+                "📘 Уровень глубоких знаний — так держать!"
+            ),
+            "Наставник": (
+                "🎉 Поздравляем! Ты стал 🧠 <b>Наставником</b>!\n"
+                "📚 У тебя огромный опыт — делись знаниями, помогай другим!\n"
+                f"🎼 <b>Твоя NFT-карточка достижений:</b>\n<a href=\"{nft_link}\">Скачать NFT</a>"
+            ),
+            "Легенда": (
+                "🔥 Ты — <b>ЛЕГЕНДА</b>!\n"
+                "🥇 Это путь упорства, знаний и роста.\n"
+                f"🎼 <b>NFT-карточка:</b>\n<a href=\"{nft_link}\">Скачать NFT</a>"
+            ),
+            "Создатель": (
+                "👑 Преклоняемся, <b>Создатель</b>!\n"
+                "💫 Ты прошёл весь путь и стал абсолютом.\n"
+                f"🎼 <b>Вот твоя NFT:</b>\n<a href=\"{nft_link}\">Скачать NFT</a>"
+            )
+        }
+
+        status_key = status_clean
+        if status_key in messages:
+            await bot.send_message(
+                chat_id=user_id,
+                text=messages[status_key],
+                parse_mode="HTML",
+                disable_web_page_preview=True
+            )
+            
+               
 async def monthly_bonus_for_user(user_row):
     today = datetime.utcnow().strftime("%Y-%m-%d")
     last_bonus = user_row.get("last_bonus_date")
@@ -311,7 +349,9 @@ async def add_paid_questions(user_id: int, quantity: int):
             "paid_questions": updated_paid_questions
         })
         
-async def update_user_after_answer(user_id: int):
+async def update_user_after_answer(user_id: int, bot: Bot):
     await increase_question_count(user_id)
     await decrease_question_limit(user_id)
     await add_xp_and_update_status(user_id)
+    await add_xp_and_update_status(user_id, bot=bot)
+
