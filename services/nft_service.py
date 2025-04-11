@@ -9,10 +9,14 @@ from services.user_service import get_user_row_by_id
 openai.api_key = OPENAI_API_KEY
 
 
-def generate_nft_card_if_needed(user_id: str):
-    user_data, row_index = get_user_row_by_id(user_id, return_index=True)
-    if not user_data or row_index is None:
+async def generate_nft_card_if_needed(user_id: str):
+
+    user_row = await get_user_row_by_id(user_id)
+    if not user_row:
         return None
+
+    user_data = dict(user_row)  # сконвертируем в обычный словарь
+    row_index = user_row.index
 
     status = user_data.get("status")
     if status not in NFT_STATUSES:
