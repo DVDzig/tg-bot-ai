@@ -42,7 +42,7 @@ async def generate_nft_card_if_needed(user_id: int):
         size="1024x1024",
         response_format="url"
     )
-    image_url = response.data[0].urlmage_url = response['data'][0]['url']
+    image_url = response.data[0].url
 
     # 📥 Скачиваем изображение
     image_bytes = requests.get(image_url).content
