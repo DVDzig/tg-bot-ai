@@ -22,6 +22,9 @@ from services.sheets import update_sheet_row
 from datetime import datetime
 import pytz
 from keyboards.shop import get_shop_keyboard
+from config import VIDEO_URLS
+import re
+
 
 router = Router()
 
@@ -165,14 +168,14 @@ async def handle_question(message: Message, state: FSMContext):
         await message.answer("⚠️ ИИ не смог сгенерировать ответ. Попробуй задать вопрос по-другому.")
         return
 
-    status = row.get("status", "🟢 Новичок")
-    videos_to_send = 0
-    if status == "🚀 Профи":
-        videos_to_send = 1
-    elif status == "👑 Эксперт":
-        videos_to_send = 2
-    elif status in ("🧠 Наставник", "🔥 Легенда", "👑 Создатель") or plan in ("lite", "pro"):
-        videos_to_send = 3
+
+    # Очистка эмодзи и пробелов
+    status = re.sub(r"[^\w\s]", "", row.get("status", "Новичок")).strip()
+    plan = row.get("plan", "").strip().lower()
+
+    videos_to_send = VIDEO_URLS.get(status, 0)
+    if plan in VIDEO_URLS:
+        videos_to_send = max(videos_to_send, VIDEO_URLS[plan])
 
     if videos_to_send > 0:
         try:
