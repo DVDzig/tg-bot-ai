@@ -89,6 +89,13 @@ def get_next_status(xp: int) -> tuple[str, int]:
         (0, "🟢 Новичок"),
     ]
 
+    for threshold, status in levels:
+        if xp < threshold:
+            return status, threshold - xp
+
+    return levels[0][1], 0  # если уже максимальный статус
+   
+
 async def activate_subscription(user_id: int, duration_days: int, internal_id: str):
     # "lite" или "pro" читаем из логов по internal_id (добавим позже или передадим как аргумент)
     plan_type = "lite" if "lite" in internal_id else "pro"
