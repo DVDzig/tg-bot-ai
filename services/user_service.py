@@ -175,7 +175,8 @@ async def increase_question_count(user_id: int):
     question_count = int(row.get("question_count", 0)) + 1
     day_count = int(row.get("day_count", 0)) + 1
     xp_week = int(row.get("xp_week", 0)) + 1
-    streak_days = int(row.get("streak_days", 0)) + 1
+    streak_days = int(row.get("streak_days") or 0) + 1
+
 
     updates = {
         "question_count": question_count,

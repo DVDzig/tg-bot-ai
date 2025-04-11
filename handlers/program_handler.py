@@ -181,7 +181,15 @@ async def handle_question(message: Message, state: FSMContext):
         try:
             video_urls = await search_video_on_youtube(f"{discipline} {text}", max_results=videos_to_send)
             for url in video_urls:
-                await message.answer_video(url)
+                if url.strip():
+                    try:
+                        await message.answer_video(url)
+                        await asyncio.sleep(1.5)  # ⏳ если отправляется несколько
+                    except Exception as e:
+                        print(f"[VIDEO ERROR] {e}")
+                else:
+                    print("[VIDEO WARNING] Пустая ссылка пропущена")
+
         except Exception as e:
             print(f"[VIDEO ERROR] {e}")
 
