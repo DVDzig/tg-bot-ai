@@ -29,11 +29,11 @@ async def generate_nft_card_if_needed(user_id: int):
     xp = user_row.get("xp", "0")
     date_str = datetime.datetime.now().strftime("%Y-%m-%d")
 
-    # 1. Генерация изображения через DALL·E
+    # 1️⃣ Генерация изображения через DALL·E
     prompt = (
         "A vector cartoon illustration of a cute raccoon with glasses, academic cap and book, "
-        "positioned on the RIGHT SIDE of the image. The LEFT SIDE should be mostly empty with a pastel background, "
-        "allowing space for text. Flat design."
+        "positioned on the RIGHT SIDE of the image. The LEFT SIDE should be mostly empty with a pastel background. "
+        "Flat design, NFT card style, no text."
     )
 
     client = AsyncOpenAI(api_key=OPENAI_API_KEY)
@@ -46,38 +46,46 @@ async def generate_nft_card_if_needed(user_id: int):
     )
     image_url = response.data[0].url
 
-    # 2. Скачиваем изображение
+    # 2️⃣ Скачиваем изображение
     image_bytes = requests.get(image_url).content
     base_image = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
 
-    # 3. Накладываем текст с помощью PIL
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    font_main = ImageFont.truetype(font_path, size=40)
+    # 3️⃣ Загружаем шрифты Nunito
+    font_regular = ImageFont.truetype("fonts/Nunito-Regular.ttf", size=38)
+    font_bold = ImageFont.truetype("fonts/Nunito-Bold.ttf", size=38)
+    font_bold_italic = ImageFont.truetype("fonts/Nunito-BoldItalic.ttf", size=36)
 
-    text_image = Image.new("RGBA", base_image.size, (255, 255, 255, 0))
-    draw = ImageDraw.Draw(text_image)
+    # 4️⃣ Создаем текстовую зону
+    text_layer = Image.new("RGBA", (300, base_image.height), (255, 255, 255, 0))
+    draw = ImageDraw.Draw(text_layer)
 
-    lines = [f"{status_full}", name, f"XP: {xp}  |  {date_str}"]
-    text_y = 40
-    for line in lines:
-        text_width = draw.textlength(line, font=font_main)
-        draw.text((40, text_y), line, font=font_main, fill="#3a3a3a")
-        text_y += 60
+    # Подготовка текста
+    lines = [
+        ("Статус:", font_bold), (status_full, font_regular),
+        ("Имя:", font_bold), (name, font_regular),
+        ("XP:", font_bold), (str(xp), font_regular),
+        ("Дата:", font_bold), (date_str, font_regular),
+        ("@TGTutorBot", font_bold_italic)
+    ]
 
-    text_image = text_image.rotate(90, expand=True)
-    final_image = Image.alpha_composite(base_image, text_image.crop((0, 0, base_image.width, base_image.height)))
+    y = 50
+    for text, font in lines:
+        draw.text((10, y), text, font=font, fill="#3a3a3a")
+        y += 55
 
-    # 4. Сохраняем изображение в память
-    output_buffer = io.BytesIO()
-    final_image.save(output_buffer, format="PNG")
-    output_buffer.seek(0)
+    # 5️⃣ Поворачиваем текстовую зону и накладываем
+    rotated_text = text_layer.rotate(90, expand=True)
+    final_image = Image.alpha_composite(base_image, rotated_text.crop((0, 0, base_image.width, base_image.height)))
+
+    # 6️⃣ Сохраняем результат
+    buffer = io.BytesIO()
+    final_image.save(buffer, format="PNG")
+    buffer.seek(0)
 
     file_name = f"NFT_{status}_{user_id}_{date_str}.png"
+    drive_url = upload_image_to_drive(file_name, buffer, folder_id=NFT_FOLDER_ID)
 
-    # 5. Загружаем в Google Диск
-    drive_url = upload_image_to_drive(file_name, output_buffer, folder_id=NFT_FOLDER_ID)
-
-    # 6. Обновляем таблицу
+    # 7️⃣ Обновляем таблицу
     nft_statuses.append(status)
     updates = {
         f"nft_url_{status}": drive_url,
@@ -85,5 +93,4 @@ async def generate_nft_card_if_needed(user_id: int):
     }
 
     await update_sheet_row(user_row.sheet_id, user_row.sheet_name, user_row.index, updates)
-
     return drive_url
