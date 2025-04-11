@@ -103,15 +103,13 @@ async def activate_subscription(user_id: int, duration_days: int, internal_id: s
     await update_user_plan(user_id, plan_type, int(duration_days))
 
 async def get_user_profile_text(user) -> str:
-
-    # Стандартный путь
     row = await get_user_row_by_id(user.id)
     if not row:
         return "Профиль не найден."
 
     first_name = row.get("first_name") or user.first_name
     xp = int(row.get("xp", 0))
-    status = get_status_by_xp(xp)
+    actual_status = row.get("status") or get_status_by_xp(xp)  # используем статус из таблицы
     next_status, to_next = get_next_status(xp)
 
     free_q = int(row.get("free_questions", 0))
@@ -130,12 +128,11 @@ async def get_user_profile_text(user) -> str:
         plan_text = "🔓 Подписка: Лайт (безлимит)"
     elif plan == "pro":
         plan_text = "🔓 Подписка: Про (приоритет, 100 вопросов, видео)"
-        
-    # NFT-карточка (если доступна по статусу и есть ссылка)
-    status_clean = status.split()[-1]
+
+    # NFT-карточка
+    status_clean = actual_status.split()[-1]
     nft_url = row.get(f"nft_url_{status_clean}")
     nft_text = f"\n🎼 NFT-карточка: [Скачать]({nft_url})" if nft_url and status_clean in ["Наставник", "Легенда", "Создатель"] else ""
-
 
     # Прогресс-бар из 5 кубиков
     filled_blocks = min(xp * 5 // max(to_next + xp, 1), 5)
@@ -144,7 +141,7 @@ async def get_user_profile_text(user) -> str:
 
     return (
         f"👤 Имя: {first_name}\n"
-        f"🎖️ Статус: {status} — {progress_bar} {progress_percent}%\n"
+        f"🎖️ Статус: {actual_status} — {progress_bar} {progress_percent}%\n"
         f"⭐ Твой XP: {xp} XP\n"
         f"📅 Последний вход: {last_login_str}\n\n"
 
@@ -159,7 +156,7 @@ async def get_user_profile_text(user) -> str:
 
         f"🔥 Сегодня ты уже задал {today_q} из 3 вопросов!\n\n"
         f"💡 Ближайший статус: {next_status} (ещё {to_next} XP)\n\n"
-        f"{plan_text}\n\n"
+        f"{plan_text}{nft_text}\n\n"
         f"👉 Подписку можно купить в разделе «🛒 Магазин»"
     )
 
@@ -359,6 +356,5 @@ async def add_paid_questions(user_id: int, quantity: int):
 async def update_user_after_answer(user_id: int, bot: Bot):
     await increase_question_count(user_id)
     await decrease_question_limit(user_id)
-    await add_xp_and_update_status(user_id)
     await add_xp_and_update_status(user_id, bot=bot)
 
