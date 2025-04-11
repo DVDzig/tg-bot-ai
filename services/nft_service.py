@@ -39,7 +39,7 @@ async def generate_nft_card_if_needed(user_id: int):
         model="dall-e-3",
         prompt=prompt,
         n=1,
-        size="768x1024",
+        size="1024x1024",
         response_format="url"
     )
     image_url = response.data[0].urlmage_url = response['data'][0]['url']
