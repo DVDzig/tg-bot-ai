@@ -188,3 +188,15 @@ async def admin_update_keywords_callback(message: Message, state: FSMContext):
             msg += f"\n...и ещё {len(failed) - 30} строк."
 
     await send_long_message(msg, message)
+
+@router.message(F.text == "🎼 Создать свою NFT")
+async def generate_own_nft_card(message: Message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    from services.nft_service import generate_nft_card_if_needed
+    await message.answer("⏳ Генерирую твою NFT-карточку достижений...")
+    link = await generate_nft_card_if_needed(message.from_user.id)
+    if link:
+        await message.answer(f"✅ Готово! Ваша карточка:\n\n🎼 [Скачать NFT](<{link}>)", parse_mode="Markdown")
+    else:
+        await message.answer("⚠️ Карточка уже существует или ваш статус не попадает под NFT-награды.")

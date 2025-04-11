@@ -8,6 +8,7 @@ def get_admin_menu_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text="🎫 Выдать подписку")
         ],
         [KeyboardButton(text="🔁 Обновить ключевые слова")],
+        [KeyboardButton(text="🎼 Создать свою NFT")],
         [
             KeyboardButton(text="♻️ Сброс лимитов"), 
             KeyboardButton(text="📣 Рассылка")
