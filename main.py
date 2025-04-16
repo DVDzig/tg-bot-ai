@@ -6,6 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Update
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.client.default import DefaultBotProperties
+from aiogram.types import MenuButtonCommands
 
 from config import TOKEN
 from handlers import (
@@ -87,3 +88,6 @@ async def on_startup():
     schedule_all_jobs(bot)
     schedule_monthly_bonus(scheduler)
     scheduler.start()
+
+    # 🆕 Установка кнопки меню команд
+    await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
