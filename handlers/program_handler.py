@@ -16,7 +16,11 @@ from services.google_sheets_service import (
     log_question_answer,
     log_image_request
 )
-from services.user_service import get_user_row_by_id, update_user_after_answer
+from services.user_service import (
+    get_user_row_by_id, 
+    update_user_after_answer,
+    decrease_question_limit
+)
 from services.gpt_service import generate_answer, search_video_on_youtube
 from services.missions_service import check_and_apply_missions
 from services.sheets import update_sheet_row

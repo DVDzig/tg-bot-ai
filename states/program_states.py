@@ -6,3 +6,4 @@ class ProgramSelection(StatesGroup):
     module = State()
     discipline = State()
     asking = State()
+    waiting_for_dalle_prompt = State()
