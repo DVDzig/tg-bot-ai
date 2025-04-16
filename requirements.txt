@@ -17,3 +17,5 @@ apscheduler
 nest_asyncio
 openpyxl
 pillow
+pytesseract
+google-cloud-vision

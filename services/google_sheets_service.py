@@ -1,6 +1,13 @@
 import re
 from aiogram import Bot
-from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS, TOKEN
+from config import (
+    USER_SHEET_ID, 
+    USER_SHEET_NAME, 
+    PROGRAM_SHEETS, 
+    TOKEN,
+    PROGRAM_SHEETS_LIST, 
+    PHOTO_LOG_SHEET_NAME
+)
 from services.sheets import (
     UserRow, 
     get_sheets_service, 
@@ -8,8 +15,8 @@ from services.sheets import (
     get_user_row_by_id, 
     update_sheet_row
 ) 
+
 from datetime import datetime, timedelta
-from config import PROGRAM_SHEETS_LIST
 import pytz
 
 bot = Bot(token=TOKEN)
@@ -476,3 +483,20 @@ async def auto_update_expired_subscriptions():
                 )
             except Exception as e:
                 print(f"[ERROR] Не удалось отправить сообщение пользователю {user_id}: {e}")
+
+async def log_photo_request(user_id: int, raw_text: str, answer: str):
+    service = get_sheets_service()
+    values = [[
+        str(user_id),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        raw_text,
+        answer,
+        "", "", ""
+    ]]
+    service.spreadsheets().values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{PHOTO_LOG_SHEET_NAME}!A1",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": values}
+    ).execute()

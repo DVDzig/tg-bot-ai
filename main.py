@@ -18,7 +18,8 @@ from handlers import (
     shop_handler,             # ✅ только один обработчик магазина
     leaderboard_handler,
     program_handler,    
-    shop_navigation
+    shop_navigation,
+    photo_handler
 )
 from middlewares.ensure_user import EnsureUserMiddleware
 from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus
@@ -42,6 +43,8 @@ dp.include_router(leaderboard_handler.router)
 dp.include_router(program_handler.router)
 dp.include_router(start_handler.router)
 dp.include_router(shop_navigation.router)
+dp.include_router(photo_handler.router)
+
 
 # === Telegram Bot & Dispatcher ===
 bot = Bot(

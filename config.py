@@ -8,6 +8,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 USER_SHEET_ID = os.getenv("USER_SHEET_ID")
 USER_SHEET_NAME = os.getenv("USER_SHEET_NAME","Users")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
+PHOTO_LOG_SHEET_NAME = os.getenv("PHOTO_LOG_SHEET_NAME","Photo_Log")
 client_email = os.getenv("CLIENT_EMAIL")
 PAYMENT_LOG_SHEET = "PaymentsLog"
 
