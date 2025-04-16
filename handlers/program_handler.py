@@ -101,8 +101,12 @@ async def select_asking(message: Message, state: FSMContext):
 
     discipline = message.text.replace("🧠", "").strip()
     await state.update_data(discipline=discipline)
+
+    # 🔧 вот этого не хватало:
+    row = await get_user_row_by_id(message.from_user.id)
+    status = row.get("status", "").split()[-1]
+
     await state.set_state(ProgramSelection.asking)
-    status = row.get("status", "").split()[-1]  # получаем текущий статус
     await message.answer(
         f"✅ Дисциплина <b>{discipline}</b> выбрана.\n\nТеперь можешь задавать свои вопросы. Я отвечаю только по теме!",
         reply_markup=get_consultant_keyboard(user_status=status)
@@ -127,7 +131,7 @@ async def handle_question(message: Message, state: FSMContext):
     user = message.from_user
     text = message.text.strip()
     data = await state.get_data()
-    row = await get_user_row_by_id(message.from_user.id)
+    row = await get_user_row_by_id(user.id)
 
     if not row:
         await message.answer("Ошибка: не удалось получить данные пользователя.")
