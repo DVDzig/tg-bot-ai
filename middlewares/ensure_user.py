@@ -30,9 +30,12 @@ class EnsureUserMiddleware(BaseMiddleware):
                         if now - last_time > timedelta(minutes=15):
                             state: FSMContext = data.get("state")
                             if state:
-                                await state.clear()
-                            await event.answer("👋 Рады видеть тебя снова! Вернёмся в главное меню:")
-                            await event.answer("Выбери действие:", reply_markup=get_main_menu_keyboard(user.id))
+                                current_state = await state.get_state()
+
+                                if current_state is None or current_state.startswith("Start"):
+                                    await state.clear()
+                                    await event.answer("👋 Рады видеть тебя снова! Вернёмся в главное меню", reply_markup=get_main_menu_keyboard(user.id))
+
                     except Exception as e:
                         print(f"[Middleware TimeParse Error] {e}")
 
