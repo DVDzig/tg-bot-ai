@@ -5,7 +5,7 @@ from services.user_service import get_or_create_user, get_user_row_by_id
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timedelta
 import pytz
-from keyboards.common import get_main_keyboard
+from keyboards.main_menu import get_main_menu_keyboard
 
 class EnsureUserMiddleware(BaseMiddleware):
     async def __call__(
@@ -32,7 +32,7 @@ class EnsureUserMiddleware(BaseMiddleware):
                             if state:
                                 await state.clear()
                             await event.answer("👋 Рады видеть тебя снова! Вернёмся в главное меню:")
-                            await event.answer("Выбери действие:", reply_markup=get_main_keyboard())
+                            await event.answer("Выбери действие:", reply_markup=get_main_menu_keyboard())
                     except Exception as e:
                         print(f"[Middleware TimeParse Error] {e}")
 
