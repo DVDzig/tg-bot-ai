@@ -132,7 +132,7 @@ async def get_user_profile_text(user) -> str:
     # NFT-карточка
     status_clean = actual_status.split()[-1]
     nft_url = row.get(f"nft_url_{status_clean}")
-    nft_text = f"\n🎼 NFT-карточка: [Скачать]({nft_url})" if nft_url and status_clean in ["Наставник", "Легенда", "Создатель"] else ""
+    nft_text = f'\n🎼 NFT-карточка: <a href="{nft_url}">Скачать</a>' if nft_url and status_clean in ["Наставник", "Легенда", "Создатель"] else ""
 
     # Прогресс-бар из 5 кубиков
     filled_blocks = min(xp * 5 // max(to_next + xp, 1), 5)
