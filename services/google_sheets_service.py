@@ -6,7 +6,8 @@ from config import (
     PROGRAM_SHEETS, 
     TOKEN,
     PROGRAM_SHEETS_LIST, 
-    PHOTO_LOG_SHEET_NAME
+    PHOTO_LOG_SHEET_NAME,
+    IMAGE_LOG_SHEET_NAME
 )
 from services.sheets import (
     UserRow, 
@@ -496,6 +497,23 @@ async def log_photo_request(user_id: int, raw_text: str, answer: str):
     service.spreadsheets().values().append(
         spreadsheetId=USER_SHEET_ID,
         range=f"{PHOTO_LOG_SHEET_NAME}!A1",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": values}
+    ).execute()
+
+async def log_image_request(user_id: int, prompt: str, status: str):
+    service = get_sheets_service()
+    values = [[
+        str(user_id),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        prompt,
+        "DALL·E",
+        status
+    ]]
+    service.spreadsheets().values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{IMAGE_LOG_SHEET_NAME}!A1",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
         body={"values": values}

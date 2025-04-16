@@ -13,12 +13,13 @@ def get_back_keyboard(from_state: str = None) -> ReplyKeyboardMarkup:
     )
 
 
-def get_consultant_keyboard():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🛒 Магазин")],
-            [KeyboardButton(text="⬅️ Назад в главное меню")]
-        ],
-        resize_keyboard=True,
-        input_field_placeholder="Спроси меня или выбери действие ⤵️"
-    )
+def get_consultant_keyboard(user_status: str = "") -> ReplyKeyboardMarkup:
+    buttons = []
+
+    if user_status in ["Эксперт", "Наставник", "Легенда", "Создатель"]:
+        buttons.append([KeyboardButton(text="🎨 Сгенерировать изображение")])
+
+    buttons.append([KeyboardButton(text="🛒 Магазин")])
+    buttons.append([KeyboardButton(text="⬅️ Назад в дисциплины")])
+    
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)

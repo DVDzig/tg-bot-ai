@@ -1,6 +1,10 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from services.user_service import get_user_row_by_id
+from services.user_service import (
+    get_user_row_by_id, 
+    update_user_after_answer, 
+    decrease_question_limit
+)
 from services.gpt_service import generate_answer
 import io
 from services.vision_service import extract_text_from_image
@@ -25,6 +29,12 @@ async def handle_photo_with_test(message: Message):
         await message.answer("🛑 Эта функция доступна только для пользователей со статусом Эксперт+ или подпиской Про.")
         return
 
+    # 1️⃣ Списываем вопрос
+    success = await decrease_question_limit(user_id)
+    if not success:
+        await message.answer("❌ У вас закончились вопросы. Пополните лимит в разделе 🛒 Магазин.")
+        return
+
     await message.answer("📸 Фото получено. Распознаю текст через Google Vision...")
 
     photo = message.photo[-1]
@@ -44,8 +54,11 @@ async def handle_photo_with_test(message: Message):
         answer = await generate_answer("Общий анализ", "Тест", "Фотозапрос", text)
         await message.answer(f"🤖 Ответ ИИ:\n\n{answer}")
 
-        # ✅ Логирование в Photo_Log
-        await log_photo_request(message.from_user.id, text, answer)
+        # 2️⃣ Обновляем XP, статус и миссии
+        await update_user_after_answer(user_id, bot=message.bot)
+
+        # 3️⃣ Логируем
+        await log_photo_request(user_id, text, answer)
 
     except Exception as e:
         print(f"[GPT ERROR] {e}")

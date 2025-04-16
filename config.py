@@ -9,6 +9,7 @@ USER_SHEET_ID = os.getenv("USER_SHEET_ID")
 USER_SHEET_NAME = os.getenv("USER_SHEET_NAME","Users")
 PROGRAM_SHEETS = os.getenv("PROGRAM_SHEETS")
 PHOTO_LOG_SHEET_NAME = os.getenv("PHOTO_LOG_SHEET_NAME","Photo_Log")
+IMAGE_LOG_SHEET_NAME = os.getenv("IMAGE_LOG_SHEET_NAME","Image_Log")
 client_email = os.getenv("CLIENT_EMAIL")
 PAYMENT_LOG_SHEET = "PaymentsLog"
 

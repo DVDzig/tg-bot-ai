@@ -14,6 +14,7 @@ from services.google_sheets_service import (
     get_disciplines_by_module,
     get_keywords_for_discipline,
     log_question_answer,
+    log_image_request
 )
 from services.user_service import get_user_row_by_id, update_user_after_answer
 from services.gpt_service import generate_answer, search_video_on_youtube
@@ -22,9 +23,9 @@ from services.sheets import update_sheet_row
 from datetime import datetime
 import pytz
 from keyboards.shop import get_shop_keyboard
-from config import VIDEO_URLS
+from config import VIDEO_URLS, OPENAI_API_KEY
 import re
-
+from openai import AsyncOpenAI
 
 router = Router()
 
@@ -97,10 +98,12 @@ async def select_asking(message: Message, state: FSMContext):
     discipline = message.text.replace("🧠", "").strip()
     await state.update_data(discipline=discipline)
     await state.set_state(ProgramSelection.asking)
+    status = row.get("status", "").split()[-1]  # получаем текущий статус
     await message.answer(
         f"✅ Дисциплина <b>{discipline}</b> выбрана.\n\nТеперь можешь задавать свои вопросы. Я отвечаю только по теме!",
-        reply_markup=get_consultant_keyboard()
+        reply_markup=get_consultant_keyboard(user_status=status)
     )
+
 
 @router.message(ProgramSelection.asking)
 async def handle_question(message: Message, state: FSMContext):
@@ -217,3 +220,50 @@ async def handle_question(message: Message, state: FSMContext):
     rewards = await check_and_apply_missions(user.id)
     for r in rewards:
         await message.answer(r)
+
+@router.message(ProgramSelection.asking, F.text == "🎨 Сгенерировать изображение")
+async def prompt_dalle(message: Message, state: FSMContext):
+    await state.set_state(ProgramSelection.waiting_for_dalle_prompt)
+    await message.answer("🎨 Напиши, что нужно сгенерировать:")
+
+@router.message(ProgramSelection.waiting_for_dalle_prompt)
+async def dalle_generate(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    prompt = message.text
+
+    # 1️⃣ Пробуем списать вопрос сначала
+    success = await decrease_question_limit(user_id)
+    if not success:
+        await message.answer("❌ У вас закончились вопросы. Пополните лимит в разделе 🛒 Магазин.")
+        await state.set_state(ProgramSelection.asking)
+        return
+
+    await message.answer("🎨 Генерирую изображение через DALL·E...")
+
+    try:
+        # 2️⃣ Генерация изображения
+        client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+        response = await client.images.generate(
+            model="dall-e-3",
+            prompt=prompt,
+            n=1,
+            size="1024x1024",
+            response_format="url"
+        )
+        image_url = response.data[0].url
+        await message.answer_photo(photo=image_url, caption="Готово! ✨")
+
+        # 3️⃣ Обновляем XP и статус
+        await update_user_after_answer(user_id, bot=message.bot)
+
+        # 4️⃣ Логируем успешный запрос
+        await log_image_request(user_id, prompt, "успешно")
+
+    except Exception as e:
+        print(f"[DALLE ERROR] {e}")
+        await message.answer("⚠️ Ошибка генерации. Попробуй другой запрос.")
+
+        # ❌ Логируем неудачный запрос
+        await log_image_request(user_id, prompt, "ошибка")
+
+    await state.set_state(ProgramSelection.asking)
