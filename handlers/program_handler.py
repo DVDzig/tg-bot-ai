@@ -127,7 +127,7 @@ async def handle_question(message: Message, state: FSMContext):
     user = message.from_user
     text = message.text.strip()
     data = await state.get_data()
-    row = await get_user_row_by_id(user.id)
+    row = await get_user_row_by_id(message.from_user.id)
 
     if not row:
         await message.answer("Ошибка: не удалось получить данные пользователя.")
