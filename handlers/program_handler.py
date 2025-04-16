@@ -196,8 +196,9 @@ async def handle_question(message: Message, state: FSMContext):
     header = f"📚 *Ответ по дисциплине {discipline}*:\n\n"
     stats = (
         f"🧠 Твой XP: {row.get('xp')} | Статус: {status}\n"
-        f"🎫 Осталось бесплатных вопросов: {row.get('free_questions', 0)}\n"
+        f"🎁 Осталось: 🎫 {row.get('free_questions', 0)} | 💰 {row.get('paid_questions', 0)}"
     )
+
 
     try:
         await message.answer(f"{header}{answer}\n\n{stats}", parse_mode="Markdown")
