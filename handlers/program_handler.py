@@ -371,11 +371,3 @@ async def reject_photo_outside_context(message: Message, state: FSMContext):
     print(f"[DEBUG FSM STATE] current: {current}")
     if current != ProgramSelection.asking:
         await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
-
-@router.message()
-async def debug_all_messages(message: Message):
-    print("[DEBUG] Поймано сообщение!")
-    print(f"Тип: {message.content_type}")
-    print(f"photo: {message.photo}")
-    print(f"document: {message.document}")
-    await message.answer(f"🛠 Получено сообщение типа: <b>{message.content_type}</b>", parse_mode="HTML")
