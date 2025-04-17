@@ -14,6 +14,8 @@ from services.google_drive_service import upload_image_to_drive, extract_text_wi
 from services.google_sheets_service import log_photo_request
 from services.gpt_service import generate_answer
 from states.program_states import ProgramSelection
+import html
+
 
 router = Router()
 
@@ -49,7 +51,8 @@ async def handle_photo_question(message: Message, state: FSMContext):
         await message.answer("🔍 На фото не найден текст.")
         return
 
-    await message.answer(f"📄 Распознанный текст:\n<pre>{text}</pre>", parse_mode="HTML")
+    text_clean = html.escape(text)
+    await message.answer(f"📄 Распознанный текст:\n<pre>{text_clean}</pre>", parse_mode="HTML")
 
     # Получаем данные пользователя
     row = await get_user_row_by_id(user_id)
@@ -95,6 +98,10 @@ async def handle_photo_question(message: Message, state: FSMContext):
 
         answer = await generate_answer(program, module, discipline, text)
         await log_photo_request(user_id, text, answer, program, module, discipline)
+        
+        answer_clean = html.escape(answer)
+        await message.answer(f"🤖 Ответ ИИ:\n<pre>{answer_clean}</pre>", parse_mode="HTML")
+
 
 
         print("[DEBUG] ✅ Ответ успешно сгенерирован и залогирован")
