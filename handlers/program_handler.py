@@ -125,13 +125,15 @@ async def select_asking(message: Message, state: FSMContext):
 
 @router.message(ProgramSelection.asking)
 async def handle_question(message: Message, state: FSMContext):
+    if message.text == "📸 Отправить фото":
+        await message.answer("📸 Пришли изображение с тестом, и я его распознаю.")
+        return
+    
     if message.text == "🎨 Сгенерировать изображение":
         await state.set_state(ProgramSelection.waiting_for_dalle_prompt)
         await message.answer("🎨 Напиши, что нужно сгенерировать:")
         return
-    if message.text == "📸 Отправить фото":
-        await message.answer("📸 Пришли изображение с тестом, и я его распознаю.")
-        return
+
     if message.text == "⬅️ Назад в дисциплины":
         data = await state.get_data()
         program = data.get("program")
@@ -145,16 +147,13 @@ async def handle_question(message: Message, state: FSMContext):
         await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
         return
 
-    # 🚫 Игнорируем нажатие кнопки генерации изображения
-    if message.text == "🎨 Сгенерировать изображение":
-        return
 
     user = message.from_user
     text = message.text
-    if not text:
-        await message.answer("⚠️ Пожалуйста, отправь текстовый вопрос.")
+    if not text or text.strip() in ["📸 Отправить фото", ""]:
         return
     text = text.strip()
+
 
     data = await state.get_data()
     row = await get_user_row_by_id(user.id)
