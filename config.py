@@ -13,6 +13,7 @@ IMAGE_LOG_SHEET_NAME = os.getenv("IMAGE_LOG_SHEET_NAME","Image_Log")
 client_email = os.getenv("CLIENT_EMAIL")
 PAYMENT_LOG_SHEET = "PaymentsLog"
 
+
 GOOGLE_CREDENTIALS_JSON = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
 # Статусы, для которых генерируются NFT
@@ -20,6 +21,7 @@ NFT_STATUSES = ["Наставник", "Легенда", "Создатель"]
 
 # Папка на Google Диске
 NFT_FOLDER_ID = os.getenv("NFT_FOLDER_ID")
+PHOTO_ARCHIVE_FOLDER_ID = os.getenv("PHOTO_ARCHIVE_FOLDER_ID")
 
 
 # Yookassa

@@ -17,6 +17,7 @@ from services.google_sheets_service import (
     log_image_request,
     log_photo_request
 )
+from services.google_drive_service import upload_image_to_drive
 from services.user_service import (
     get_user_row_by_id, 
     update_user_after_answer,
@@ -28,7 +29,7 @@ from services.sheets import update_sheet_row
 from datetime import datetime
 import pytz
 from keyboards.shop import get_shop_keyboard
-from config import VIDEO_URLS, OPENAI_API_KEY
+from config import VIDEO_URLS, OPENAI_API_KEY, PHOTO_ARCHIVE_FOLDER_ID
 import re
 from openai import AsyncOpenAI
 import asyncio
@@ -128,6 +129,9 @@ async def handle_question(message: Message, state: FSMContext):
         await state.set_state(ProgramSelection.waiting_for_dalle_prompt)
         await message.answer("🎨 Напиши, что нужно сгенерировать:")
         return
+    if message.text == "📸 Отправить фото":
+        await message.answer("📸 Пришли изображение с тестом, и я его распознаю.")
+        return
     if message.text == "⬅️ Назад в дисциплины":
         data = await state.get_data()
         program = data.get("program")
@@ -146,7 +150,12 @@ async def handle_question(message: Message, state: FSMContext):
         return
 
     user = message.from_user
-    text = message.text.strip()
+    text = message.text
+    if not text:
+        await message.answer("⚠️ Пожалуйста, отправь текстовый вопрос.")
+        return
+    text = text.strip()
+
     data = await state.get_data()
     row = await get_user_row_by_id(user.id)
 
@@ -320,6 +329,15 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
     image_data = await message.bot.download_file(file.file_path)
 
     text = extract_text_from_image(image_data)
+    
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    file_name = f"photo_{user_id}_{now}.png"
+
+    upload_image_to_drive(
+        file_name,
+        io.BytesIO(image_data),
+        folder_id=PHOTO_ARCHIVE_FOLDER_ID
+    )
 
     if not text.strip():
         await message.answer("❗ Не удалось распознать текст. Проверь, что на фото есть чёткий текст.")
@@ -338,11 +356,14 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
     except Exception as e:
         print(f"[GPT ERROR] {e}")
         await message.answer("⚠️ Не удалось сгенерировать ответ. Попробуй позже.")
-
+    
+    # 🔁 Вернёмся в режим общения с ИИ
+    await state.set_state(ProgramSelection.asking)
 
 # ❌ Обработка фото в любом другом состоянии (вежливо отклоняем)
 @router.message(F.photo)
 async def reject_photo_outside_context(message: Message, state: FSMContext):
     current = await state.get_state()
+    print(f"[DEBUG FSM STATE] current: {current}")
     if current != ProgramSelection.asking:
         await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
