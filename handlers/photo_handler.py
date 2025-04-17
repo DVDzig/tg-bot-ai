@@ -43,13 +43,11 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
         return
 
     await message.answer("📸 Фото получено. Распознаю текст через Google Vision...")
-    print("[DEBUG] 📷 Получаем файл...")
 
     try:
         photo = message.photo[-1]
         file = await message.bot.get_file(photo.file_id)
         image_data = await message.bot.download_file(file.file_path)
-        print("[DEBUG] 📦 Фото загружено")
     except Exception as e:
         print(f"[ERROR] Ошибка при получении фото: {e}")
         await message.answer("⚠️ Не удалось загрузить изображение.")
@@ -57,37 +55,12 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
 
     try:
         text = extract_text_from_image(image_data)
-        print(f"[DEBUG] 📄 Распознанный текст: {text}")
     except Exception as e:
         print(f"[ERROR] Vision API Error: {e}")
         await message.answer("❗ Не удалось распознать текст. Попробуй позже.")
         return
 
-    try:
-        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        file_name = f"photo_{user_id}_{now}.png"
-        upload_image_to_drive(file_name, BytesIO(image_data), folder_id=PHOTO_ARCHIVE_FOLDER_ID)
-        print("[DEBUG] ☁️ Фото сохранено в архив")
-    except Exception as e:
-        print(f"[ERROR] Ошибка при сохранении фото на Google Диск: {e}")
-
-    if not text.strip():
-        await message.answer("❗ Не удалось распознать текст. Проверь, что на фото есть чёткий текст.")
-        return
-
-    await message.answer(f"📄 Распознанный текст:\n<pre>{text}</pre>", parse_mode="HTML")
-
-    try:
-        answer = await generate_answer("Общий анализ", "Тест", "Фотозапрос", text)
-        await message.answer(f"🤖 Ответ ИИ:\n\n{answer}")
-        await update_user_after_answer(user_id, bot=message.bot)
-        await log_photo_request(user_id, text, answer)
-        print("[DEBUG] ✅ Ответ сгенерирован и залогирован")
-    except Exception as e:
-        print(f"[ERROR] GPT Error: {e}")
-        await message.answer("⚠️ Не удалось сгенерировать ответ. Попробуй позже.")
-
-    await state.set_state(ProgramSelection.asking)
+    await state.set_state(ProgramSelection.asking)  # Устанавливаем состояние обратно в asking
     print("[DEBUG] 🔁 FSM возвращена в asking")
 
 @router.message(F.photo)

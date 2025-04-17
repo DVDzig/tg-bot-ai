@@ -95,9 +95,7 @@ async def select_asking(message: Message, state: FSMContext):
         data = await state.get_data()
         program = data.get("program")
         modules = await get_modules_by_program(program)
-        await state.set_state(ProgramSelection.module)
-        print("[DEBUG] После установки ProgramSelection.module:", await state.get_state())  # Логирование
-
+        await state.set_state(ProgramSelection.module)  # Устанавливаем состояние, чтобы оно не сбрасывалось
         await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
         return
 
