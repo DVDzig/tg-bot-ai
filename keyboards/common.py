@@ -13,13 +13,16 @@ def get_back_keyboard(from_state: str = None) -> ReplyKeyboardMarkup:
     )
 
 
-def get_consultant_keyboard(user_status: str = "") -> ReplyKeyboardMarkup:
+def get_consultant_keyboard(user_status: str = "", plan: str = "") -> ReplyKeyboardMarkup:
     buttons = []
+
+    if user_status in ["Эксперт", "Наставник", "Легенда", "Создатель"] or plan == "pro":
+        buttons.append([KeyboardButton(text="📸 Отправить фото")])
 
     if user_status in ["Эксперт", "Наставник", "Легенда", "Создатель"]:
         buttons.append([KeyboardButton(text="🎨 Сгенерировать изображение")])
 
-    buttons.append([KeyboardButton(text="🛒 Магазин")])
     buttons.append([KeyboardButton(text="⬅️ Назад в дисциплины")])
-    
+    buttons.append([KeyboardButton(text="🛒 Магазин")])
+
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)

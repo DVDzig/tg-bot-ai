@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 from states.program_states import ProgramSelection
 from keyboards.program import (
@@ -14,7 +14,8 @@ from services.google_sheets_service import (
     get_disciplines_by_module,
     get_keywords_for_discipline,
     log_question_answer,
-    log_image_request
+    log_image_request,
+    log_photo_request
 )
 from services.user_service import (
     get_user_row_by_id, 
@@ -31,6 +32,9 @@ from config import VIDEO_URLS, OPENAI_API_KEY
 import re
 from openai import AsyncOpenAI
 import asyncio
+from services.vision_service import extract_text_from_image
+from io import BytesIO
+
 
 
 router = Router()
@@ -104,16 +108,19 @@ async def select_asking(message: Message, state: FSMContext):
     discipline = message.text.replace("🧠", "").strip()
     await state.update_data(discipline=discipline)
 
-    # 🔧 вот этого не хватало:
+    # 🔧 Достаём статус и тариф
     row = await get_user_row_by_id(message.from_user.id)
     status = row.get("status", "").split()[-1]
+    plan = row.get("plan", "").strip().lower()
 
+    # ⏭ Переход в состояние
     await state.set_state(ProgramSelection.asking)
+
+    # ⌨️ Показываем клавиатуру
     await message.answer(
         f"✅ Дисциплина <b>{discipline}</b> выбрана.\n\nТеперь можешь задавать свои вопросы. Я отвечаю только по теме!",
-        reply_markup=get_consultant_keyboard(user_status=status)
+        reply_markup=get_consultant_keyboard(user_status=status, plan=plan)
     )
-
 
 @router.message(ProgramSelection.asking)
 async def handle_question(message: Message, state: FSMContext):
@@ -283,3 +290,59 @@ async def dalle_generate(message: Message, state: FSMContext):
     finally:
         await state.set_state(ProgramSelection.asking)
 
+
+# ✅ Обработка фото только в режиме общения с ИИ (FSM-состояние)
+@router.message(ProgramSelection.asking, F.photo)
+async def handle_photo_with_test(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    row = await get_user_row_by_id(user_id)
+    if not row:
+        await message.answer("Ошибка: не удалось получить данные пользователя.")
+        return
+
+    plan = row.get("plan", "").lower()
+    status = row.get("status", "")
+    status_clean = status.split()[-1]
+
+    if plan != "pro" and status_clean not in ["Эксперт", "Наставник", "Легенда", "Создатель"]:
+        await message.answer("🛑 Эта функция доступна только для пользователей со статусом Эксперт+ или подпиской Про.")
+        return
+
+    success = await decrease_question_limit(user_id)
+    if not success:
+        await message.answer("❌ У вас закончились вопросы. Пополните лимит в разделе 🛒 Магазин.")
+        return
+
+    await message.answer("📸 Фото получено. Распознаю текст через Google Vision...")
+
+    photo = message.photo[-1]
+    file = await message.bot.get_file(photo.file_id)
+    image_data = await message.bot.download_file(file.file_path)
+
+    text = extract_text_from_image(image_data)
+
+    if not text.strip():
+        await message.answer("❗ Не удалось распознать текст. Проверь, что на фото есть чёткий текст.")
+        return
+
+    await message.answer(f"📄 Распознанный текст:\n<pre>{text}</pre>", parse_mode="HTML")
+
+    try:
+        answer = await generate_answer("Общий анализ", "Тест", "Фотозапрос", text)
+        await message.answer(f"🤖 Ответ ИИ:\n\n{answer}")
+
+        # Обновляем XP, статус и миссии
+        await update_user_after_answer(user_id, bot=message.bot)
+        await log_photo_request(user_id, text, answer)
+
+    except Exception as e:
+        print(f"[GPT ERROR] {e}")
+        await message.answer("⚠️ Не удалось сгенерировать ответ. Попробуй позже.")
+
+
+# ❌ Обработка фото в любом другом состоянии (вежливо отклоняем)
+@router.message(F.photo)
+async def reject_photo_outside_context(message: Message, state: FSMContext):
+    current = await state.get_state()
+    if current != ProgramSelection.asking:
+        await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
