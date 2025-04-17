@@ -7,15 +7,17 @@ from aiogram.types import Update
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import MenuButtonCommands
-
+from aiogram.types import BotCommand, MenuButtonCommands
 from config import TOKEN
+from bot import bot
+
 from handlers import (
     start_handler,
     admin_handler,
     info_handler,
     missions_handler,
     profile_handler,
-    shop_handler,             # ✅ только один обработчик магазина
+    shop_handler,
     leaderboard_handler,
     program_handler,    
     shop_navigation,
@@ -82,15 +84,16 @@ async def root_head():
 async def on_startup():
     logger.info("🚀 Запуск Telegram-бота и планировщика")
 
-    # Устанавливаем Webhook
     webhook_url = "https://tg-bot-ai-teyr.onrender.com/webhook"
     await bot.set_webhook(webhook_url)
 
-    # Планировщик
-    scheduler = AsyncIOScheduler()
-    schedule_all_jobs(bot)
-    schedule_monthly_bonus(scheduler)
-    scheduler.start()
-
-    # 🆕 Установка кнопки меню команд
+    # 🆕 Устанавливаем команды меню (в поле ввода Telegram)
+    await bot.set_my_commands([
+        BotCommand(command="start", description="🔄 Начать заново"),
+        BotCommand(command="photo", description="📸 Отправить фото теста")
+    ])
     await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+
+    # Планировщик задач
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
