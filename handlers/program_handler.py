@@ -96,6 +96,8 @@ async def select_asking(message: Message, state: FSMContext):
         program = data.get("program")
         modules = await get_modules_by_program(program)
         await state.set_state(ProgramSelection.module)
+        print("[DEBUG] После установки ProgramSelection.module:", await state.get_state())  # Логирование
+
         await message.answer("Выбери модуль:", reply_markup=get_module_keyboard(modules))
         return
 
@@ -112,6 +114,7 @@ async def select_asking(message: Message, state: FSMContext):
     print("[DEBUG FSM] set ProgramSelection.asking")
 
     await state.set_state(ProgramSelection.asking)  # Устанавливаем состояние для общения с ИИ
+    print("[DEBUG] После установки ProgramSelection.asking:", await state.get_state())  # Логирование состояния
 
     # ⌨️ Показываем клавиатуру
     await message.answer(

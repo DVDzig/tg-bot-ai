@@ -11,7 +11,9 @@ router = Router()
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
-    await state.set_state(ProgramSelection.level)  # Устанавливаем начальное состояние
+    print("[DEBUG] После state.clear():", await state.get_state())  # Логирование состояния после очистки
+    await state.set_state(ProgramSelection.level)
+    print("[DEBUG] После state.set_state(ProgramSelection.level):", await state.get_state())  # Логирование состояния после установки
     user_id = message.from_user.id
     keyboard = get_main_menu_keyboard(user_id)
     await message.answer(
