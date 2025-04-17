@@ -330,7 +330,13 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
     file = await message.bot.get_file(photo.file_id)
     image_data = await message.bot.download_file(file.file_path)
 
-    text = extract_text_from_image(image_data)
+    try:
+        text = extract_text_from_image(image_data)
+    except Exception as e:
+        print(f"[Vision API ERROR] {e}")
+        await message.answer("❗ Не удалось распознать текст с фото. Попробуй позже.")
+        return
+
     print(f"[DEBUG] Распознанный текст: {text}")
     
     now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -338,9 +344,10 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
 
     upload_image_to_drive(
         file_name,
-        io.BytesIO(image_data),
+        BytesIO(image_data),
         folder_id=PHOTO_ARCHIVE_FOLDER_ID
     )
+
     print("[DEBUG] Фото успешно загружено в архив Google Диска ✅")
 
     if not text.strip():
