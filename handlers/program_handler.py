@@ -371,3 +371,15 @@ async def reject_photo_outside_context(message: Message, state: FSMContext):
     print(f"[DEBUG FSM STATE] current: {current}")
     if current != ProgramSelection.asking:
         await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
+
+@router.message(F.text == "📸 Отправить фото")
+async def reject_photo_button_outside_context(message: Message, state: FSMContext):
+    current = await state.get_state()
+    if current != ProgramSelection.asking:
+        await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
+
+@router.message(F.text == "🎨 Сгенерировать изображение")
+async def reject_dalle_outside_context(message: Message, state: FSMContext):
+    current = await state.get_state()
+    if current != ProgramSelection.asking:
+        await message.answer("🎨 Генерация изображений доступна только в меню общения с ИИ.")

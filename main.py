@@ -87,8 +87,7 @@ async def on_startup():
 
     # 🆕 Устанавливаем команды меню (в поле ввода Telegram)
     await bot.set_my_commands([
-        BotCommand(command="start", description="🔄 Начать заново"),
-        BotCommand(command="photo", description="📸 Отправить фото теста")
+        BotCommand(command="start", description="🔄 Начать заново")
     ])
     await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
 
