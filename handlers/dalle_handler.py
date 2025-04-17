@@ -3,7 +3,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from openai import AsyncOpenAI
 from config import OPENAI_API_KEY
-from services.gpt_service import log_image_request
+from services.google_sheets_service import log_image_request
 from services.user_service import update_user_after_answer, decrease_question_limit
 from states.program_states import ProgramSelection
 
