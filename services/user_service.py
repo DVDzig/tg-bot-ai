@@ -188,25 +188,20 @@ async def increase_question_count(user_id: int):
 async def decrease_question_limit(user_id: int):
     row = await get_user_row_by_id(user_id)
     if not row:
-        return
+        return False
 
     free = int(row.get("free_questions", 0))
     paid = int(row.get("paid_questions", 0))
 
-    if free <= 0 and paid <= 0:
-        return  # Нечего списывать
-
     if free > 0:
-        free -= 1
+        updates = {"free_questions": free - 1}
+    elif paid > 0:
+        updates = {"paid_questions": paid - 1}
     else:
-        paid -= 1
-
-    updates = {
-        "free_questions": free,
-        "paid_questions": paid,
-    }
+        return False  # Нечего списывать
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+    return True
 
 
 

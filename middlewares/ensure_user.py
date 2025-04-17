@@ -34,7 +34,7 @@ class EnsureUserMiddleware(BaseMiddleware):
 
                                 if current_state is None or current_state.startswith("Start"):
                                     await state.clear()
-                                    await event.answer("👋 Рады видеть тебя снова! Вернёмся в главное меню", reply_markup=get_main_menu_keyboard(user.id))
+                                    await event.answer("👋 Рады видеть тебя снова!", reply_markup=get_main_menu_keyboard(user.id))
 
                     except Exception as e:
                         print(f"[Middleware TimeParse Error] {e}")
