@@ -10,10 +10,9 @@ from services.user_service import (
     decrease_question_limit,
     update_user_after_answer,
 )
-from services.google_drive_service import upload_image_to_drive
+from services.google_drive_service import upload_image_to_drive, extract_text_with_docs_ocr
 from services.google_sheets_service import log_photo_request
 from services.gpt_service import generate_answer
-from services.vision_service import extract_text_with_docs_ocr
 from states.program_states import ProgramSelection
 
 router = Router()
