@@ -117,6 +117,14 @@ async def select_asking(message: Message, state: FSMContext):
 
 @router.message(ProgramSelection.asking)
 async def handle_question(message: Message, state: FSMContext):
+    # 🚫 Игнорируем нажатие кнопки генерации изображения
+    if message.text == "🎨 Сгенерировать изображение":
+        return
+    
+    if message.text == "🛒 Магазин":
+        await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
+        return
+    
     if message.text == "⬅️ Назад в дисциплины":
         data = await state.get_data()
         program = data.get("program")
@@ -124,14 +132,6 @@ async def handle_question(message: Message, state: FSMContext):
         disciplines = await get_disciplines_by_module(program, module)
         await state.set_state(ProgramSelection.discipline)
         await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
-        return
-
-    if message.text == "🛒 Магазин":
-        await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
-        return
-
-    # 🚫 Игнорируем нажатие кнопки генерации изображения
-    if message.text == "🎨 Сгенерировать изображение":
         return
 
     user = message.from_user
