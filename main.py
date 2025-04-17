@@ -43,11 +43,12 @@ dp.include_router(missions_handler.router)
 dp.include_router(profile_handler.router)
 dp.include_router(shop_handler.router)            # ✅ только один shop_handler
 dp.include_router(leaderboard_handler.router)
+dp.include_router(photo_handler.router)
+dp.include_router(dalle_handler.router)
 dp.include_router(program_handler.router)
 dp.include_router(start_handler.router)
 dp.include_router(shop_navigation.router)
-dp.include_router(photo_handler.router)
-dp.include_router(dalle_handler.router)
+
 
 
 # === Telegram Bot & Dispatcher ===
