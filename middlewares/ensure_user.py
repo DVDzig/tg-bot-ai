@@ -39,7 +39,7 @@ class EnsureUserMiddleware(BaseMiddleware):
                             state: FSMContext = data.get("state")
                             if state:
                                 current_state = await state.get_state()
-                                if current_state is None or current_state.startswith("Start"):
+                                if current_state and current_state.startswith("Start"):
                                     await state.clear()
                                     await event.answer("👋 Рады видеть тебя снова!")
                                     await event.answer("Выбери действие:", reply_markup=get_main_menu_keyboard(user.id))
