@@ -280,4 +280,6 @@ async def dalle_generate(message: Message, state: FSMContext):
         # ❌ Логируем неудачный запрос
         await log_image_request(user_id, prompt, "ошибка")
 
-    await state.set_state(ProgramSelection.asking)
+    finally:
+        await state.set_state(ProgramSelection.asking)
+

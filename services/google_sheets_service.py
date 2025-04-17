@@ -495,7 +495,7 @@ async def log_photo_request(user_id: int, raw_text: str, answer: str):
         "", "", ""
     ]]
     service.spreadsheets().values().append(
-        spreadsheetId=USER_SHEET_ID,
+        spreadsheetId=PROGRAM_SHEETS,
         range=f"{PHOTO_LOG_SHEET_NAME}!A1",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
@@ -512,7 +512,7 @@ async def log_image_request(user_id: int, prompt: str, status: str):
         status
     ]]
     service.spreadsheets().values().append(
-        spreadsheetId=USER_SHEET_ID,
+        spreadsheetId=PROGRAM_SHEETS,
         range=f"{IMAGE_LOG_SHEET_NAME}!A1",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
