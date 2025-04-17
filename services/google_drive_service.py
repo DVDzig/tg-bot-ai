@@ -39,3 +39,37 @@ def upload_image_to_drive(filename, file_bytes_io, folder_id=None):
     ).execute()
 
     return f"https://drive.google.com/uc?id={uploaded_file['id']}"
+
+def extract_text_with_docs_ocr(file_bytes: BytesIO, file_name: str = "ocr_image.png", folder_id: str = None) -> str:
+    from services.gdrive_auth import get_drive_service
+    drive_service = get_drive_service()
+
+    # Загружаем файл как image/png
+    file_metadata = {
+        "name": file_name,
+        "mimeType": "application/vnd.google-apps.document"
+    }
+    if folder_id:
+        file_metadata["parents"] = [folder_id]
+
+    media = MediaIoBaseUpload(file_bytes, mimetype="image/png", resumable=True)
+
+    # Конвертируем в Google Docs с OCR
+    file = drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
+
+    file_id = file.get("id")
+
+    # Читаем текст из Google Docs
+    doc = drive_service.files().export(
+        fileId=file_id,
+        mimeType="text/plain"
+    ).execute()
+
+    # Удаляем временный файл
+    drive_service.files().delete(fileId=file_id).execute()
+
+    return doc.decode("utf-8")
