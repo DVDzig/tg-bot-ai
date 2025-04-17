@@ -3,6 +3,7 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from keyboards.main_menu import get_main_menu_keyboard
 from aiogram.fsm.context import FSMContext
+from states.program_states import ProgramSelection
 
 
 router = Router()
@@ -10,6 +11,7 @@ router = Router()
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
+    await state.set_state(ProgramSelection.level)  # Устанавливаем начальное состояние
     user_id = message.from_user.id
     keyboard = get_main_menu_keyboard(user_id)
     await message.answer(

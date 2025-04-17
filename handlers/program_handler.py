@@ -31,13 +31,12 @@ import re
 import asyncio
 
 
-
 router = Router()
 
 @router.message(F.text == "💬 Выбор программы")
 async def start_program_selection(message: Message, state: FSMContext):
     await state.clear()
-    await state.set_state(ProgramSelection.level)
+    await state.set_state(ProgramSelection.level)  # Устанавливаем начальное состояние
     await message.answer("Выбери уровень образования:", reply_markup=get_level_keyboard())
 
 @router.message(ProgramSelection.level)
@@ -112,7 +111,7 @@ async def select_asking(message: Message, state: FSMContext):
     print("[DEBUG FSM] entering select_asking")
     print("[DEBUG FSM] set ProgramSelection.asking")
 
-    await state.set_state(ProgramSelection.asking)
+    await state.set_state(ProgramSelection.asking)  # Устанавливаем состояние для общения с ИИ
 
     # ⌨️ Показываем клавиатуру
     await message.answer(
@@ -123,7 +122,7 @@ async def select_asking(message: Message, state: FSMContext):
 @router.message(ProgramSelection.asking)
 async def handle_question(message: Message, state: FSMContext):
     if message.text == "📸 Отправить фото":
-        await state.set_state(ProgramSelection.asking)
+        await state.set_state(ProgramSelection.asking)  # Устанавливаем состояние перед отправкой фото
         await message.answer("📸 Пришли изображение с тестом, и я его распознаю.")
         return
 
@@ -151,7 +150,6 @@ async def handle_question(message: Message, state: FSMContext):
     if not text or text.strip() in ["📸 Отправить фото", ""]:
         return
     text = text.strip()
-
 
     data = await state.get_data()
     row = await get_user_row_by_id(user.id)
@@ -246,4 +244,3 @@ async def handle_question(message: Message, state: FSMContext):
     rewards = await check_and_apply_missions(user.id)
     for r in rewards:
         await message.answer(r)
-
