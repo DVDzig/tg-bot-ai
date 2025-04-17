@@ -117,14 +117,10 @@ async def select_asking(message: Message, state: FSMContext):
 
 @router.message(ProgramSelection.asking)
 async def handle_question(message: Message, state: FSMContext):
-    # 🚫 Игнорируем нажатие кнопки генерации изображения
     if message.text == "🎨 Сгенерировать изображение":
+        await state.set_state(ProgramSelection.waiting_for_dalle_prompt)
+        await message.answer("🎨 Напиши, что нужно сгенерировать:")
         return
-    
-    if message.text == "🛒 Магазин":
-        await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
-        return
-    
     if message.text == "⬅️ Назад в дисциплины":
         data = await state.get_data()
         program = data.get("program")
@@ -132,6 +128,14 @@ async def handle_question(message: Message, state: FSMContext):
         disciplines = await get_disciplines_by_module(program, module)
         await state.set_state(ProgramSelection.discipline)
         await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
+        return
+
+    if message.text == "🛒 Магазин":
+        await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
+        return
+
+    # 🚫 Игнорируем нажатие кнопки генерации изображения
+    if message.text == "🎨 Сгенерировать изображение":
         return
 
     user = message.from_user
@@ -229,6 +233,7 @@ async def handle_question(message: Message, state: FSMContext):
     rewards = await check_and_apply_missions(user.id)
     for r in rewards:
         await message.answer(r)
+
 
 @router.message(ProgramSelection.asking, F.text == "🎨 Сгенерировать изображение")
 async def prompt_dalle(message: Message, state: FSMContext):
