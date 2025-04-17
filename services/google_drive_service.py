@@ -1,19 +1,20 @@
 import json
 import io
 import mimetypes
+from io import BytesIO
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from config import client_email, GOOGLE_CREDENTIALS_JSON
 
+# === Авторизация ===
 SCOPES = ['https://www.googleapis.com/auth/drive']
-
-# Загрузка credentials из строки в .env
 info = json.loads(GOOGLE_CREDENTIALS_JSON)
 creds = Credentials.from_service_account_info(info, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=creds)
 
+# === Загрузка файла в Google Диск ===
 def upload_image_to_drive(filename, file_bytes_io, folder_id=None):
     mime_type, _ = mimetypes.guess_type(filename)
     media = MediaIoBaseUpload(file_bytes_io, mimetype=mime_type, resumable=True)
@@ -32,19 +33,13 @@ def upload_image_to_drive(filename, file_bytes_io, folder_id=None):
     # Сделать файл публичным
     drive_service.permissions().create(
         fileId=uploaded_file['id'],
-        body={
-            'role': 'reader',
-            'type': 'anyone'
-        }
+        body={'role': 'reader', 'type': 'anyone'}
     ).execute()
 
     return f"https://drive.google.com/uc?id={uploaded_file['id']}"
 
+# === Распознавание текста через Google Docs OCR ===
 def extract_text_with_docs_ocr(file_bytes: BytesIO, file_name: str = "ocr_image.png", folder_id: str = None) -> str:
-    from services.gdrive_auth import get_drive_service
-    drive_service = get_drive_service()
-
-    # Загружаем файл как image/png
     file_metadata = {
         "name": file_name,
         "mimeType": "application/vnd.google-apps.document"
@@ -54,7 +49,7 @@ def extract_text_with_docs_ocr(file_bytes: BytesIO, file_name: str = "ocr_image.
 
     media = MediaIoBaseUpload(file_bytes, mimetype="image/png", resumable=True)
 
-    # Конвертируем в Google Docs с OCR
+    # Загружаем как Google Документ с OCR
     file = drive_service.files().create(
         body=file_metadata,
         media_body=media,
@@ -63,7 +58,7 @@ def extract_text_with_docs_ocr(file_bytes: BytesIO, file_name: str = "ocr_image.
 
     file_id = file.get("id")
 
-    # Читаем текст из Google Docs
+    # Читаем распознанный текст
     doc = drive_service.files().export(
         fileId=file_id,
         mimeType="text/plain"
