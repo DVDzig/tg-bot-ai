@@ -3,6 +3,7 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from io import BytesIO
 from services.vision_service import extract_text_from_image
+from services.gpt_service import generate_answer  # ⬅️ GPT-функция
 
 router = Router()
 
@@ -14,10 +15,10 @@ async def handle_photo_question(message: Message, state: FSMContext):
     await message.answer("📸 Получено фото. Сейчас распознаю текст...")
 
     try:
-        # Получаем лучшее (последнее) фото
         photo = message.photo[-1]
         file = await message.bot.get_file(photo.file_id)
         image_data = await message.bot.download_file(file.file_path)
+        image_bytes = image_data.read()
         print("[DEBUG] 📷 Фото скачано")
     except Exception as e:
         print(f"[ERROR] Ошибка при загрузке фото: {e}")
@@ -25,7 +26,7 @@ async def handle_photo_question(message: Message, state: FSMContext):
         return
 
     try:
-        text = extract_text_from_image(image_data)
+        text = extract_text_from_image(image_bytes)
         print(f"[DEBUG] 📝 Распознанный текст: {text}")
     except Exception as e:
         print(f"[ERROR] Ошибка распознавания текста: {e}")
@@ -37,3 +38,14 @@ async def handle_photo_question(message: Message, state: FSMContext):
         return
 
     await message.answer(f"📄 Распознанный текст:\n<pre>{text}</pre>", parse_mode="HTML")
+
+    await message.answer("🤖 Думаю над ответом...")
+
+    try:
+        # Пока передаём фиксированные параметры
+        answer = await generate_answer("Фото", "Тест", "Изображение", text)
+        print(f"[DEBUG] ✅ Ответ GPT: {answer}")
+        await message.answer(f"🤖 Ответ ИИ:\n\n{answer}")
+    except Exception as e:
+        print(f"[ERROR] GPT Error: {e}")
+        await message.answer("⚠️ Не удалось сгенерировать ответ. Попробуй позже.")

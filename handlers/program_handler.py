@@ -108,11 +108,7 @@ async def select_asking(message: Message, state: FSMContext):
     plan = row.get("plan", "").strip().lower()
 
     # ⏭ Переход в состояние
-    print("[DEBUG FSM] entering select_asking")
-    print("[DEBUG FSM] set ProgramSelection.asking")
-
     await state.set_state(ProgramSelection.asking)  # Устанавливаем состояние для общения с ИИ
-    print("[DEBUG] После установки ProgramSelection.asking:", await state.get_state())  # Логирование состояния
 
     # ⌨️ Показываем клавиатуру
     await message.answer(
