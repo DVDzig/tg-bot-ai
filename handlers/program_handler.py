@@ -123,9 +123,10 @@ async def select_asking(message: Message, state: FSMContext):
 @router.message(ProgramSelection.asking)
 async def handle_question(message: Message, state: FSMContext):
     if message.text == "📸 Отправить фото":
+        await state.set_state(ProgramSelection.asking)
         await message.answer("📸 Пришли изображение с тестом, и я его распознаю.")
         return
-    
+
     if message.text == "🎨 Сгенерировать изображение":
         await state.set_state(ProgramSelection.waiting_for_dalle_prompt)
         await message.answer("🎨 Напиши, что нужно сгенерировать:")

@@ -93,6 +93,9 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
 @router.message(F.photo)
 async def reject_photo_outside_context(message: Message, state: FSMContext):
     current = await state.get_state()
-    print(f"[DEBUG] ❌ Фото вне контекста — state = {current}")
-    if current != ProgramSelection.asking:
+    print(f"[DEBUG] 🧐 Текущее состояние: {current}")
+    if current is None:
+        # Иногда FSM может быть сброшен — проверим текст предыдущего сообщения
+        await message.answer("📸 Кажется, ты не выбрал дисциплину. Пожалуйста, выбери её перед загрузкой фото.")
+    elif current != ProgramSelection.asking:
         await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
