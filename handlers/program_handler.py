@@ -302,6 +302,8 @@ async def dalle_generate(message: Message, state: FSMContext):
 # ✅ Обработка фото только в режиме общения с ИИ (FSM-состояние)
 @router.message(ProgramSelection.asking, F.photo)
 async def handle_photo_with_test(message: Message, state: FSMContext):
+    print("[DEBUG] handle_photo_with_test called ✅")
+
     user_id = message.from_user.id
     row = await get_user_row_by_id(user_id)
     if not row:
@@ -322,12 +324,14 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
         return
 
     await message.answer("📸 Фото получено. Распознаю текст через Google Vision...")
+    print("[DEBUG] перед extract_text_from_image")
 
     photo = message.photo[-1]
     file = await message.bot.get_file(photo.file_id)
     image_data = await message.bot.download_file(file.file_path)
 
     text = extract_text_from_image(image_data)
+    print(f"[DEBUG] Распознанный текст: {text}")
     
     now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     file_name = f"photo_{user_id}_{now}.png"
@@ -337,6 +341,7 @@ async def handle_photo_with_test(message: Message, state: FSMContext):
         io.BytesIO(image_data),
         folder_id=PHOTO_ARCHIVE_FOLDER_ID
     )
+    print("[DEBUG] Фото успешно загружено в архив Google Диска ✅")
 
     if not text.strip():
         await message.answer("❗ Не удалось распознать текст. Проверь, что на фото есть чёткий текст.")
