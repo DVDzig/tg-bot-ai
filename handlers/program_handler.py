@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, BufferedInputFile
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 from states.program_states import ProgramSelection
 from keyboards.program import (
@@ -13,15 +13,12 @@ from services.google_sheets_service import (
     get_modules_by_program,
     get_disciplines_by_module,
     get_keywords_for_discipline,
-    log_question_answer,
-    log_image_request,
-    log_photo_request
+    log_question_answer
 )
 from services.google_drive_service import upload_image_to_drive
 from services.user_service import (
     get_user_row_by_id, 
-    update_user_after_answer,
-    decrease_question_limit
+    update_user_after_answer
 )
 from services.gpt_service import generate_answer, search_video_on_youtube
 from services.missions_service import check_and_apply_missions
@@ -29,12 +26,9 @@ from services.sheets import update_sheet_row
 from datetime import datetime
 import pytz
 from keyboards.shop import get_shop_keyboard
-from config import VIDEO_URLS, OPENAI_API_KEY, PHOTO_ARCHIVE_FOLDER_ID
+from config import VIDEO_URLS
 import re
-from openai import AsyncOpenAI
 import asyncio
-from services.vision_service import extract_text_from_image
-from io import BytesIO
 
 
 
@@ -249,144 +243,3 @@ async def handle_question(message: Message, state: FSMContext):
     for r in rewards:
         await message.answer(r)
 
-
-@router.message(ProgramSelection.asking, F.text == "🎨 Сгенерировать изображение")
-async def prompt_dalle(message: Message, state: FSMContext):
-    await state.set_state(ProgramSelection.waiting_for_dalle_prompt)
-    await message.answer("🎨 Напиши, что нужно сгенерировать:")
-
-@router.message(ProgramSelection.waiting_for_dalle_prompt)
-async def dalle_generate(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    prompt = message.text
-
-    # 1️⃣ Пробуем списать вопрос сначала
-    success = await decrease_question_limit(user_id)
-    if not success:
-        await message.answer("❌ У вас закончились вопросы. Пополните лимит в разделе 🛒 Магазин.")
-        await state.set_state(ProgramSelection.asking)
-        return
-
-    await message.answer("🎨 Генерирую изображение через DALL·E...")
-
-    try:
-        # 2️⃣ Генерация изображения
-        client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-        response = await client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            n=1,
-            size="1024x1024",
-            response_format="url"
-        )
-        image_url = response.data[0].url
-        await message.answer_photo(photo=image_url, caption="Готово! ✨")
-
-        # 3️⃣ Обновляем XP и статус
-        await update_user_after_answer(user_id, bot=message.bot)
-
-        # 4️⃣ Логируем успешный запрос
-        await log_image_request(user_id, prompt, "успешно")
-
-    except Exception as e:
-        print(f"[DALLE ERROR] {e}")
-        await message.answer("⚠️ Ошибка генерации. Попробуй другой запрос.")
-
-        # ❌ Логируем неудачный запрос
-        await log_image_request(user_id, prompt, "ошибка")
-
-    finally:
-        await state.set_state(ProgramSelection.asking)
-
-
-# ✅ Обработка фото только в режиме общения с ИИ (FSM-состояние)
-@router.message(ProgramSelection.asking, F.photo)
-async def handle_photo_with_test(message: Message, state: FSMContext):
-    print("[DEBUG] handle_photo_with_test called ✅")
-
-    user_id = message.from_user.id
-    row = await get_user_row_by_id(user_id)
-    if not row:
-        await message.answer("Ошибка: не удалось получить данные пользователя.")
-        return
-
-    plan = row.get("plan", "").lower()
-    status = row.get("status", "")
-    status_clean = status.split()[-1]
-
-    if plan != "pro" and status_clean not in ["Эксперт", "Наставник", "Легенда", "Создатель"]:
-        await message.answer("🛑 Эта функция доступна только для пользователей со статусом Эксперт+ или подпиской Про.")
-        return
-
-    success = await decrease_question_limit(user_id)
-    if not success:
-        await message.answer("❌ У вас закончились вопросы. Пополните лимит в разделе 🛒 Магазин.")
-        return
-
-    await message.answer("📸 Фото получено. Распознаю текст через Google Vision...")
-    print("[DEBUG] перед extract_text_from_image")
-
-    photo = message.photo[-1]
-    file = await message.bot.get_file(photo.file_id)
-    image_data = await message.bot.download_file(file.file_path)
-
-    try:
-        text = extract_text_from_image(image_data)
-    except Exception as e:
-        print(f"[Vision API ERROR] {e}")
-        await message.answer("❗ Не удалось распознать текст с фото. Попробуй позже.")
-        return
-
-    print(f"[DEBUG] Распознанный текст: {text}")
-    
-    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    file_name = f"photo_{user_id}_{now}.png"
-
-    upload_image_to_drive(
-        file_name,
-        BytesIO(image_data),
-        folder_id=PHOTO_ARCHIVE_FOLDER_ID
-    )
-
-    print("[DEBUG] Фото успешно загружено в архив Google Диска ✅")
-
-    if not text.strip():
-        await message.answer("❗ Не удалось распознать текст. Проверь, что на фото есть чёткий текст.")
-        return
-
-    await message.answer(f"📄 Распознанный текст:\n<pre>{text}</pre>", parse_mode="HTML")
-
-    try:
-        answer = await generate_answer("Общий анализ", "Тест", "Фотозапрос", text)
-        await message.answer(f"🤖 Ответ ИИ:\n\n{answer}")
-
-        # Обновляем XP, статус и миссии
-        await update_user_after_answer(user_id, bot=message.bot)
-        await log_photo_request(user_id, text, answer)
-
-    except Exception as e:
-        print(f"[GPT ERROR] {e}")
-        await message.answer("⚠️ Не удалось сгенерировать ответ. Попробуй позже.")
-    
-    # 🔁 Вернёмся в режим общения с ИИ
-    await state.set_state(ProgramSelection.asking)
-
-# ❌ Обработка фото в любом другом состоянии (вежливо отклоняем)
-@router.message(F.photo)
-async def reject_photo_outside_context(message: Message, state: FSMContext):
-    current = await state.get_state()
-    print(f"[DEBUG FSM STATE] current: {current}")
-    if current != ProgramSelection.asking:
-        await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
-
-@router.message(F.text == "📸 Отправить фото")
-async def reject_photo_button_outside_context(message: Message, state: FSMContext):
-    current = await state.get_state()
-    if current != ProgramSelection.asking:
-        await message.answer("📸 Фото можно отправлять только в меню общения с ИИ по дисциплине.")
-
-@router.message(F.text == "🎨 Сгенерировать изображение")
-async def reject_dalle_outside_context(message: Message, state: FSMContext):
-    current = await state.get_state()
-    if current != ProgramSelection.asking:
-        await message.answer("🎨 Генерация изображений доступна только в меню общения с ИИ.")
