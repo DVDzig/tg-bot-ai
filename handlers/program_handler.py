@@ -30,6 +30,8 @@ from keyboards.shop import get_shop_keyboard
 from config import VIDEO_URLS, OPENAI_API_KEY
 import re
 from openai import AsyncOpenAI
+import asyncio
+
 
 router = Router()
 
@@ -123,11 +125,15 @@ async def handle_question(message: Message, state: FSMContext):
         await state.set_state(ProgramSelection.discipline)
         await message.answer("Выбери дисциплину:", reply_markup=get_discipline_keyboard(disciplines))
         return
-    
+
     if message.text == "🛒 Магазин":
         await message.answer("🛒 Магазин", reply_markup=get_shop_keyboard())
         return
-    
+
+    # 🚫 Игнорируем нажатие кнопки генерации изображения
+    if message.text == "🎨 Сгенерировать изображение":
+        return
+
     user = message.from_user
     text = message.text.strip()
     data = await state.get_data()
@@ -179,11 +185,8 @@ async def handle_question(message: Message, state: FSMContext):
         await message.answer("⚠️ ИИ не смог сгенерировать ответ. Попробуй задать вопрос по-другому.")
         return
 
-
-    # Очистка эмодзи и пробелов
     status = re.sub(r"[^\w\s]", "", row.get("status", "Новичок")).strip()
     plan = row.get("plan", "").strip().lower()
-
     videos_to_send = VIDEO_URLS.get(status, 0)
     if plan in VIDEO_URLS:
         videos_to_send = max(videos_to_send, VIDEO_URLS[plan])
@@ -195,12 +198,11 @@ async def handle_question(message: Message, state: FSMContext):
                 if url.strip():
                     try:
                         await message.answer(f"🎬 Видео по теме:\n{url}")
-                        await asyncio.sleep(1.5)  # ⏳ если отправляется несколько
+                        await asyncio.sleep(1.5)
                     except Exception as e:
                         print(f"[VIDEO ERROR] {e}")
                 else:
                     print("[VIDEO WARNING] Пустая ссылка пропущена")
-
         except Exception as e:
             print(f"[VIDEO ERROR] {e}")
 
@@ -209,7 +211,6 @@ async def handle_question(message: Message, state: FSMContext):
         f"🧠 Твой XP: {row.get('xp')} | Статус: {status}\n"
         f"🎁 Осталось: 🎫 {row.get('free_questions', 0)} | 💰 {row.get('paid_questions', 0)}"
     )
-
 
     try:
         await message.answer(f"{header}{answer}\n\n{stats}", parse_mode="Markdown")
