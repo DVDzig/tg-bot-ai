@@ -49,3 +49,16 @@ async def dalle_generate(message: Message, state: FSMContext):
 
     finally:
         await state.set_state(ProgramSelection.asking)
+
+@router.message()
+async def debug_everything(message: Message, state: FSMContext):
+    current = await state.get_state()
+    print("[DEBUG] 🕵️ Общее сообщение поймано")
+    print(f"[DEBUG] 🔎 Тип: {message.content_type}")
+    print(f"[DEBUG] 📦 state = {current}")
+    print(f"[DEBUG] 📸 photo = {message.photo}")
+    print(f"[DEBUG] 📄 document = {message.document}")
+    await message.answer(
+        f"🛠 Получено: <b>{message.content_type}</b>\nFSM: {current}",
+        parse_mode="HTML"
+    )
