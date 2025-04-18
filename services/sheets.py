@@ -116,3 +116,26 @@ async def get_user_row_by_id(user_id: int) -> UserRow | None:
         return None
 
     return None
+
+async def get_sheet_values_by_column(sheet_name: str, column_name: str) -> list[dict]:
+    service = get_sheets_service()
+    result = service.spreadsheets().values().get(
+        spreadsheetId=USER_SHEET_ID,
+        range=f"{sheet_name}!A1:Z1000"
+    ).execute()
+
+    values = result.get("values", [])
+    if not values or len(values) < 2:
+        return []
+
+    headers = values[0]
+    header_map = {h: i for i, h in enumerate(headers)}
+    rows = []
+
+    for row in values[1:]:
+        row_dict = {}
+        for h, i in header_map.items():
+            row_dict[h] = row[i] if i < len(row) else ""
+        rows.append(row_dict)
+
+    return rows

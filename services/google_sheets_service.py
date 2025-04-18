@@ -14,11 +14,13 @@ from services.sheets import (
     get_sheets_service, 
     find_user_row_index,
     get_user_row_by_id, 
-    update_sheet_row
+    update_sheet_row,
+    get_sheet_values_by_column
 ) 
 
 from datetime import datetime, timedelta
 import pytz
+
 
 bot = Bot(token=TOKEN)
 
@@ -520,7 +522,7 @@ async def log_image_request(user_id: int, prompt: str, status: str):
     ).execute()
 
 async def get_last_user_questions(user_id: int, limit: int = 5):
-    from .sheets import get_sheet_values_by_column
+
     data = await get_sheet_values_by_column("QA_Log", "user_id")
 
     results = []
