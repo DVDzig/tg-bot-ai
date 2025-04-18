@@ -10,12 +10,12 @@ async def reward_referrer(referrer_id: str):
     current_count = int(row.get("referrals_count", 0))
     new_count = current_count + 1
 
-    # Начисляем 1 платный вопрос
-    paid_questions = int(row.get("paid_questions", 0)) + 1
+    # Начисляем 1 бесплатный вопрос
+    free_q = int(row.get("free_questions", 0)) + 1
 
     updates = {
         "referrals_count": new_count,
-        "paid_questions": paid_questions
+        "free_questions": free_q
     }
 
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)

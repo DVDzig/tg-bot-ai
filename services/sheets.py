@@ -1,4 +1,4 @@
-from config import USER_SHEET_ID, USER_SHEET_NAME
+from config import USER_SHEET_ID, USER_SHEET_NAME, PROGRAM_SHEETS
 from googleapiclient.discovery import build
 import json
 import os
@@ -120,7 +120,7 @@ async def get_user_row_by_id(user_id: int) -> UserRow | None:
 async def get_sheet_values_by_column(sheet_name: str, column_name: str) -> list[dict]:
     service = get_sheets_service()
     result = service.spreadsheets().values().get(
-        spreadsheetId=USER_SHEET_ID,
+        spreadsheetId=PROGRAM_SHEETS,
         range=f"{sheet_name}!A1:Z1000"
     ).execute()
 
