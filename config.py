@@ -51,7 +51,8 @@ USER_FIELDS = [
     "premium_status", "Ежедневная миссия", "Недельная миссия", 
     "Стрик-миссия", "plan", "premium_status", "premium_until", 
     "next_plan", "next_until", "nft_statuses", "nft_url_Наставник", 
-    "nft_url_Легенда", "nft_url_Создатель"
+    "nft_url_Легенда", "nft_url_Создатель",
+    "referrer_id", "referrals_count"
 ]
 
 

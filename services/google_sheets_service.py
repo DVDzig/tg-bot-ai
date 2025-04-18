@@ -518,3 +518,19 @@ async def log_image_request(user_id: int, prompt: str, status: str):
         insertDataOption="INSERT_ROWS",
         body={"values": values}
     ).execute()
+
+async def get_last_user_questions(user_id: int, limit: int = 5):
+    from .sheets import get_sheet_values_by_column
+    data = await get_sheet_values_by_column("QA_Log", "user_id")
+
+    results = []
+    for row in reversed(data):
+        if str(row.get("user_id")) == str(user_id):
+            results.append({
+                "discipline": row.get("discipline", "—"),
+                "question": row.get("question", "")
+            })
+        if len(results) >= limit:
+            break
+
+    return results
