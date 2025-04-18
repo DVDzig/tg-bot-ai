@@ -534,3 +534,16 @@ async def get_last_user_questions(user_id: int, limit: int = 5):
             break
 
     return results
+
+async def log_user_rating(user_id: int, rating: str, status: str, xp: int):
+    timestamp = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+    values = [[str(user_id), timestamp, rating, status, str(xp)]]
+
+    service = get_sheets_service()
+    service.spreadsheets().values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range="Feedback!A1",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": values}
+    ).execute()

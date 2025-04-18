@@ -29,6 +29,7 @@ from keyboards.shop import get_shop_keyboard
 from config import VIDEO_URLS
 import re
 import asyncio
+from keyboards.inline_rating_keyboard import get_rating_keyboard
 
 
 router = Router()
@@ -229,6 +230,8 @@ async def handle_question(message: Message, state: FSMContext):
     except Exception as e:
         print(f"[MESSAGE ERROR] {e}")
         await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
+
+    await message.answer("🤔 Насколько полезен был ответ?", reply_markup=get_rating_keyboard())
 
     await log_question_answer(user.id, program, discipline, text, answer)
     await update_user_after_answer(message.from_user.id, bot=message.bot)
