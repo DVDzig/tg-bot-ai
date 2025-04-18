@@ -30,3 +30,29 @@ async def reset_daily_missions():
         updates["day_count"] = "0"
 
         await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+
+async def reset_expired_subscriptions():
+    users = await get_all_users()
+    today = datetime.utcnow().date()
+
+    for user in users:
+        user_id = user.get("user_id")
+        premium_until = user.get("premium_until", "").strip()
+
+        if not premium_until or premium_until.lower() == "none":
+            continue
+
+        try:
+            until_date = datetime.strptime(premium_until, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+
+        if until_date < today:
+            updates = {
+                "plan": "",
+                "premium_status": "",
+                "premium_until": "",
+                "next_plan": "",
+                "next_until": ""
+            }
+            await update_sheet_row(user.sheet_id, user.sheet_name, user.index, updates)

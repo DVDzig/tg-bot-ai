@@ -1,8 +1,9 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from tasks.reset_missions import reset_daily_missions
+from tasks.reset_missions import reset_daily_missions, reset_expired_subscriptions
 from services.user_service import apply_monthly_bonus_to_all_users
 from datetime import datetime
+
 
 
 def schedule_all_jobs(bot):
@@ -23,3 +24,7 @@ def schedule_monthly_bonus(scheduler: AsyncIOScheduler):
         id="monthly_bonus",
         timezone="Europe/Moscow"
     )
+
+def schedule_all_jobs(scheduler):
+    scheduler.add_job(reset_daily_missions, "cron", hour=3, minute=0)
+    scheduler.add_job(reset_expired_subscriptions, "cron", hour=4, minute=0)
