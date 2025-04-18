@@ -3,6 +3,7 @@ from aiogram.types import Message
 from keyboards.profile_menu import get_profile_menu_keyboard
 from keyboards.main_menu import get_main_menu_keyboard
 from services.google_sheets_service import get_user_row_by_id
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 router = Router()
 
@@ -12,6 +13,7 @@ async def open_profile_menu(message: Message):
 
 @router.message(F.text == "👥 Рефералы")
 async def show_referrals(message: Message):
+    
     user_id = message.from_user.id
     row = await get_user_row_by_id(user_id)
     if not row:
@@ -20,13 +22,21 @@ async def show_referrals(message: Message):
 
     count = int(row.get("referrals_count", 0))
     link = f"https://t.me/TGTutorBot?start=ref_{user_id}"
+    share_url = f"https://t.me/share/url?url={link}&text=Присоединяйся к образовательному помощнику!"
+
+    inline_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="📤 Поделиться", url=share_url)]
+        ]
+    )
 
     await message.answer(
         f"👥 <b>Реферальная программа</b>\n"
         f"Приглашай друзей и получай бонусы! 🎁\n\n"
         f"🔗 Твоя ссылка:\n<code>{link}</code>\n\n"
         f"👨‍👩‍👧 Ты уже пригласил: <b>{count}</b> друзей",
-        parse_mode="HTML"
+        parse_mode="HTML",
+        reply_markup=inline_kb
     )
 
 @router.message(F.text == "📄 Мои вопросы")
@@ -80,3 +90,31 @@ async def show_user_stats(message: Message):
     )
 
     await message.answer(text, parse_mode="HTML")
+
+@router.message(F.text == "🏅 Достижения")
+async def show_achievements(message: Message):
+
+    user_id = message.from_user.id
+    row = await get_user_row_by_id(user_id)
+    if not row:
+        await message.answer("Профиль не найден 😔")
+        return
+
+    raw_achievements = row.get("achievements", "")
+    user_achievements = set(a.strip() for a in raw_achievements.split(",") if a.strip())
+
+    # Список всех достижений
+    ALL_ACHIEVEMENTS = {
+        "first_question": "🎉 Первый вопрос",
+        "xp100": "💯 100 XP",
+        "mentor": "🧠 Наставник",
+        "streak3": "🔥 Серия из 3 дней",
+        "q10": "🗣 10 вопросов"
+    }
+
+    lines = ["🏅 <b>Твои достижения:</b>\n"]
+    for key, label in ALL_ACHIEVEMENTS.items():
+        status = "✅" if key in user_achievements else "❌"
+        lines.append(f"{status} {label}")
+
+    await message.answer("\n".join(lines), parse_mode="HTML")

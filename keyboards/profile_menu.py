@@ -2,7 +2,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def get_profile_menu_keyboard() -> ReplyKeyboardMarkup:
     buttons = [
-        [KeyboardButton(text="👥 Рефералы"), KeyboardButton(text="📊 Статистика")],
+        [KeyboardButton(text="👥 Рефералы")],
+        [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="🏅 Достижения")],
         [KeyboardButton(text="📄 Мои вопросы")],
         [KeyboardButton(text="⬅️ Назад")]
     ]

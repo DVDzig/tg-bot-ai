@@ -170,9 +170,17 @@ async def increase_question_count(user_id: int):
 
     # Обновляем счётчики
     question_count = int(row.get("question_count", 0)) + 1
+    if question_count == 1:
+        await grant_achievement(user_id, "first_question")
+    if question_count == 10:
+        await grant_achievement(user_id, "q10")
+
     day_count = int(row.get("day_count", 0)) + 1
     xp_week = int(row.get("xp_week", 0)) + 1
     streak_days = int(row.get("streak_days") or 0) + 1
+    if streak_days == 3:
+        await grant_achievement(user_id, "streak3")
+
 
 
     updates = {
@@ -219,6 +227,9 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1, bot: Bot = None
 
     old_status = row.get("status", "")
     new_status = get_status_by_xp(new_xp)
+    if new_xp >= 100:
+        await grant_achievement(user_id, "xp100")
+
 
     now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -235,8 +246,23 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1, bot: Bot = None
         status_clean = new_status.split()[-1]
         nft_link = None
 
-        if status_clean in ["Наставник", "Легенда", "Создатель"]:
-            nft_link = await generate_nft_card_if_needed(user_id)
+    if status_clean in ["Наставник", "Легенда", "Создатель"]:
+        nft_link = await generate_nft_card_if_needed(user_id)
+        
+    status_map = {
+        "Опытный": "status_experienced",
+        "Профи": "status_pro",
+        "Эксперт": "status_expert",
+        "Наставник": "status_mentor",
+        "Легенда": "status_legend",
+        "Создатель": "status_creator"
+    }
+
+    # Если достижение связано со статусом — добавим
+    for name, key in status_map.items():
+        if name in new_status:
+            await grant_achievement(user_id, key)
+
 
         messages = {
             "Опытный": (
@@ -353,3 +379,17 @@ async def update_user_after_answer(user_id: int, bot: Bot):
     await decrease_question_limit(user_id)
     await add_xp_and_update_status(user_id, bot=bot)
 
+async def grant_achievement(user_id: int, key: str):
+    row = await get_user_row_by_id(user_id)
+    if not row:
+        return
+
+    achievements_raw = row.get("achievements", "")
+    achievements = set(a.strip() for a in achievements_raw.split(",") if a.strip())
+
+    if key in achievements:
+        return  # Уже есть
+
+    achievements.add(key)
+    updates = {"achievements": ",".join(sorted(achievements))}
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
