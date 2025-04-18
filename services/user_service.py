@@ -246,22 +246,22 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1, bot: Bot = None
         status_clean = new_status.split()[-1]
         nft_link = None
 
-    if status_clean in ["Наставник", "Легенда", "Создатель"]:
-        nft_link = await generate_nft_card_if_needed(user_id)
+        if status_clean in ["Наставник", "Легенда", "Создатель"]:
+            nft_link = await generate_nft_card_if_needed(user_id)
         
-    status_map = {
-        "Опытный": "status_experienced",
-        "Профи": "status_pro",
-        "Эксперт": "status_expert",
-        "Наставник": "status_mentor",
-        "Легенда": "status_legend",
-        "Создатель": "status_creator"
-    }
+        status_map = {
+            "Опытный": "status_experienced",
+            "Профи": "status_pro",
+            "Эксперт": "status_expert",
+            "Наставник": "status_mentor",
+            "Легенда": "status_legend",
+            "Создатель": "status_creator"
+        }
 
-    # Если достижение связано со статусом — добавим
-    for name, key in status_map.items():
-        if name in new_status:
-            await grant_achievement(user_id, key)
+        # Если достижение связано со статусом — добавим
+        for name, key in status_map.items():
+            if name in new_status:
+                await grant_achievement(user_id, key)
 
 
         messages = {
