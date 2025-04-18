@@ -13,8 +13,7 @@ router = Router()
 @router.message(CommandStart(deep_link=True))
 async def cmd_start_ref(message: Message, state: FSMContext):
     await state.clear()
-    await state.set_state(ProgramSelection.level)
-
+    
     user = message.from_user
     user_id = user.id
 
@@ -47,8 +46,7 @@ async def cmd_start_ref(message: Message, state: FSMContext):
 @router.message(CommandStart())
 async def cmd_start_plain(message: Message, state: FSMContext):
     await state.clear()
-    await state.set_state(ProgramSelection.level)
-
+    
     user = message.from_user
     user_id = user.id
 
