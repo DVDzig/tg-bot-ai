@@ -7,7 +7,8 @@ from config import (
     TOKEN,
     PROGRAM_SHEETS_LIST, 
     PHOTO_LOG_SHEET_NAME,
-    IMAGE_LOG_SHEET_NAME
+    IMAGE_LOG_SHEET_NAME,
+    FEEDBACK_LOG_SHEET
 )
 from services.sheets import (
     UserRow, 
@@ -543,7 +544,7 @@ async def log_user_rating(user_id: int, rating: str, status: str, xp: int):
 
     service = get_sheets_service()
     service.spreadsheets().values().append(
-        spreadsheetId=USER_SHEET_ID,
+        spreadsheetId=FEEDBACK_LOG_SHEET,
         range="Feedback!A1",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
