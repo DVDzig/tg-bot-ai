@@ -1,10 +1,10 @@
 from services.sheets import get_user_row_by_id, update_sheet_row
-from bot import bot
 from services.user_service import update_user_plan
 
 
 
 async def reward_referrer(referrer_id: str):
+    from bot import bot
     row = await get_user_row_by_id(referrer_id)
     if not row:
         return
