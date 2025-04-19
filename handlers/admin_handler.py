@@ -179,13 +179,13 @@ async def admin_update_keywords_callback(message: Message, state: FSMContext):
         msg += "✅ Обновлено:\n"
         msg += "\n".join(updated[:30])
         if len(updated) > 30:
-            msg += f"\n...и ещё {len(updated) - 30} строк."
+            msg += f"\n...и ещё <b>{len(updated) - 30}</b> дисциплин."
 
     if failed:
         msg += "\n\n❌ Ошибки:\n"
-        msg += "\n".join(failed[:30])
-        if len(failed) > 30:
-            msg += f"\n...и ещё {len(failed) - 30} строк."
+        msg += "\n".join(failed[:20])
+        if len(failed) > 20:
+            msg += f"\n...и ещё <b>{len(failed) - 20}</b> ошибок."
 
     await send_long_message(msg, message)
 
