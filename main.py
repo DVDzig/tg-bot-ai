@@ -22,11 +22,9 @@ from handlers import (
     program_handler,    
     shop_navigation,
     photo_handler, 
-    dalle_handler,
-    rating_handler
+    dalle_handler
 )
 from middlewares.ensure_user import EnsureUserMiddleware
-from utils.scheduler import schedule_all_jobs, schedule_monthly_bonus
 
 dp = Dispatcher(storage=MemoryStorage())
 
@@ -49,8 +47,6 @@ dp.include_router(dalle_handler.router)
 dp.include_router(program_handler.router)
 dp.include_router(start_handler.router)
 dp.include_router(shop_navigation.router)
-dp.include_router(rating_handler.router)
-print("[DEBUG] router rating_handler подключён")
 
 
 # === Telegram Bot & Dispatcher ===

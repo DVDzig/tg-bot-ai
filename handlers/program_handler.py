@@ -15,7 +15,6 @@ from services.google_sheets_service import (
     get_keywords_for_discipline,
     log_question_answer
 )
-from services.google_drive_service import upload_image_to_drive
 from services.user_service import (
     get_user_row_by_id, 
     update_user_after_answer
@@ -29,7 +28,6 @@ from keyboards.shop import get_shop_keyboard
 from config import VIDEO_URLS
 import re
 import asyncio
-from keyboards.inline_rating_keyboard import get_rating_keyboard
 
 
 router = Router()
@@ -227,10 +225,10 @@ async def handle_question(message: Message, state: FSMContext):
 
     try:
         await message.answer(
-            f"{header}{answer}\n\n{stats}\n\n🤔 <b>Насколько полезен был ответ?</b>",
-            parse_mode="HTML",
-            reply_markup=get_rating_keyboard()
-        )
+            f"{header}{answer}\n\n{stats}",
+            parse_mode="HTML"
+    )
+
     except Exception as e:
         print(f"[MESSAGE ERROR] {e}")
         await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
