@@ -1,6 +1,10 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from tasks.reset_missions import reset_daily_missions, reset_expired_subscriptions
+from tasks.reset_missions import (
+    reset_daily_missions, 
+    reset_expired_subscriptions,
+    send_reminder_messages
+)
 from services.user_service import apply_monthly_bonus_to_all_users
 from datetime import datetime
 
@@ -11,6 +15,10 @@ def schedule_all_jobs(scheduler: AsyncIOScheduler):
 
     # Сброс просроченных подписок в 04:00 по Москве
     scheduler.add_job(reset_expired_subscriptions, "cron", hour=4, minute=0)
+    
+    # Проверка напоминаний — каждый день в 10:00
+    scheduler.add_job(send_reminder_messages, "cron", hour=10, minute=0)
+
 
 def schedule_monthly_bonus(scheduler: AsyncIOScheduler):
     scheduler.add_job(
