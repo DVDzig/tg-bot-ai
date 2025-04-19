@@ -63,3 +63,21 @@ async def reward_referrer(referrer_id: str):
             )
         except Exception as e:
             print(f"[Notify error] {e}")
+
+async def set_referrer_if_new(user_id: int, referrer_id: str):
+    if str(user_id) == str(referrer_id):
+        return  # нельзя быть своим же рефералом
+
+    row = await get_user_row_by_id(user_id)
+    if not row:
+        return
+
+    if row.get("referrer_id"):
+        return  # уже есть пригласивший
+
+    updates = {
+        "referrer_id": referrer_id
+    }
+
+    await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+    await reward_referrer(referrer_id)
