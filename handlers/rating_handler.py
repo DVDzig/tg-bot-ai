@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from services.user_service import get_user_row_by_id
 from services.google_sheets_service import log_user_rating
-from keyboards.program import get_consultant_keyboard
+from keyboards.common import get_consultant_keyboard
 
 router = Router()
 
