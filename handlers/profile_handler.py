@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from keyboards.profile_menu import get_profile_menu_keyboard
 from keyboards.main_menu import get_main_menu_keyboard
-from services.google_sheets_service import get_user_row_by_id
+from services.google_sheets_service import get_user_row_by_id, get_last_user_questions
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 router = Router()
@@ -32,17 +32,22 @@ async def show_referrals(message: Message):
 
     await message.answer(
         f"👥 <b>Реферальная программа</b>\n"
-        f"Приглашай друзей и получай бонусы! 🎁\n\n"
+        f"Приглашай друзей и получай крутые бонусы! 🎁\n\n"
         f"🔗 Твоя ссылка:\n<code>{link}</code>\n\n"
-        f"👨‍👩‍👧 Ты уже пригласил: <b>{count}</b> друзей",
+        f"👨‍👩‍👧 Ты уже пригласил: <b>{count}</b> друзей\n\n"
+        f"🏆 <b>Бонусы за приглашения:</b>\n"
+        f"• 1 друг — 🎫 +5 бесплатных вопросов\n"
+        f"• 3 друга — 💡 Подписка <b>Лайт</b> на 3 дня\n"
+        f"• 10 друзей — 🧿 NFT-карточка <b>Амбассадор</b>\n"
+        f"• 50 друзей — 👑 Подписка <b>Про</b> на 30 дней\n\n"
+        f"📣 Делись ссылкой и получай всё это первым!",
         parse_mode="HTML",
         reply_markup=inline_kb
     )
 
 @router.message(F.text == "📄 Мои вопросы")
 async def show_user_questions(message: Message):
-    from services.google_sheets_service import get_last_user_questions  # импорт внутрь, чтобы избежать циклов
-
+    
     user_id = message.from_user.id
     questions = await get_last_user_questions(user_id)
 
