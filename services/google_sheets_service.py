@@ -543,7 +543,7 @@ async def log_user_rating(user_id: int, rating: str, status: str, xp: int):
 
     service = get_sheets_service()
     service.spreadsheets().values().append(
-        spreadsheetId=USER_SHEET_NAME,
+        spreadsheetId=USER_SHEET_ID,
         range="Feedback!A1",
         valueInputOption="USER_ENTERED",
         insertDataOption="INSERT_ROWS",
