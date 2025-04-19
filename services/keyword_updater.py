@@ -77,9 +77,11 @@ async def update_keywords_from_logs():
         last_updated = None
         for row_idx in rows:
             try:
-                raw_date = values[row_idx - 1][last_updated_col]
-                last_updated = datetime.strptime(raw_date, DATE_FORMAT)
-                break
+                row_data = values[row_idx - 1]
+                raw_date = row_data[last_updated_col] if last_updated_col < len(row_data) else ""
+                if raw_date:
+                    last_updated = datetime.strptime(raw_date, DATE_FORMAT)
+                    break
             except:
                 continue
 
