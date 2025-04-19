@@ -85,8 +85,10 @@ async def update_keywords_from_logs():
             except:
                 continue
 
-        if last_updated and last_asked <= last_updated:
-            continue  # не обновляем
+        if last_updated and (datetime.now() - last_updated).days < 20:
+            print(f"⏭ Пропускаем: {program} / {module} / {discipline} — обновлялось менее 20 дней назад")
+            continue
+
 
         print(f"🧠 Обновляем: {program} / {module} / {discipline}")
         combined_text = "\n".join(text_blocks)[:4000]
