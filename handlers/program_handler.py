@@ -230,7 +230,7 @@ async def handle_question(message: Message, state: FSMContext):
             f"{header}{answer}\n\n{stats}\n\n🤔 <b>Насколько полезен был ответ?</b>",
             parse_mode="HTML",
             reply_markup=get_rating_keyboard()
-    )
+        )
     except Exception as e:
         print(f"[MESSAGE ERROR] {e}")
         await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
