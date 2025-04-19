@@ -226,12 +226,14 @@ async def handle_question(message: Message, state: FSMContext):
     )
 
     try:
-        await message.answer(f"{header}{answer}\n\n{stats}", parse_mode="Markdown")
+        await message.answer(
+            f"{header}{answer}\n\n{stats}\n\n🤔 <b>Насколько полезен был ответ?</b>",
+            parse_mode="HTML",
+            reply_markup=get_rating_keyboard()
+    )
     except Exception as e:
         print(f"[MESSAGE ERROR] {e}")
         await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
-
-    await message.answer("🤔 Насколько полезен был ответ?", reply_markup=get_rating_keyboard())
 
     await log_question_answer(user.id, program, discipline, text, answer)
     await update_user_after_answer(message.from_user.id, bot=message.bot)
@@ -244,3 +246,4 @@ async def handle_question(message: Message, state: FSMContext):
     rewards = await check_and_apply_missions(user.id)
     for r in rewards:
         await message.answer(r)
+        
