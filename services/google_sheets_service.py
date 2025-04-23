@@ -257,12 +257,13 @@ async def get_keywords_for_discipline(program: str, module: str, discipline: str
 
     return []
 
-async def log_question_answer(user_id: int, program: str, discipline: str, question: str, answer: str):
+async def log_question_answer(user_id: int, program: str, module: str, discipline: str, question: str, answer: str):
     service = get_sheets_service()
     values = [[
         str(user_id),
         datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S"),
         program,
+        module,
         discipline,
         question,
         answer

@@ -233,7 +233,7 @@ async def handle_question(message: Message, state: FSMContext):
         print(f"[MESSAGE ERROR] {e}")
         await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
 
-    await log_question_answer(user.id, program, discipline, text, answer)
+    await log_question_answer(user.id, program, module, discipline, text, answer)
     await update_user_after_answer(message.from_user.id, bot=message.bot)
 
     updates = {
