@@ -4,8 +4,6 @@ from services.google_sheets_service import (
     update_sheet_row
 )
 import random
-from bot import bot
-from services.sheets import get_user_row_by_id
 
 
 async def reset_daily_missions():
@@ -67,6 +65,7 @@ async def reset_expired_subscriptions():
                 print(f"[EXPIRED] Подписка у пользователя {user_id} сброшена")
 
 async def send_reminder_messages():
+    from bot import bot
     users = await get_all_users()
     now = datetime.now()
     today = now.date()
