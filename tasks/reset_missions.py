@@ -52,14 +52,19 @@ async def reset_expired_subscriptions():
             continue
 
         if until_date < today:
-            updates = {
-                "plan": "",
-                "premium_status": "",
-                "premium_until": "",
-                "next_plan": "",
-                "next_until": ""
-            }
-            await update_sheet_row(user.sheet_id, user.sheet_name, user.index, updates)
+            from services.sheets import get_user_row_by_id
+            row = await get_user_row_by_id(user_id)
+
+            if row:
+                updates = {
+                    "plan": "",
+                    "premium_status": "",
+                    "premium_until": "",
+                    "next_plan": "",
+                    "next_until": ""
+                }
+                await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
+                print(f"[EXPIRED] Подписка у пользователя {user_id} сброшена")
 
 async def send_reminder_messages():
     users = await get_all_users()

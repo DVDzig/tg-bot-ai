@@ -85,7 +85,7 @@ async def update_keywords_from_logs():
             except:
                 continue
 
-        if last_updated and (datetime.now() - last_updated).days < 20:
+        if last_updated and (datetime.now() - last_updated).days < 7:
             print(f"⏭ Пропускаем: {program} / {module} / {discipline} — обновлялось менее 20 дней назад")
             continue
 
