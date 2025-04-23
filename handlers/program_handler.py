@@ -237,7 +237,10 @@ async def handle_question(message: Message, state: FSMContext):
     await update_user_after_answer(message.from_user.id, bot=message.bot)
 
     updates = {
-        "last_interaction": datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+        "last_interaction": datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S"),
+        "plan": plan,
+        "module": module,
+        "discipline": discipline
     }
     await update_sheet_row(row.sheet_id, row.sheet_name, row.index, updates)
 
