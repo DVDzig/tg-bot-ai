@@ -236,7 +236,9 @@ async def handle_question(message: Message, state: FSMContext):
 
     await log_question_answer(user.id, program, module, discipline, text, answer)
 
-    await log_user_program_context(user.id, plan, module, discipline)
+    program = data.get("program", "")
+    await log_user_program_context(user.id, program, module, discipline)
+
 
     await update_user_after_answer(message.from_user.id, bot=message.bot)
 
