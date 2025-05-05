@@ -21,7 +21,7 @@ async def create_yookassa_payment(user_id: int, amount: int, description: str, p
         "capture": True,
         "description": description,
         "metadata": {
-            "user_id": str(user_id),
+            "user_id": int(user_id),
             "payment_type": payment_type,
             "quantity": quantity,
             "internal_id": internal_id

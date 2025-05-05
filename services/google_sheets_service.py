@@ -260,7 +260,7 @@ async def get_keywords_for_discipline(program: str, module: str, discipline: str
 async def log_question_answer(user_id: int, program: str, module: str, discipline: str, question: str, answer: str):
     service = get_sheets_service()
     values = [[
-        str(user_id),
+        int(user_id),
         datetime.now(pytz.timezone("Europe/Moscow")).strftime("%d %B %Y, %H:%M"),
         program,
         module,
@@ -470,7 +470,7 @@ async def auto_update_expired_subscriptions():
             # Лог в лист SubscriptionLog
             await log_subscription_change({
                 "timestamp": datetime.utcnow().strftime("%d %B %Y, %H:%M"),
-                "user_id": str(user_id),
+                "user_id": int(user_id),
                 "activated_plan": next_plan,
                 "expires_on": next_until,
                 "was_delayed": "Да",
@@ -491,7 +491,7 @@ async def auto_update_expired_subscriptions():
 async def log_photo_request(user_id: int, raw_text: str, answer: str):
     service = get_sheets_service()
     values = [[
-        str(user_id),
+        int(user_id),
         datetime.now().strftime("%d %B %Y, %H:%M"),
         raw_text,
         answer,
@@ -508,7 +508,7 @@ async def log_photo_request(user_id: int, raw_text: str, answer: str):
 async def log_image_request(user_id: int, prompt: str, status: str):
     service = get_sheets_service()
     values = [[
-        str(user_id),
+        int(user_id),
         datetime.now().strftime("%d %B %Y, %H:%M"),
         prompt,
         "DALL·E",
@@ -543,7 +543,7 @@ async def log_user_program_context(user_id: int, plan: str, module: str, discipl
     service = get_sheets_service()
 
     values = [[
-        str(user_id),
+        int(user_id),
         datetime.now(pytz.timezone("Europe/Moscow")).strftime("%d %B %Y, %H:%M"),
         plan,
         module,

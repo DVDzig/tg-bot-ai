@@ -12,7 +12,7 @@ async def log_pending_payment(user_id: int, payment_type: str, amount: int, inte
 
     await append_payment_log(PAYMENT_LOG_SHEET, [
         timestamp,
-        str(user_id),
+        int(user_id),
         payment_type,
         str(amount),
         internal_id,
