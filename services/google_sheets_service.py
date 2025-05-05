@@ -537,3 +537,23 @@ async def get_last_user_questions(user_id: int, limit: int = 5):
             break
 
     return results
+
+async def log_user_program_context(user_id: int, plan: str, module: str, discipline: str):
+    from services.sheets import get_sheets_service
+    service = get_sheets_service()
+
+    values = [[
+        str(user_id),
+        datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S"),
+        plan,
+        module,
+        discipline
+    ]]
+
+    service.spreadsheets().values().append(
+        spreadsheetId=USER_SHEET_ID,
+        range="Log!A1",
+        valueInputOption="USER_ENTERED",
+        insertDataOption="INSERT_ROWS",
+        body={"values": values}
+    ).execute()

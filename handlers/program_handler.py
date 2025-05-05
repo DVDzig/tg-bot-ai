@@ -13,7 +13,8 @@ from services.google_sheets_service import (
     get_modules_by_program,
     get_disciplines_by_module,
     get_keywords_for_discipline,
-    log_question_answer
+    log_question_answer,
+    log_user_program_context
 )
 from services.user_service import (
     get_user_row_by_id, 
@@ -234,6 +235,9 @@ async def handle_question(message: Message, state: FSMContext):
         await message.answer("⚠️ Ответ слишком длинный или произошла ошибка при отправке.")
 
     await log_question_answer(user.id, program, module, discipline, text, answer)
+
+    await log_user_program_context(user.id, plan, module, discipline)
+
     await update_user_after_answer(message.from_user.id, bot=message.bot)
 
     updates = {
