@@ -8,7 +8,7 @@ async def log_pending_payment(user_id: int, payment_type: str, amount: int, inte
     """
     Логируем создание платежа в таблицу (до подтверждения)
     """
-    timestamp = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%d %B %Y, %H:%M")
 
     await append_payment_log(PAYMENT_LOG_SHEET, [
         timestamp,

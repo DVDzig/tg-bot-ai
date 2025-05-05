@@ -30,8 +30,8 @@ async def get_or_create_user(user) -> None:
         "last_name": user.last_name or "",  # Если last_name пустое, ставим пустую строку
         "language_code": user.language_code or "en",  # Язык по умолчанию - "en"
         "is_premium": str(getattr(user, "is_premium", False)).lower(),
-        "first_interaction": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-        "last_interaction": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "first_interaction": datetime.utcnow().strftime("%d %B %Y, %H:%M"),
+        "last_interaction": datetime.utcnow().strftime("%d %B %Y, %H:%M"),
         "question_count": 0,
         "day_count": 0,
         "status": "Новичок",
@@ -166,7 +166,7 @@ async def increase_question_count(user_id: int):
         return
 
     # Текущее время
-    now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%d %B %Y, %H:%M")
 
     # Обновляем счётчики
     question_count = int(row.get("question_count", 0)) + 1
@@ -231,7 +231,7 @@ async def add_xp_and_update_status(user_id: int, delta: int = 1, bot: Bot = None
         await grant_achievement(user_id, "xp100")
 
 
-    now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(pytz.timezone("Europe/Moscow")).strftime("%d %B %Y, %H:%M")
 
     updates = {
         "xp": new_xp,

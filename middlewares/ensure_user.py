@@ -23,7 +23,7 @@ class EnsureUserMiddleware(BaseMiddleware):
             row = await get_user_row_by_id(user.id)
             if row:
                 now = datetime.now(pytz.timezone("Europe/Moscow"))
-                now_str = now.strftime("%Y-%m-%d %H:%M:%S")
+                now_str = now.strftime("%d %B %Y, %H:%M")
 
                 # 🔁 Обновляем last_interaction при любом действии
                 await update_sheet_row(row.sheet_id, row.sheet_name, row.index, {

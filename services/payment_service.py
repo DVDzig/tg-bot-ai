@@ -7,7 +7,7 @@ SHEET_NAME = "PaymentsLog"
 
 # Логирование ожидающего платежа
 async def log_pending_payment(user_id: int, payment_id: str, quantity: int, payment_type: str):
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.utcnow().strftime("%d %B %Y, %H:%M")
     row = [
         str(user_id),
         str(quantity),
@@ -29,7 +29,7 @@ async def log_pending_payment(user_id: int, payment_id: str, quantity: int, paym
 
 # Логирование успешного платежа (по необходимости)
 async def log_successful_payment(user_id: int, payment_id: str):
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.utcnow().strftime("%d %B %Y, %H:%M")
     row = [
         str(user_id),
         "",                   # quantity
